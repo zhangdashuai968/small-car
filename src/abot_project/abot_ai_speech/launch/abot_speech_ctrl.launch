@@ -1,0 +1,7 @@
+<launch>
+  <node name="abot_speaker_node" pkg="abot_ai_speech" type="abot_speaker_node.py" output="screen"/>
+  <node name="abot_ctrl_node" pkg="abot_ai_speech" type="abot_speech_ctrl.py" output="screen">
+   <param name="device_id" type="int" value="11" />
+   <param name="stop_time" type="int" value="5" />
+  </node>
+</launch>

@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find robot_arm_moveit)/launch/demo.launch"/>
+    <include file="$(find robot_arm_driver)/launch/arm_driver.launch"/>
+</launch>

@@ -1,0 +1,12 @@
+BACKGROUND
+abot_bottle
+abot_brake
+abot_forbid
+abot_parking
+abot_person
+abot_speed_40
+abot_stop
+abot_traffic_green
+abot_traffic_red
+abot_traffic_yellow
+abot_uturn

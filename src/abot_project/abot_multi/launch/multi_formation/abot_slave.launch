@@ -1,0 +1,43 @@
+<launch>
+    <param name="/use_sim_time" value="false"/>
+    <arg name="master_robot"  default="riki1"/>
+    <arg name="robot_name"  default="$(env ROBOT_NAME)"/>
+    <arg name="odom_model"  default="$(env ABOTBASE)"/>
+    <arg name="lidar_frame"  default="$(arg robot_name)/laser"/>
+    <arg name="scan_frame_id"   default="scan"/>
+    <arg name="scan_topic"   default="scan"/>
+    <arg name="pose_x"            value="0.6"/>
+    <arg name="pose_y"            value="0"/>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_robot2" args="$(arg pose_x) $(arg pose_y) 0 0 0 0 $(arg master_robot)/base_footprint $(arg robot_name)" />
+
+     <node name="multi_robot_tf_$(arg robot_name)" pkg="abot_multi" type="slave_tf_listener" output="screen">
+        <param name="base_frame"   value="$(arg robot_name)/base_footprint"/>
+        <param name="target_frame" value="$(arg robot_name)"/>
+        <param name="cmd_vel"      value="/$(arg robot_name)/cmd_vel"/>
+     </node>
+
+     <group ns="$(arg robot_name)">
+        <include file="$(find abot_multi)/launch/lidar/$(env RIKILIDAR).launch" >
+            <arg name="lidar_frame"  value="$(arg lidar_frame)"/>
+        </include>
+
+     <node pkg="amcl" type="amcl" name="amcl" output="screen" clear_params="true">
+            <rosparam file="$(find abot)/param/navigation/amcl_params.yaml" command="load" />
+            <param name="use_map_topic"             value="true"/>
+            <param name="global_frame_id" value="map"/>
+            <param name="odom_frame_id"   value="$(arg robot_name)/odom"/>
+            <param name="base_frame_id"   value="$(arg robot_name)/base_footprint"/>
+            <param name="odom_model_type"           value="$(arg odom_model)"/>
+            <param name="initial_pose_x"            value="$(arg pose_x)"/>
+            <param name="initial_pose_y"            value="$(arg pose_y)"/>
+            <remap from="scan"                      to="$(arg scan_topic)"/>
+            <remap from="map" to="/map" />
+            <remap from="scan" to="$(arg scan_topic)"/>
+            <remap from="odom" to="odom"/>
+            <remap from="amcl_pose" to="amcl_pose"/>
+     </node>
+    </group>
+
+</launch>
+

@@ -1,0 +1,42 @@
+<launch>
+
+  <node pkg="abot_grasp_race" type="grasp_race.py" name="grasp_race" output="screen">
+
+    <param name="calibration_mode"  type="bool" value="True"/>
+
+    <param name="port"  type="string" value="/dev/ttyACM0"/>
+    <param name="baud"  type="int" value="115200"/>
+    <param name="speed"  type="int" value="2500"/>
+    <!--舵机朝向看的角度，是否需要执行舵机-->
+    <param name="servo_x"  type="int" value="10"/>
+    <param name="servo_run"  type="bool" value="False"/>
+
+    <!--机械臂与摄像头的坐标校正数据-->
+    <rosparam param="calib_data">[37, 7, 483, 200, 25, -95]</rosparam> 
+
+    <!-- 抓取颜色色块的顺序 -->
+    <rosparam param="grasp_order">["green", "yellow", "yellow"]</rosparam> 
+    <!-- 放置时色块偏移的高度 -->
+    <param name="place_offse_z"  value="30"/>
+    <!--抓取时左右偏差过大时，可以适当的调这个值，以5为单位增加或者减小-->
+    <param name="ky"  value="10"/>
+    <!-- 导航偏移值，由于抓取需要调转车头，这里先导航到偏移值前面的位置，在调头后退到达抓取点 -->
+    <param name="nav_offset"  value="0.2"/>
+    <!-- 寻找到到目标点的运行时间，值越大，计算出的时间越短 -->
+    <param name="ctrl_time"  value="150"/>
+    <!-- 找抓取目标物的后退运动阈值 -->
+    <param name="obj_offset_y"  value="50"/>
+    <!-- 找抓取目标物的左右运动阈值 -->
+    <param name="obj_offset_x"  value="30"/>
+
+    <!-- 定点模式抓取，True定点抓取，False为移动抓取 -->
+    <param name="fix_grasp_mode"  type="bool" value="True"/>
+
+    <!--抓取点的xy坐标与相对于起始点车辆朝向-->
+    <rosparam param="grasp_pos">[[1.0, 0.2, 90], [1.0, 1.2, 90], [1.0, 2.2, 90]]</rosparam>
+    <!--放置点xy坐标与相对于起始点的车辆朝向-->
+    <rosparam param="place_pos">[[2.0, 0.2, 180], [2.0, 1.2, 180], [2.0, 2.2, 180]]</rosparam>
+    <!--任务终点xy坐标与相对于起始点的车辆朝向-->
+    <rosparam param="end_pos">[0, 3.2, 0]</rosparam>
+  </node>
+</launch>

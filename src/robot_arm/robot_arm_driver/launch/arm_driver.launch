@@ -1,0 +1,7 @@
+<launch>
+  <param name="/use_sim_time" value="false" />
+  
+  <node name="robot_arm_node" pkg="robot_arm_driver" type="robot_arm_driver.py" output="screen"/>
+
+</launch>
+

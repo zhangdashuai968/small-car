@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package>
+  <name>abot_ai_speech</name>
+  <version>0.0.0</version>
+  <description>The abot speech package</description>
+  <maintainer email="304050118@qq.com">Kevin</maintainer>
+  <license>Apache</license>
+  <author email="304050118@qq.com">Kevin</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>catkin_virtualenv</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>portaudio19-dev</build_depend>
+  <run_depend>angles</run_depend>
+  <run_depend>audio_common_msgs</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>python-pyaudio</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>speech_recognition_msgs</run_depend>
+</package>

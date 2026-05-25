@@ -1,0 +1,38 @@
+<launch>
+  <arg name="odom_frame_id"   default="odom"/>
+  <arg name="base_frame_id"   default="base_footprint"/> 
+  <arg name="scan_frame_id"   default="scan"/>
+  <arg name="global_frame_id" default="map"/>
+  <arg name="cmd_vel_topic" default="cmd_vel" />
+  <arg name="odom_topic" default="odom" />
+  <arg name="laser_topic" default="scan" />
+
+  <!--  ************** Navigation ***************  -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+      <rosparam file="$(find abot_multi)/param/navigation/$(env NAV_PATH)/costmap_$(env ABOTMODEL)_params.yaml" command="load" ns="global_costmap" />
+      <rosparam file="$(find abot_multi)/param/navigation/$(env NAV_PATH)/costmap_$(env ABOTMODEL)_params.yaml" command="load" ns="local_costmap" />
+      <rosparam file="$(find abot_multi)/param/navigation/$(env NAV_PATH)/local_costmap_params.yaml" command="load" />
+      <rosparam file="$(find abot_multi)/param/navigation/$(env NAV_PATH)/global_costmap_params.yaml" command="load" />
+      <rosparam file="$(find abot_multi)/param/navigation/$(env NAV_PATH)/move_base_params.yaml" command="load" />
+      <rosparam file="$(find abot_multi)/param/navigation/$(env NAV_PATH)/$(env NAV_PATH)_$(env ABOTBASE)_planner_params.yaml" command="load" />
+      <param name="global_costmap/global_frame" value="$(arg global_frame_id)"/>
+
+      <param name="global_costmap/scan/sensor_frame" value="$(arg scan_frame_id)"/>
+      <param name="global_costmap/obstacle_layer/scan/sensor_frame" value="$(arg scan_frame_id)"/>
+
+      <param name="local_costmap/scan/sensor_frame" value="$(arg scan_frame_id)"/>
+      <param name="local_costmap/obstacle_layer/scan/sensor_frame" value="$(arg scan_frame_id)"/>
+      <param name="global_costmap/robot_base_frame" value="$(arg base_frame_id)"/>
+
+      <param name="local_costmap/global_frame" value="$(arg odom_frame_id)"/>
+      <param name="local_costmap/robot_base_frame" value="$(arg base_frame_id)"/>
+      <param name="global_costmap/obstacle_layer/scan/topic" value="$(arg laser_topic)"/>
+      <param name="local_costmap/obstacle_layer/scan/topic" value="$(arg laser_topic)"/>
+
+      <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+      <remap from="odom" to="$(arg odom_topic)"/>
+      <remap from="scan" to="$(arg laser_topic)"/>
+      <remap from="map" to="/map"/>
+  </node>
+
+</launch>

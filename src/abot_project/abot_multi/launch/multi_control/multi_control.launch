@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="robot_name"    default="$(env ROBOT_NAME)" />
+    <arg name="robot_master"  default="abot1" />
+    <arg name="cmd_vel_topic" default="/$(arg robot_name)/cmd_vel"/>
+
+    <node name="multi_control_$(arg robot_name)" pkg="abot_multi" type="multi_control_listen.py" output="screen">
+	<param name="master_robot" value="$(arg robot_master)" type="string" />
+        <param name="slave_robot" value="$(arg robot_name)" type="string" />
+    </node>
+</launch>

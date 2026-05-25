@@ -1,0 +1,12 @@
+joints: {
+  joint1: {id: 0, neutral: 205, max_angle: 169.6, min_angle: -169.6, max_speed: 90},
+  joint2: {id: 1, max_angle: 225.0, min_angle: -225.0, max_speed: 90},
+  joint3: {id: 2, max_angle: 225.0, min_angle: -225.0, max_speed: 90},
+  joint4: {id: 3, max_angle: 225.0, min_angle: -225.0, max_speed: 90},
+  right_finger_joint: {id: 5, max_speed: 90},
+  left_finger_joint: {id: 6, max_speed: 90}
+}
+controllers: {
+  arm_controllers: {type:  follow_controller, joints:[joint1, joint2, joint3, joint4], action_name: arm_controller/follow_joint_trajectory, onboard: False},
+  #gripper_controllers: {type:  follow_controller, joints:[right_finger_joint, left_finger_joint], action_name: gripper_controller/follow_joint_trajectory, onboard: False}
+}

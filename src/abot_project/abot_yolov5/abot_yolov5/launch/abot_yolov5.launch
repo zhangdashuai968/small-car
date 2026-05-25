@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+  <arg name="camera_type" value="$(env CAMERA)"/>
+  <arg if="$(eval arg('camera_type') == 'astra')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'astrapro')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'gemini')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'usb')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'csi')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'intel')" name="input_image"      default="/camera/color/image_raw"/>
+
+
+  <param name="yolov5_path"       value="$(find abot_yolov5)/yolov5"/>
+  <!-- Start yolov5 and ros wrapper -->
+  <node pkg="abot_yolov5" type="yolov5_node.py" name="yolov5" output="screen" >
+    <param name="weight_path"       value="$(find abot_yolov5)/weights/yolov5s.pt"/>
+    <param name="image_topic"       value="$(arg input_image)" />
+    <param name="pub_topic"         value="/yolov5/BoundingBoxes" />
+    <param name="camera_frame"       value="camera"/>
+    <param name="conf"              value="0.3" />
+    <param name="use_cpu"           value="false" />
+  </node>
+
+</launch>

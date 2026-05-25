@@ -1,0 +1,13 @@
+<launch>
+  <include file="$(find abot)/launch/camera.launch"/>
+  <include file="$(find abot_yolo_detection)/launch/abot_traffic.launch"/>
+
+  <node name="vision_race" pkg="abot_vision_race" type="vision.py" output="screen" >
+      <!--任务图像信息xy坐标与相对于原点车辆朝向-->
+      <rosparam param="task_image_pos">[0.6, 0.2, -90]</rosparam>
+      <!--任务标识图像xy坐标与相对于原点车辆朝向-->
+      <rosparam param="task_detect_pos">[[0.5, 1.0, 180],[0.5, 2.0, 180],[0.5, 3.0, 180]]</rosparam>
+      <!--任务点xy坐标与相对于原点车辆朝向-->
+      <rosparam param="task_pos">[[1.5, 1.0, 180],[1.5, 2.0, 180],[1.5, 3.0, 180]]</rosparam>
+  </node>
+</launch>

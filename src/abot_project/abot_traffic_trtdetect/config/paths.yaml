@@ -1,0 +1,4 @@
+abot_detect_node:
+    model_path: "/home/abot/catkin_ws/src/abot_project/abot_traffic_trtdetect/config/ssd-mobilenet.onnx"
+    class_labels_path: "/home/abot/catkin_ws/src/abot_project/abot_traffic_trtdetect/config/labels.txt"
+

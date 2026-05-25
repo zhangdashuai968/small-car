@@ -1,0 +1,38 @@
+<launch>
+  <arg name="detect_mode" default="deep" doc="calibration_mode type [hsv, deep]"/>
+  <arg name="camera_type" value="$(env CAMERA)"/>
+
+  <arg if="$(eval arg('camera_type') == 'astra')" name="input_image"        default="/camera/rgb/image_rect_color"/>
+  <arg if="$(eval arg('camera_type') == 'astra')" name="depth_image"        default="/camera/depth/image_rect"/>
+  <arg if="$(eval arg('camera_type') == 'astra')" name="depth_info"       default="/camera/depth/camera_info"/>
+
+  <arg if="$(eval arg('camera_type') == 'astrapro')" name="input_image"        default="/camera/rgb/image_rect_color"/>
+  <arg if="$(eval arg('camera_type') == 'astrapro')" name="depth_image"        default="/camera/depth/image_rect"/>
+  <arg if="$(eval arg('camera_type') == 'astrapro')" name="depth_info"       default="/camera/depth/camera_info"/>
+
+  <arg if="$(eval arg('camera_type') == 'gemini')" name="input_image"        default="/camera/rgb/image_rect_color"/>
+  <arg if="$(eval arg('camera_type') == 'gemini')" name="depth_image"        default="/camera/depth/image_rect_raw"/>
+  <arg if="$(eval arg('camera_type') == 'gemini')" name="depth_info"       default="/camera/depth/camera_info"/>
+
+  <arg if="$(eval arg('camera_type') == 'intel')" name="input_image"        default="/camera/color/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'intel')" name="depth_image"        default="/camera/aligned_depth_to_color/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'intel')" name="depth_info"       default="/camera/aligned_depth_to_color/camera_info"/>
+   
+  <!--include file="$(find abot)/launch/camera.launch"/-->
+  <group if="$(eval arg('detect_mode') == 'hsv')">
+        <include file="$(find abot_object_detect)/launch/abot_ball_object.launch" />
+  </group>
+  <group if="$(eval arg('detect_mode') == 'deep')">
+  	<!--include file="$(find abot_yolo_detection)/launch/abot_block.launch"/-->
+  	<include file="$(find abot_yolo_detection)/launch/abot_traffic.launch"/>
+  </group>
+
+
+  <node name="abot_object_point" pkg="abot_object_point" type="object_xyz.py" output="screen" >
+      <param name="camera_topic" value="$(arg input_image)" type="string" />
+      <param name="depth_topic" value="$(arg depth_image)" type="string" />
+      <param name="depth_info_topic" value="$(arg depth_info)" type="string" />
+      <param name="real_area" value="500" type="int" />
+      <param name="depth_offset" value="3" type="int" />
+  </node>
+</launch>

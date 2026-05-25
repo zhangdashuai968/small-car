@@ -1,0 +1,15 @@
+<launch>
+  <!-- 自动建图和保存launch文件 -->
+  
+  <!-- 参数配置 -->
+  <arg name="map_save_time" default="120" />
+  <arg name="map_name" default="auto_map" />
+  <arg name="map_directory" default="/home/abot/catkin_ws/src/abot_project/abot/maps" />
+  
+  <!-- 启动自动建图和保存节点 -->
+  <node name="auto_map_save" pkg="abot" type="auto_map_save.py" output="screen">
+    <param name="~map_save_time" value="$(arg map_save_time)" />
+    <param name="~map_name" value="$(arg map_name)" />
+    <param name="~map_directory" value="$(arg map_directory)" />
+  </node>
+</launch>

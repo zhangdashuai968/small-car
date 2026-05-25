@@ -1,0 +1,6 @@
+classes= 3
+train  = /home/rikibot/Work/yolo/data/ImageSets/Main/train.txt
+valid  = /home/rikibot/Work/yolo/data/ImageSets/Main/val.txt
+names = /home/rikibot/Work/yolo/data/labels.names
+backup = ./backup
+

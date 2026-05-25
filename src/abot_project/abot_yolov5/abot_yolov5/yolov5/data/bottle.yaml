@@ -1,0 +1,4 @@
+train: /home/rikibot/Work/yolov5/train
+val: /home/rikibot/Work/yolov5/val
+nc: 1
+names: ["bottle"]

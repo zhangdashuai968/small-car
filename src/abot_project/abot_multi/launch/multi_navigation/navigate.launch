@@ -1,0 +1,41 @@
+<launch>
+    <param name="/use_sim_time" value="false"/>
+    <arg name="robot_name"  default="$(env ROBOT_NAME)"/>
+    <arg name="odom_model"  default="$(env ABOTBASE)"/>
+    <arg name="lidar_frame"  default="$(arg robot_name)/laser"/>
+    <arg name="scan_frame_id"   default="scan"/>
+    <arg name="scan_topic"   default="scan"/>
+   
+    <group ns="$(arg robot_name)">
+	<include file="$(find abot_multi)/launch/lidar/$(env ABOTLIDAR).launch" >
+            <arg name="lidar_frame"  value="$(arg lidar_frame)"/>
+        </include>
+
+	<include file="$(find abot_multi)/launch/multi_navigation/move_base.launch" >
+ 	    <arg name="global_frame_id" value="map"/>
+            <arg name="odom_frame_id"   value="$(arg robot_name)/odom"/>
+            <arg name="base_frame_id"   value="$(arg robot_name)/base_footprint"/>
+            <arg name="scan_frame_id"   value="$(arg robot_name)/scan"/> 
+	    <arg name="odom_topic" value="/$(arg robot_name)/odom" />
+            <arg name="laser_topic" value="/$(arg robot_name)/scan" />
+            <arg name="cmd_vel_topic" value="/$(arg robot_name)/cmd_vel" />
+        </include>
+
+	<node pkg="amcl" type="amcl" name="amcl" output="screen" clear_params="true">
+	    <rosparam file="$(find abot_multi)/param/navigation/amcl_params.yaml" command="load" />
+            <param name="use_map_topic"             value="true"/>
+            <param name="global_frame_id" value="map"/>
+    	    <param name="odom_frame_id"   value="$(arg robot_name)/odom"/>
+            <param name="base_frame_id"   value="$(arg robot_name)/base_footprint"/> 
+	    <param name="odom_model_type"           value="$(arg odom_model)"/>
+	    <param name="initial_pose_x"            value="0"/>
+	    <param name="initial_pose_y"            value="0"/>
+	    <param name="initial_pose_a"            value="0"/>
+            <remap from="scan"                      to="$(arg scan_topic)"/>
+    	    <remap from="map" to="/map" />
+            <remap from="scan" to="$(arg scan_topic)"/>
+    	    <remap from="odom" to="odom"/>
+            <remap from="amcl_pose" to="amcl_pose"/>
+	</node>
+    </group>
+</launch>

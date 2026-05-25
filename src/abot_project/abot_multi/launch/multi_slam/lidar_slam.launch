@@ -1,0 +1,14 @@
+<launch>
+  <arg name="robot_name"  default="$(env ROBOT_NAME)"/>
+  <arg name="lidar_frame"  default="$(env ROBOT_NAME)/laser"/>
+  <group ns="$(arg robot_name)">
+    <include file="$(find abot_multi)/launch/lidar/$(env ABOTLIDAR).launch" >
+      <arg name="lidar_frame"  value="$(arg lidar_frame)"/>
+    </include> 
+    <include file="$(find abot)/param/navigation/slam_gmapping.xml">
+      <arg name="base_frame"  value="$(arg robot_name)/base_link"/>
+      <arg name="odom_frame"  value="$(arg robot_name)/odom"/>
+      <arg name="map_frame"  value="$(arg robot_name)/map"/>
+    </include> 
+  </group>
+</launch>

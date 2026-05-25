@@ -1,0 +1,10 @@
+<launch>
+    <!-- 启动 roscore -->
+    <node name="roscore" pkg="roscore" type="roscore" />
+    
+    <!-- 启动 multi_point_navigation_grasp.py 脚本 -->
+    <node name="multi_point_navigation_grasp" pkg="abot_grasp_race" type="multi_point_navigation_grasp.py" output="screen">
+        <!-- 如果需要传递参数，可以在这里添加 -->
+        <!-- <param name="param_name" value="param_value" /> -->
+    </node>
+</launch>

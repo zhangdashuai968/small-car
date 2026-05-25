@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="camera_type" value="$(env CAMERA)"/>
+  <arg if="$(eval arg('camera_type') == 'astra')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'astrapro')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'gemini')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'usb')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'csi')" name="input_image"        default="/camera/rgb/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'intel')" name="input_image"      default="/camera/color/image_raw"/>
+    <node if="true" pkg="abot_yolo_detection" type="abot_yolo_detection_node" name="abot_yolo_detection_node" output="screen" clear_params="true" required="true">
+        <remap from="/image_color" to="$(arg input_image)"/>
+            
+        <param name="yolo_names_file" value="$(find abot_yolo_detection)/conf/coco.names"/>
+        <param name="yolo_config_file" value="$(find abot_yolo_detection)/conf/yolov4-tiny.cfg"/>
+        <param name="yolo_weights_file" value="$(find abot_yolo_detection)/conf/yolov4-tiny.weights"/>
+        <param name="yolo_thresh"  type = "double" value="0.6"/>
+    </node>
+      
+</launch>

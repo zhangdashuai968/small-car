@@ -1,0 +1,32 @@
+<launch>
+    <!-- 不使用仿真时间 -->
+    <param name="/use_sim_time" value="false" />
+
+    <!-- 启动arbotix driver-->
+    <arg name="sim" default="true" />
+
+    <param  name="robot_description" textfile="$(find robot_arm_description)/urdf/robot_arm_description.urdf" />
+
+
+    <node name="arbotix" pkg="arbotix_python" type="arbotix_driver" output="screen">
+        <rosparam file="$(find robot_arm_description)/config/arm.yaml" command="load" />
+        <param name="sim" value="true"/>
+    </node>
+
+    <node name="gripper_controller" pkg="arbotix_controllers" type="gripper_controller">
+        <rosparam>
+            model: dualservo
+            center: 0.0
+            pad_width: 0.004
+            finger_length: 0.08
+            joint_left: left_finger_joint
+            joint_right: right_finger_joint 
+        </rosparam>
+    </node>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" />
+
+    <!-- 启动rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find robot_arm_description)/rviz/arm.rviz" required="true" />
+
+</launch>

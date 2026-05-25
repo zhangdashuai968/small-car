@@ -1,0 +1,18 @@
+<launch>
+        <!--这里易于求解与理解，假定摄像头的初始平台与抓取平面平行,
+            实际上有一定的角度，大家可以用三角函数消除这个误差-->
+    <node name="grasp_node" pkg="robot_arm_grasp" type="object_grasp.py" output="screen">
+        <!--这里摄像头空间的x轴相对于机械臂是y轴，摄像头y轴相对于机械臂运行是x軕，摄像头的z轴与机械臂运动一致, 摄像头安装在机械臂上，因此摄像头相对于机械臂的偏移量是一样的-->
+        <!--摄像头x原轴原点，相对于机械臂y轴的偏移量-->
+        <param name="cg_x"  value="25"/>
+        <!--摄像头y原轴原点，相对于机械臂x轴的偏移量-->
+        <param name="cg_y"  value="50"/>
+        <!--摄像头z原轴原点，相对于机械臂z轴的偏移量-->
+        <param name="cg_z"  value="150"/>
+        <!--抓取目标确认的次数-->
+        <param name="obj_ok"  value="10"/>
+        <!--抓取目标放置的位置-->
+	<rosparam param="place_pose">[120, 120, 80]</rosparam>
+    </node>
+</launch>
+

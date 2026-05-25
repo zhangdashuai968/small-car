@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot  name="rikibot_x4">
+ <!--
+  <link name="dummy" />
+  <joint name="dummy_joint" type="fixed">
+     <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+     <parent link="dummy"/>
+     <child link="base_link"/>
+  </joint>
+  -->
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.0100509903998089 -0.00144764242107561 0.0653853892348185"
+        rpy="0 0 0" />
+      <mass
+        value="2.82862380332547" />
+      <inertia
+        ixx="0.00377870413792899"
+        ixy="1.76310164462596E-05"
+        ixz="-4.99175307781338E-05"
+        iyy="0.00418622858471457"
+        iyz="-3.3373980535048E-06"
+        izz="0.00549349802407062" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://abot_description/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0 0 0 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://abot_description/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

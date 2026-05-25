@@ -1,0 +1,9 @@
+<launch>
+  <node name='follower' pkg="abot_lidar_follower" type="sonar_follower.py" output='screen'>
+    <param name='speed' value='0.2' type='double' />
+    <param name='mini_distance' value='30' type='double' />
+    <param name='max_distance' value='50' type='double' />
+    <param name='lost_distance' value='100' type='double' />
+  </node>
+</launch>
+

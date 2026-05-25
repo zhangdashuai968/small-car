@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: rikibot_arm_description
+    relative_path: urdf/rikibot_arm_description.urdf
+    xacro_args: ""
+  SRDF:
+    relative_path: config/rikibot_arm_description.srdf
+  CONFIG:
+    author_name: kevin
+    author_email: 304050118@qq.com
+    generated_timestamp: 1694499982

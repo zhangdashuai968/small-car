@@ -1,0 +1,5 @@
+train: /home/rikibot/Work/yolov5/train
+val: /home/rikibot/Work/yolov5/val
+nc: 11
+names: ["rikibot_brake", "rikibot_bottle", "rikibot_speed_40", "rikibot_uturn", "rikibot_forbid", "rikibot_stop", "rikibot_parking", "rikibot_person", "rikibot_traffic_red", "rikibot_traffic_green", "rikibot_traffic_yellow"]
+

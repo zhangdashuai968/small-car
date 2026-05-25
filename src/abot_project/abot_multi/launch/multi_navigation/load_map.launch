@@ -1,0 +1,10 @@
+<launch>
+    <arg name="robot_name"  default="$(env ROBOT_NAME)"/>
+
+    <param name="/use_sim_time" value="false"/>
+    <arg name="map_file" default="$(find abot)/maps/house.yaml"/>
+      
+    <node pkg="map_server" name="map_server"  type="map_server" args="$(arg map_file)" >
+  	 <param   name="frame_id" value="map" />     
+    </node>
+</launch>

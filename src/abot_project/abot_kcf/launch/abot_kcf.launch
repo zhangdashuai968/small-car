@@ -1,0 +1,30 @@
+<launch>
+
+   <arg name="camera_type" value="$(env CAMERA)"/>
+   <arg if="$(eval arg('camera_type') == 'astra')" name="input_image"      default="/camera/rgb/image_raw"/>
+   <arg if="$(eval arg('camera_type') == 'astrapro')" name="input_image"   default="/camera/rgb/image_raw"/>
+   <arg if="$(eval arg('camera_type') == 'intel')" name="input_image"      default="/camera/color/image_raw"/>
+
+   <arg if="$(eval arg('camera_type') == 'astra')" name="input_depth"      default="/camera/depth/image"/>
+   <arg if="$(eval arg('camera_type') == 'astrapro')" name="input_depth"   default="/camera/depth/image"/>
+   <arg if="$(eval arg('camera_type') == 'intel')" name="input_depth"      default="/camera/depth/image_rect_raw"/>
+
+   <group if="$(eval arg('camera_type') == 'astrapro')">
+       <include file="$(find astra_launch)/launch/astrapro.launch"/>
+   </group>
+
+   <group if="$(eval arg('camera_type') == 'astra')">
+       <include file="$(find astra_launch)/launch/astra.launch"/>
+   </group>
+
+   <group if="$(eval arg('camera_type') == 'intel')">
+      <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
+    </group>
+
+    <node pkg="abot_kcf" name="abot_kcf" type="abot_kcf_node" cwd="node" output="screen">
+	<param name="image_topic" value="$(arg input_image)" />
+	<param name="depth_topic" value="$(arg input_depth)" />
+        <param name="camera_model" value="$(arg camera_type)" />
+    </node>
+
+</launch>

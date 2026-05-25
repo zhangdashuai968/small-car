@@ -1,0 +1,27 @@
+<launch>
+     <arg name="camera_type" value="$(env CAMERA)"/>
+     <arg if="$(eval arg('camera_type') == 'astra')" name="input_image"        default="/camera/rgb/image_raw"/>
+     <arg if="$(eval arg('camera_type') == 'astrapro')" name="input_image"        default="/camera/rgb/image_raw"/>
+     <arg if="$(eval arg('camera_type') == 'usb')" name="input_image"        default="/camera/rgb/image_raw"/>
+     <arg if="$(eval arg('camera_type') == 'csi')" name="input_image"        default="/camera/rgb/image_raw"/>
+     <arg if="$(eval arg('camera_type') == 'intel')" name="input_image"      default="/camera/color/image_raw"/>
+
+     <arg if="$(eval arg('camera_type') == 'astra')" name="camera_info"        default="/camera/rgb/camera_info"/>
+     <arg if="$(eval arg('camera_type') == 'astrapro')" name="camera_info"        default="/camera/rgb/camera_info"/>
+     <arg if="$(eval arg('camera_type') == 'usb')" name="camera_info"        default="/camera/rgb/camera_info"/>
+     <arg if="$(eval arg('camera_type') == 'csi')" name="camera_info"        default="/camera/rgb/camera_info"/>
+     <arg if="$(eval arg('camera_type') == 'intel')" name="camera_info"      default="/camera/color/camera_info"/>
+
+     <include file="$(find abot)/launch/camera.launch" />
+     <arg name="marker_size" default="5.0" />
+     <arg name="max_new_marker_error" default="0.08" />
+     <arg name="max_track_error" default="0.05" />
+     <arg name="cam_image_topic" default="$(arg input_image)" />
+     <arg name="cam_info_topic" default="$(arg camera_info)" />
+     <arg name="output_frame" default="camera" />
+
+        <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
+
+   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find abot_ar_track)/rviz/abot_ar_tags.rviz"/>
+ 
+</launch>

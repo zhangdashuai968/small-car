@@ -1,0 +1,6 @@
+classes= 5
+train  = /home/rikibot/Work/yolo/trainval.txt
+valid  = /home/rikibot/Work/yolo/val.txt
+names = /home/rikibot/catkin_ws/src/rikibot_project/rikibot_yolo_detection/darknet/cfg/labels.names
+backup = backup/
+

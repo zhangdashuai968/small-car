@@ -1,0 +1,24 @@
+<launch>
+  <arg name="calibration_mode" default="$(env ABOT_IN_CALIB)" doc="calibration_mode type [calibration, action]"/>
+  
+
+      <!-- image transport from compressed to raw -->
+  <node pkg="image_transport" type="republish" name="republish" args="compressed">
+     <remap from="in"  to="camera/rgb/image_raw" />
+     <remap from="out"   to="camera/image"/>
+  </node>
+  <node pkg="topic_tools" type="relay" name="relay_camera_info" args="/camera/rgb/camera_info /camera/camera_info"/>
+
+
+
+  <!-- run the following under calibration mode -->
+  <!-- camera calibration uses raw image -->
+  <node if="$(eval calibration_mode == 'calibration')" pkg="camera_calibration" type="cameracalibrator.py" name="cameracalibrator" args="--size 8x6 --square 0.108 --no-service-check image:=/camera/image camera:=/camera" output="screen"/>
+
+  <!-- run the following under action mode -->
+  <!-- image rectification -->
+  <node if="$(eval calibration_mode == 'action')" ns="camera" pkg="image_proc" type="image_proc" name="image_proc" args="_approximate_sync:=true" output="screen">
+    <remap from="image_raw" to="image" />
+    <param name="queue_size" value="10" />
+  </node>
+</launch>

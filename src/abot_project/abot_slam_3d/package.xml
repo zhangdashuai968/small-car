@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>abot_slam_3d</name>
+  <version>0.0.0</version>
+  <description>The abot_slam_3d package</description>
+
+  <maintainer email="304050118@qq.com">kevin</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- message generation -->
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+  <!-- other dependencies -->
+  <exec_depend>rtabmap_ros</exec_depend>
+</package>

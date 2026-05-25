@@ -1,0 +1,28 @@
+<launch>
+
+  <arg name="calibration_mode" default="$(env AUTO_ARM_CALIB)" doc="calibration_mode type [calibration, action]"/>
+  <group if="$(eval arg('calibration_mode') == 'action')">
+  	<include file="$(find abot)/launch/navigate.launch" />
+  </group>
+
+  <node pkg="abot_xarm" type="abot_move_grasp" name="abot_move_grasp_node" output="screen">
+    <param if="$(eval calibration_mode == 'calibration')" name="/is_detection_calibration_mode" value="True"/>
+    <param if="$(eval calibration_mode == 'action')" name="/is_detection_calibration_mode" value="False"/>    
+
+    <param name="arm_center"  type="string" value="160, 10, -35.0, 90.0"/>
+    <param name="arm_top"  type="string" value="230.0, 10, -35.0, 90.0"/>
+
+    <param name="port"  type="string" value="/dev/ttyACM0"/>
+    <param name="baud"  type="int" value="115200"/>
+    <param name="speed"  type="int" value="1200"/>
+    <!-- fix grasp mode is True, robot not move nav, is False nav grasp -->
+    <param name="fix_grasp_mode"  type="bool" value="True"/>
+    <!-- set grasp pose and place pose  -->
+    <param name="obj_grasp_pose"  type="string" value="2.394, -1.054, 0.000"/>
+    <param name="obj_grasp_quat"  type="string" value="0.000, 0.000, 1.000, 0.060"/>
+
+    <param name="obj_place_pose"  type="string" value="-0.049,  -0.853, 0"/>
+    <param name="obj_place_quat"  type="string" value="0.000, 0.000, -0.024, 1.000"/>
+
+  </node>
+</launch>

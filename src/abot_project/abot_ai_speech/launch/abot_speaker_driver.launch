@@ -1,0 +1,3 @@
+<launch>
+  <node name="abot_speaker_node" pkg="abot_ai_speech" type="abot_speaker_node.py" output="screen"/>
+</launch>

@@ -1,0 +1,19 @@
+<launch>
+   <arg name="camera_type" value="$(env CAMERA)"/>
+   <arg if="$(eval arg('camera_type') == 'astra')" name="input_image"        default="/camera/rgb/image_raw"/>
+   <arg if="$(eval arg('camera_type') == 'astrapro')" name="input_image"        default="/camera/rgb/image_raw"/>
+   <arg if="$(eval arg('camera_type') == 'usb')" name="input_image"        default="/camera/rgb/image_raw"/>
+   <arg if="$(eval arg('camera_type') == 'csi')" name="input_image"        default="/camera/rgb/image_raw"/>
+   <arg if="$(eval arg('camera_type') == 'intel')" name="input_image"      default="/camera/color/image_raw"/>
+    <!-- Detection node -->
+    <node pkg="abot_line_follower" name="abot_line_detect" type="abot_line_node" cwd="node" output="screen">
+  	<param name="max_speed" type="double" value="0.2" />
+  	<!-- yellow: 0,  red: 1, green: 2, blue:3-->
+  	<param name="color" type="int" value="0" />
+  	<param name="detect_mode" type="bool" value="false" />
+  	<param name="servo_ctrl" type="bool" value="false" />
+        <param name="image_topic" value="$(arg input_image)" />
+
+    </node>
+
+</launch>

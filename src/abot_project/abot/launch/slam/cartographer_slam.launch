@@ -1,0 +1,4 @@
+<launch>
+  <include file="$(find abot)/launch/lidar/$(env ABOTLIDAR).launch" />
+  <include file="$(find abot)/launch/include/cartographer/cartographer_2d.launch" />
+</launch>

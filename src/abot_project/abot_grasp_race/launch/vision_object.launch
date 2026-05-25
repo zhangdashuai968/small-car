@@ -1,0 +1,36 @@
+<launch>
+  <arg name="camera_type" value="$(env CAMERA)"/>
+
+  <arg if="$(eval arg('camera_type') == 'astra')" name="input_image"        default="/camera/rgb/image_rect_color"/>
+  <arg if="$(eval arg('camera_type') == 'astra')" name="depth_image"        default="/camera/depth/image_rect"/>
+  <arg if="$(eval arg('camera_type') == 'astra')" name="depth_info"       default="/camera/depth/camera_info"/>
+
+  <arg if="$(eval arg('camera_type') == 'gemini')" name="input_image"        default="/camera/rgb/image_rect_color"/>
+  <arg if="$(eval arg('camera_type') == 'gemini')" name="depth_image"        default="/camera/depth/image_rect_raw"/>
+  <arg if="$(eval arg('camera_type') == 'gemini')" name="depth_info"       default="/camera/depth/camera_info"/>
+
+  <arg if="$(eval arg('camera_type') == 'astrapro')" name="input_image"        default="/camera/rgb/image_rect_color"/>
+  <arg if="$(eval arg('camera_type') == 'astrapro')" name="depth_image"        default="/camera/depth/image_rect"/>
+  <arg if="$(eval arg('camera_type') == 'astrapro')" name="depth_info"       default="/camera/depth/camera_info"/>
+
+  <arg if="$(eval arg('camera_type') == 'intel')" name="input_image"        default="/camera/color/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'intel')" name="depth_image"        default="/camera/aligned_depth_to_color/image_raw"/>
+  <arg if="$(eval arg('camera_type') == 'intel')" name="depth_info"       default="/camera/aligned_depth_to_color/camera_info"/>
+   
+  <include file="$(find abot)/launch/camera.launch"/>
+
+  <node name="abot_object_point" pkg="abot_grasp_race" type="object_point.py" output="screen" >
+      <param name="camera_topic" value="$(arg input_image)" />
+      <param name="depth_topic" value="$(arg depth_image)" />
+      <param name="depth_offset" value="3" />
+      <!--检测色块区域大小域值-->
+      <param name="real_area" value="400"/>
+      <!--有效识别图像的域值，用来排除机械臂底座与抓取后颜色的干扰-->
+      <param name="out_y" value="300"/>
+      <!--HSV色块颜色的色值与名称-->
+      <rosparam param="color1">[0, 131, 158, 76, 255, 255, 'yellow']</rosparam>
+      <rosparam param="color2">[0, 116, 102, 41, 255, 255, 'red']</rosparam>
+      <rosparam param="color3">[42, 56, 41, 97, 255, 255, 'green']</rosparam>
+      <rosparam param="K">[471.62835693359375, 0.0, 314.3524169921875, 0.0, 471.62835693359375, 190.69113159179688, 0.0, 0.0, 1.0]</rosparam>
+  </node>
+</launch>

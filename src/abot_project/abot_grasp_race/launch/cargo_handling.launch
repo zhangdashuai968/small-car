@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find abot)/launch/bringup.launch" />
+   
+    <!-- 启动导航 -->
+    <node pkg="rostopic" type="rostopic" name="adjust_camera" args="pub -1 servo riki_msgs/Servo '{Servo1: 88, Servo2: 20}'" />
+    <include file="$(find abot)/launch/navigate.launch" />
+    
+    <!-- 启动机械臂抓取 -->
+    <include file="$(find ZachLab_grasp)/launch/grasp.launch" />
+   
+    <!-- 设置conda环境 -->
+    <env name="CONDA_DEFAULT_ENV" value="39"/>
+    
+    <!-- 启动目标识别 -->
+    <!-- 先激活conda环境再启动vl_locate -->
+    <node pkg="abot_grasp_race" type="start_vl_locate.sh" name="vl_locate_with_conda" output="screen"/>
+    <!--
+    <include file="$(find vl_locate)/launch/vl_locate.launch" />
+    -->
+    
+    <!-- 定时输出进度信息 -->
+    <node pkg="abot_grasp_race" type="progress_reporter.py" name="progress_reporter" output="screen">
+        <remap from="/cargo_handling_status" to="/update_step" />
+    </node>
+    
+    <!-- 启动物流搬运主节点 -->
+    <node pkg="abot_grasp_race" type="cargo_handling.py" name="cargo_handling" output="screen">
+        <!-- 定义六个点位的坐标和朝向 -->
+        <rosparam param="waypoints">[
+             [3.6, -0.9, 1.6],   <!-- 第一个抓取点 -->
+            [2.4, -0.9, 1.6],  <!-- 第一个抓取动作2点 -->
+            [3.6, -2.13, 1.576],   <!-- 第二个抓取点 -->
+            [2.4, -2.13, 1.6],  <!-- 第二个抓取动作2点 -->
+            [3.6, -3.33, 1.6],   <!-- 第三个抓取点 -->
+            [2.4, -3.33, 1.6]   <!-- 第三个抓取动作2点 -->
+        ]</rosparam>
+        
+        <!-- 定义三个抓取目标的名称 -->
+        <rosparam param="object_names">["蓝方块", "红方块", "绿方块"]</rosparam>
+        
+        <!-- 任务终点坐标和朝向 -->  
+        <rosparam param="end_pos">[2.4, -2, 0]</rosparam>
+        
+        <!-- 导航偏移值 -->
+        <param name="nav_offset" value="0" />
+    </node>
+</launch>

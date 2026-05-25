@@ -1,0 +1,27 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/kyle/ws_moveit/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/kyle/ws_gluon/src/deepsense-innfos-gluon/ros_gluon/gluon_control/include/**",
+        "/home/kyle/ws_moveit/src/industrial_core/industrial_robot_client/include/**",
+        "/home/kyle/ws_moveit/src/industrial_core/industrial_trajectory_filters/include/**",
+        "/home/kyle/ws_moveit/src/industrial_core/industrial_utils/include/**",
+        "/home/kyle/ws_moveit/src/ros_control_boilerplate/include/**",
+        "/home/kyle/ws_moveit/src/industrial_core/simple_message/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

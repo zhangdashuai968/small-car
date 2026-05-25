@@ -1,0 +1,305 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Authors: Rikibot kevin
+
+import rospy
+import os
+import math
+import numpy as np
+import cv2
+import time
+import json
+from cv_bridge import CvBridge
+from std_msgs.msg import UInt8, Float64
+from sensor_msgs.msg import Image, CompressedImage
+from dynamic_reconfigure.server import Server
+from abot_xarm.cfg import XarmPoseParamsConfig
+from actionlib_msgs.msg import *
+from geometry_msgs.msg import Pose, Point, Quaternion
+from abot_xarm_driver import *
+from abot_nav import *
+from abot_detect import *
+
+
+GRIPPER_CLOSE = 700
+GRIPPER_OPEN = 200
+GRIPPER_DEFAULT = 500
+
+class RikibotxArmGrasp():
+    def __init__(self):
+        self.x = rospy.get_param("~x", 80)
+        self.y = rospy.get_param("~y", 0) 
+        self.z = rospy.get_param("~z", 250)
+        self.rotary = rospy.get_param("~rotary", 90)
+
+        self.arm_center = rospy.get_param("~arm_center", '85.0, 100.0, -80.0, 90')
+        self.arm_top = rospy.get_param("~arm_top", '195.0, 120.0, -90.0, 90')
+
+        self.speed = rospy.get_param("~speed", 1000)  #Servo contorl speed ms
+        self.port = rospy.get_param("~port", '/dev/ttyACM0')
+        self.baud = rospy.get_param("~baud", 115200)
+        self.fix_grasp_mode = rospy.get_param("~fix_grasp_mode", True)
+        self.postion_offset = rospy.get_param("~postion_offset", 0.2)
+        self.obj_grasp_pose =  rospy.get_param("~obj_grasp_pose", '3.552, -1.372, 0.000')
+        self.obj_grasp_quat =  rospy.get_param("~obj_grasp_quat", '0.000, 0.000, 1.000, 0.010')
+        self.obj_place_pose = rospy.get_param("~obj_place_pose", '-0.049,  -0.853, 0')
+        self.obj_place_quat = rospy.get_param("~obj_place_quat", '0.000, 0.000, -0.024, 1.000')
+
+
+        r = rospy.Rate(5)
+        rospy.on_shutdown(self.shutdown)
+
+        self.is_calibration_mode = rospy.get_param("~is_detection_calibration_mode", False)
+        if self.is_calibration_mode is True:
+            srv_xarm = Server(XarmPoseParamsConfig, self.cbGetxArmPoseParam)
+
+        self.sub_image_type = "raw"         # you can choose image type "compressed", "raw"
+        self.pub_image_type = "compressed"  # you can choose image type "compressed", "raw"
+
+        if self.sub_image_type == "compressed":
+            # subscribes compressed image
+            self.sub_image_original = rospy.Subscriber('/camera/image_rect_color/compressed', CompressedImage, self.cbxArmImg, queue_size = 1)
+        elif self.sub_image_type == "raw":
+            # subscribes raw image
+            self.sub_image_original = rospy.Subscriber('/camera/image_rect_color', Image, self.cbxArmImg, queue_size = 1)
+
+
+        #if self.pub_image_type == "compressed":
+        #    self.pub_detect_image = rospy.Publisher('/detect_image/compressed', CompressedImage, queue_size=1)
+        #else:   
+        #    self.pub_detect_image = rospy.Publisher('/detect_image', Image, queue_size=1)
+
+ 
+        self.cvBridge = CvBridge()
+        self.obj_detection = ObjectDetection()
+        self.xArmCtrl = RikibotxArmCtrl(port=self.port, baud=self.baud)
+
+        self.count = 0
+        self.move_count = 0
+
+        self.color = (0, 0, 255)
+        self.acent = list(map(float, self.arm_center.split(',')))
+        self.atop = list(map(float, self.arm_top.split(',')))
+        self.ccent = [220.0, 320.0]
+        #self.ccent = [220.0, 400.0]
+        self.ctop = [150.0, 320.0]
+        self.obj_x = 0
+        self.obj_y = 0
+        self.last_x = self.last_y = self.last_z = self.last_rotary = 0
+        self.grasp_lock = False
+        self.grasp_finish = False
+        self.goal_lock = False
+        self.obj_color = 'red'
+        self.angle = 0
+
+        self.nav_step = 0
+        #grasp_pose = [3.552, -1.372, 0.000]
+        #grasp_quat = [0.000, 0.000, 1.000, 0.010]
+        #place_pose = [-0.049,  -0.853, 0]
+        #place_quat = [0.000, 0.000, -0.024, 1.000]
+        grasp_pose = list(map(float, self.obj_grasp_pose.split(',')))
+        grasp_quat = list(map(float, self.obj_grasp_quat.split(',')))
+        place_pose = list(map(float, self.obj_place_pose.split(',')))
+        place_quat = list(map(float, self.obj_place_quat.split(',')))
+        self.GraspGoalOffset = Pose(Point(grasp_pose[0] - self.postion_offset, grasp_pose[1], grasp_pose[2]), Quaternion(grasp_quat[0], grasp_quat[1], grasp_quat[2], grasp_quat[3]))
+        self.GraspGoal = Pose(Point(grasp_pose[0], grasp_pose[1], grasp_pose[2]), Quaternion(grasp_quat[0], grasp_quat[1], grasp_quat[2], grasp_quat[3]))
+        self.PlaceGoalOffset = Pose(Point(place_pose[0] + self.postion_offset, place_pose[1], place_pose[2]), Quaternion(place_quat[0], place_quat[1], place_quat[2], place_quat[3]))
+        self.PlaceGoal = Pose(Point(place_pose[0], place_pose[1], place_pose[2]), Quaternion(place_quat[0], place_quat[1], place_quat[2], place_quat[3]))
+
+       
+        if self.fix_grasp_mode is False or self.is_calibration_mode is True:
+            self.nav = RikibotNav()
+
+        if self.is_calibration_mode is False:
+            self.xArmHome()
+
+        self.xArmGripperTxData(GRIPPER_OPEN)
+
+
+        while not rospy.is_shutdown():
+            if self.fix_grasp_mode is False:
+                if self.goal_lock is True:
+                    if self.grasp_lock is True:
+                        rospy.loginfo("object pos: x: %d, y: %d", self.obj_x, self.obj_y) 
+                        self.xArmGraspPlan()
+                else:
+                    self.MoveSingleGrasp()
+
+            else:
+                if self.grasp_lock is True:
+                    rospy.loginfo("object pos: x: %d, y: %d", self.obj_x, self.obj_y) 
+                    self.xArmGraspPlan()
+
+            r.sleep()
+
+    def MoveSingleGrasp(self):
+        if self.nav_step == 0:
+            self.nav.SendGoal(self.GraspGoalOffset)
+        if self.nav_step == 1:
+            self.nav.SendGoal(self.GraspGoal)
+        if self.nav_step == 2 and self.grasp_finish is True:
+            self.nav.SendGoal(self.PlaceGoalOffset)
+        if self.nav_step == 3:
+            self.nav.SendGoal(self.PlaceGoal)
+        if self.nav_step == 4:
+            self.xArmPlacePlan()
+            
+        state =self.nav.NavState()
+        if state == 1:
+            self.nav_step = self.nav_step + 1
+            if self.nav_step == 2:
+                self.goal_lock  = True
+
+
+    def cbxArmImg(self, image_msg):
+        self.count += 1
+  	if self.count % 3 == 0:
+            self.count = 0
+            if self.sub_image_type == "compressed":
+            	#converting compressed image to opencv image
+            	np_arr = np.fromstring(image_msg.data, np.uint8)
+            	img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            elif self.sub_image_type == "raw":
+                img = self.cvBridge.imgmsg_to_cv2(image_msg, "bgr8")
+
+	    img_h, img_w = img.shape[:2]
+            if self.is_calibration_mode is True:
+                cv2.circle(img, (int(self.ccent[1]), int(self.ccent[0])), 5, self.color, 4)
+                cv2.circle(img, (int(self.ctop[1]), int(self.ctop[0])), 5, self.color, 4)
+                if self.last_x != self.x or self.last_y != self.y or self.last_z != self.z or self.last_rotary != self.rotary:
+                    rospy.loginfo("Update Pose")
+                    self.last_x = self.x
+                    self.last_y = self.y
+                    self.last_z = self.z
+                    self.last_rotary = self.rotary
+                    self.xArmPoseTxData(self.x, self.y, self.z, self.rotary)
+
+            elif self.goal_lock is True or self.fix_grasp_mode is True :
+                object_pos_list = self.obj_detection.detect(img)
+		if object_pos_list is not None:
+                    rospy.loginfo("detect object ")
+                    self.obj_color = object_pos_list[0][0]
+                    self.obj_x = object_pos_list[0][1]
+                    self.obj_y = object_pos_list[0][2]
+                    self.angle = object_pos_list[0][3]
+                    if self.angle <= -45:
+                        self.angle = 180 + self.angle
+                    else:
+                        self.angle = 90 + self.angle
+                    self.grasp_lock = True
+                    #cv2.imshow("detect", img), cv2.waitKey(1)
+                else:
+                    rospy.loginfo("no object detect")
+
+
+                    
+            cv2.imshow("detect", img), cv2.waitKey(1)
+            #if self.pub_image_type == "compressed":
+            #    image_msg = CompressedImage()
+            #    image_msg.header.stamp = rospy.Time.now()
+            #    image_msg.format = "jpeg"
+            #    image_msg.data = np.array(cv2.imencode('.jpg', img)[1]).tostring()
+            #    self.pub_detect_image.publish(image_msg)
+
+            #else :
+            #    self.pub_detect_image.publish(self.cvBridge.cv2_to_imgmsg(img, "bgr8"))
+
+    def TransformPose(self):
+        cx = self.acent[0];cy = self.acent[1];cz = self.acent[2]
+        tx = self.atop[0];ty = self.atop[1];tz = self.atop[2]
+
+        a = ((cx-tx)*(self.ccent[0]-self.ctop[0])+\
+                  (cy-ty)*(self.ccent[1]-self.ctop[1]))/\
+                  (pow((self.ccent[1]-self.ctop[1]), 2)+ pow((self.ccent[0]- self.ctop[0]), 2))
+        b = ((cy-ty)*(self.ccent[0]-self.ctop[0]) - \
+                (cx-ty)*(self.ccent[1]-self.ctop[1]))/\
+                (pow((self.ccent[1]-self.ctop[1]), 2)+pow((self.ccent[0] - self.ctop[0]), 2))
+        c = cx - a*self.ccent[0] + b*self.ccent[1]
+        d = cy - b*self.ccent[0] - a*self.ccent[1]
+
+        self.x = self.obj_y*a - self.obj_x*b + c 
+        self.y = self.obj_y*b + self.obj_x*a + d
+        self.z = cz
+
+
+        rospy.loginfo("Get object: a: %f, b: %f, c: %f, d : %f, x: %d, y: %d, z: %d, r: %d", a, b, c, d, self.x, self.y, self.z, self.rotary)
+
+    def xArmGraspPlan(self):
+        #self.xArmGripperTxData(GRIPPER_OPEN)
+        #time.sleep(2)
+        self.TransformPose()
+        time.sleep(2)
+        self.xArmPoseTxData(self.x, self.y, self.z, self.rotary)
+        time.sleep(2)
+        self.xArmGripperTxData(GRIPPER_CLOSE)
+        time.sleep(2)
+        self.xArmPoseTxData(80, 0, 250)
+        time.sleep(2)
+        if self.fix_grasp_mode is True:
+            self.xArmGripperTxData(GRIPPER_OPEN)
+            time.sleep(2)
+            self.xArmHome()
+            time.sleep(2)
+        self.grasp_lock = False
+        self.goal_lock = False
+        self.grasp_finish = True
+
+    def xArmPlacePlan(self):
+        self.xArmPoseTxData(250, 0, 50)
+        time.sleep(2)
+        self.xArmGripperTxData(GRIPPER_OPEN)
+        time.sleep(2)
+        self.xArmHome()
+        time.sleep(2)
+
+    def cbGetxArmPoseParam(self, config, level):
+        rospy.loginfo("Rikibot Xarm Pose Calib")
+        rospy.loginfo("x : %d", config.x)
+        rospy.loginfo("y : %d", config.y)
+        rospy.loginfo("z : %d", config.z)
+        rospy.loginfo("rotary : %d", config.rotary)
+
+        self.x = config.x
+        self.y = config.y
+        self.z = config.z
+        self.rotary = config.rotary
+        return config
+
+
+    def xArmPoseTxData(self, x, y, z, rotary=90):
+        xArmPose = {"RikibotxArmCmd": 1,"Pose": {"x": x, "y": y, "z": z, "rotary": rotary},"time": self.speed}
+        self.xArmCtrl.SerialWriteData(json.dumps(xArmPose))
+
+    def xArmGripperTxData(self, gripper_step):
+        xArmGripper = {"RikibotxArmCmd": 2, "Gripper": gripper_step, "time": self.speed }
+        self.xArmCtrl.SerialWriteData(json.dumps(xArmGripper))
+
+
+    def xArmHome(self):
+        gripper_step = 200
+        self.xArmPoseTxData(80, 0, 250)
+        time.sleep(1)
+        self.xArmGripperTxData(gripper_step)
+
+    def SendGoal(self, goal):
+        # Set up the next goal location
+        self.goal = MoveBaseGoal()
+        #self.goal.target_pose.pose = self.locations[locate]
+        self.goal.target_pose.pose = goal
+        self.goal.target_pose.header.frame_id = 'map'
+        self.goal.target_pose.header.stamp = rospy.Time.now()
+        self.move_base.send_goal(self.goal) #send goal to move_base
+
+    def main(self):
+        rospy.spin()
+
+    def shutdown(self):
+        # Release handle to the webcam
+        rospy.logwarn("now will shutdown xarm ...")
+
+
+if __name__ == '__main__':
+    rospy.init_node('rikibot_xarm_control')
+    os.system("rostopic pub -1 servo riki_msgs/Servo -- '90' '15'")
+    node =RikibotxArmGrasp()
+    node.main()

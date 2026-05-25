@@ -1,0 +1,4 @@
+BACKGROUND
+purple_block
+red_block
+yellow_block

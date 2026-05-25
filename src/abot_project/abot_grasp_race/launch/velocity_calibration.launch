@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- 速度校准参数 -->
+    <arg name="test_linear_vel" default="0.2" />      <!-- 测试线速度 m/s -->
+    <arg name="test_angular_vel" default="0.5" />     <!-- 测试角速度 rad/s -->
+    <arg name="test_duration" default="5.0" />        <!-- 测试时长 秒 -->
+    
+    <!-- 启动激光雷达 -->
+    <include file="$(find abot)/launch/rplidar.launch" />
+    
+    <!-- 启动底盘驱动（如果需要） -->
+    <!-- <include file="$(find abot)/launch/bringup.launch" /> -->
+    
+    <!-- 启动速度校准节点 -->
+    <node name="velocity_calibration" pkg="abot_grasp_race" type="velocity_calibration.py" output="screen">
+        <param name="test_linear_vel" value="$(arg test_linear_vel)" />
+        <param name="test_angular_vel" value="$(arg test_angular_vel)" />
+        <param name="test_duration" value="$(arg test_duration)" />
+    </node>
+    
+</launch>

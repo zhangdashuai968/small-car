@@ -1,0 +1,14 @@
+<launch>
+    <arg name="camera_type" value="$(env CAMERA)"/>
+    <arg if="$(eval arg('camera_type') == 'astra')" name="input_image"        default="/camera/rgb/image_raw"/>
+    <arg if="$(eval arg('camera_type') == 'astrapro')" name="input_image"        default="/camera/rgb/image_raw"/>
+    <arg if="$(eval arg('camera_type') == 'usb')" name="input_image"        default="/camera/rgb/image_raw"/>
+    <arg if="$(eval arg('camera_type') == 'csi')" name="input_image"        default="/camera/rgb/image_raw"/>
+    <arg if="$(eval arg('camera_type') == 'intel')" name="input_image"      default="/camera/color/image_raw"/>
+
+    <node name="abot_detect_node"  pkg="abot_deep_learning" type="abot_detect"  output="screen">
+          <param name="image_topic" value="$(arg input_image)" />
+          <remap from="~imin" to="/image_raw" />
+    </node>
+
+</launch>

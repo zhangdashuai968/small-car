@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find abot)/launch/camera.launch" />
+    <include file="$(find abot_xarm)/launch/camera_calibration.launch" />
+</launch>
