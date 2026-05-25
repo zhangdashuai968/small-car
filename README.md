@@ -1,6 +1,7 @@
 # Small Car — ABOT M1 ARM 智能小车
 
 > 基于 ROS 的自主导航 + 视觉抓取 + 机械臂操控实验平台
+> 属于 [三仓库生态系统](https://github.com/zhangdashuai968/morning-newspaper/blob/master/WORKFLOW.md) 的工程代码仓库
 
 ## 硬件平台
 
@@ -91,17 +92,15 @@ waypoints:
 - OpenCV 4.x
 - CMake 2.8.3+
 
-## 仓库地址
-
-[https://github.com/zhangdashuai968/small-car](https://github.com/zhangdashuai968/small-car)
-
 ## 关联项目
 
 | 项目 | 说明 |
 |------|------|
-| [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning) | 配套学习路线图：6 阶段 32 实验，从 ROS 基础到 SLAM 到视觉伺服抓取，覆盖小车全部技术栈的理论教程 |
+| [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning) | 配套学习路线图：6 阶段 32 实验，从 ROS 基础到 SLAM 到视觉伺服抓取 |
+| [morning-newspaper](https://github.com/zhangdashuai968/morning-newspaper) | 每日早报系统，包含学习进度追踪和每日工作日志 |
+| [WORKFLOW.md](https://github.com/zhangdashuai968/morning-newspaper/blob/master/WORKFLOW.md) | 三仓库生态系统完整说明 |
 
-> **关系**：`abot_arm_learning` 是"课堂"（学原理、做实验），`small-car` 是"战场"（实际部署、跑航线、真机调试）。建议先走完实验再看这里的工程代码，理解更深。
+> **关系**：`abot_arm_learning` 是"课堂"（学原理、做实验），`small-car` 是"战场"（实际部署、跑航线、真机调试）。`morning-newspaper` 是"闹钟"（每天早上提醒你进度到哪了）。
 
 ## 许可证
 
