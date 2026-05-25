@@ -95,6 +95,14 @@ waypoints:
 
 [https://github.com/zhangdashuai968/small-car](https://github.com/zhangdashuai968/small-car)
 
+## 关联项目
+
+| 项目 | 说明 |
+|------|------|
+| [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning) | 配套学习路线图：6 阶段 32 实验，从 ROS 基础到 SLAM 到视觉伺服抓取，覆盖小车全部技术栈的理论教程 |
+
+> **关系**：`abot_arm_learning` 是"课堂"（学原理、做实验），`small-car` 是"战场"（实际部署、跑航线、真机调试）。建议先走完实验再看这里的工程代码，理解更深。
+
 ## 许可证
 
 Private repository — 仅供团队内部使用。
