@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="config_file" default="ZachLab_params.yaml" doc="参数配置文件" />
+    <!-- 机械臂抓取节点 -->
+    <node name="basic_xarm_grasp" pkg="ZachLab_grasp" type="gg.py" output="screen">
+        <!-- 加载参数文件 -->
+        <rosparam file="$(find ZachLab_grasp)/config/$(arg config_file)" command="load" />
+    </node>
+</launch>

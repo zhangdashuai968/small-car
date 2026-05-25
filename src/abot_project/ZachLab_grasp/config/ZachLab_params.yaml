@@ -1,0 +1,36 @@
+# 机械臂基础抓取参数配置文件
+
+# 机械臂初始位置参数
+x: 0
+y: 0
+z: 250
+rotary: 90
+
+# 控制参数
+speed: 1500  # 舵机控制速度 ms
+port: "/dev/ttyACM0"
+baud: 115200
+
+# 夹爪位置参数
+gripper_close: 700
+gripper_open: 150
+gripper_default: 500
+
+# 标定参数
+cali_1_im: [48, 384]    # 左下角标定点像素坐标
+cali_1_mc: [-75, 99]   # 左下角标定点机械臂坐标
+cali_2_im: [588, 105]   # 右上角标定点像素坐标
+cali_2_mc: [120, 195]   # 右上角标定点机械臂坐标
+
+# 抓取参数
+grasp_z: -115           # 抓取高度
+grasp_offset_x: 10      # 
+grasp_offset_y: 0      # X轴偏移
+rotation_factor: 0.46   # 旋转因子
+max_rotation_angle: 45  # 最大旋转角度
+
+# 模式参数
+continuous_mode: true   # True为持续抓取，False为单次抓取
+
+# 话题名称
+pose_topic: "/Pose"

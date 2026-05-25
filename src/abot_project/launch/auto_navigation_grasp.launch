@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Auto Navigation and Grasp Launch File -->
+    
+    <!-- Start the automation script -->
+    <node name="auto_navigation_grasp" pkg="abot_project" type="auto_navigation_grasp.py" output="screen">
+        <!-- Waypoint parameters (can be modified as needed) -->
+        <rosparam param="waypoints">
+            - [3.6, -0.9, 1.6]
+            - [2.4, -0.9, 1.6] 
+            - [3.6, -2.13, 1.6]
+            - [2.4, -2.13, 1.6]
+            - [3.6, -3.33, 1.6]
+            - [2.4, -3.33, 1.6]
+            - [2.4, -2.0, 0.0]
+        </rosparam>
+        
+        <!-- Action sequence: true=grab, false=place, null=no action -->
+        <rosparam param="actions">[true, false, true, false, true, false, null]</rosparam>
+        
+        <!-- Object names for each point -->
+        <rosparam param="objects">["蓝方块", "图片中心点", "红方块", "图片中心点", "绿方块", "图片中心点", null]</rosparam>
+    </node>
+</launch>

@@ -1,0 +1,9 @@
+# run7: body模式 前进38cm -> 左移280cm -> 原地掉头180°
+# K_LIN=2.5 (修复左移时向后漂移)
+waypoints:
+  - name: run7_body_38cm_280cm_180deg
+    x: 0.38
+    y: 2.8
+    yaw: -2.787
+    action: pass
+    frame: body

@@ -1,0 +1,19 @@
+# Claude Code 本地配置
+.claude/
+
+# 千问配置
+.qwen/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv/
+venv/
+
+# 系统文件
+Thumbs.db
+.DS_Store
+*.swp
+*.swo

@@ -1,0 +1,51 @@
+# 任务点位配置；改这一份就够了，不用动 .py
+# action 三选一：grab / place / pass
+#   grab  : 到位 → 调 vlm_detection(object) → 触发抓取节点 (/grab=True)
+#   place : 到位 → 调 vlm_detection(object) → 触发放置 (/grab=False)
+#   pass  : 只路过、不动机械臂
+# object : 喂给 vl_locate 的目标关键词；pass 时填什么都行（不会用）
+# arm_pose: 可选；到点后先把舵机摆到这个姿态再动作（不写就保持现状）
+
+waypoints:
+  - name: pickup_grape
+    x: -0.137
+    y:  2.485
+    yaw: 0.0
+    action: grab
+    object: 葡萄
+
+  - name: drop_center_1
+    x:  0.297
+    y:  1.215
+    yaw: 0.0
+    action: place
+    object: 图片中心点
+
+  - name: pickup_banana
+    x:  1.442
+    y:  2.207
+    yaw: 0.0
+    action: grab
+    object: 香蕉
+
+  - name: drop_center_2
+    x:  2.0
+    y:  1.5
+    yaw: 0.0
+    action: place
+    object: 图片中心点
+
+  - name: pickup_mangosteen
+    x:  1.0
+    y:  3.0
+    yaw: 1.57
+    action: grab
+    object: 山竹
+
+  - name: drop_center_3
+    x:  0.0
+    y:  2.0
+    yaw: 3.14
+    action: place
+    object: 图片中心点
+
