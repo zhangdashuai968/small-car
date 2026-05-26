@@ -7,9 +7,10 @@ options = {
   trajectory_builder = TRAJECTORY_BUILDER,
   map_frame = "map",
   tracking_frame = "base_footprint",
-  published_frame = "base_footprint",
+  -- published_frame=odom + provide_odom_frame=false: 只发 map->odom, 让 bringup 的 EKF 继续管 odom->base_footprint, 避免双发冲突
+  published_frame = "odom",
   odom_frame = "odom",
-  provide_odom_frame = true,
+  provide_odom_frame = false,
   publish_frame_projected_to_2d = false,
   use_odometry = false,
   use_nav_sat = false,
