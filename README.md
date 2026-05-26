@@ -5,11 +5,81 @@
 
 ## 硬件平台
 
-- **底盘**: ABOT M1 ARM 轮式机器人
-- **计算**: NVIDIA Jetson（Ubuntu 20.04 / ROS Noetic）
-- **传感器**: LIDAR 激光雷达 | 深度相机 | IMU（9轴）
+- **底盘**: ABOT M1 ARM 差速轮（四轮）
+- **计算**: NVIDIA Jetson Nano（Ubuntu 20.04 / ROS Noetic）
+- **传感器**: 思岚 RPLidar C1 | Astra RGBD 深度相机 | MPU6050 IMU（9轴）
 - **执行器**: 六自由度机械臂（吸盘抓取）
-- **连接**: 局域网 SSH（`192.168.36.46`，用户 `abot`）
+- **连接**: 局域网 SSH（`192.168.36.46` 或 `192.168.43.211`，用户 `abot`）
+
+## 硬件详情
+
+### 网络
+
+| 项目 | 值 |
+|------|-----|
+| 网段 A IP | `192.168.36.46` |
+| 网段 B IP | `192.168.43.211` |
+| SSH 用户 | `abot` |
+| SSH 密码 | 见环境变量 `CAR_PASSWORD` |
+| ROS Master | `http://<小车IP>:11311` |
+
+### 计算平台
+
+| 项目 | 值 |
+|------|-----|
+| 型号 | NVIDIA Jetson Nano |
+| OS | Ubuntu 20.04 |
+| ROS 发行版 | Noetic |
+| 工作空间 | `~/catkin_ws` |
+| 串口设备 | `/dev/abotbase` (底盘), `/dev/abotlidar` (激光) |
+
+### 底盘
+
+| 项目 | 值 |
+|------|-----|
+| 型号 | ABOT M1 ARM |
+| 驱动方式 | 差速轮 (四轮) |
+| 环境变量 | `ABOTMODEL=x4`, `ABOTBASE=omni` |
+| 底层 MCU | STM32F103RCT6 |
+| 通信协议 | rosserial (USB, 115200 bps) |
+| 里程计标定 | `linear_scale = 1.014` |
+
+### 传感器
+
+| 传感器 | 型号 | 话题/备注 |
+|--------|------|-----------|
+| 激光雷达 | 思岚 RPLidar C1 | `/scan`, 波特率 460800 |
+| 深度相机 | Astra RGBD | `/camera/rgb/image_raw`, `/camera/depth/points` |
+| IMU | MPU6050 (板载) | `/imu/data`, Madgwick 滤波后 |
+| 里程计 | 轮式编码器 → EKF 融合 | `/odom` (EKF 融合后) |
+
+## 已知 Bug
+
+| # | 描述 | 状态 |
+|----|------|------|
+| 1 | **差速轮发 tw.linear.y 导致轨迹漂移** — ABOTBASE=omni 配置与差速轮硬件不匹配 | 待架构变更 |
+| 2 | **双 WiFi 网段 IP 不固定** — 每次开机可能分配到 36.x 或 43.x 网段 | 需手动 ping 确认 |
+| 3 | **编码文件中文乱码** — 车上部分文件为 GBK 编码，拉到 Windows 后需转换 | 逐步修复 |
+| 4 | **AMCL 初始位姿不匹配** — 启动时如果车不在 (0.6, -0.4) 需要重新设 initialpose | 已配置默认值 |
+
+> 详见 `TROUBLESHOOTING.md` 和 `reports/调参极限分析报告.md`
+
+## 启动流程
+
+```bash
+# 1. 基础驱动 + 里程计 + EKF
+roslaunch abot bringup.launch
+
+# 2. 地图 + 定位 + move_base
+roslaunch abot navigate.launch
+
+# 3. [可选] 视觉定位 + 抓取
+roslaunch vl_locate vl_locate.launch
+roslaunch ZachLab_grasp grasp.launch
+
+# 4. 执行任务
+rosrun abot auto_task_runner.py waypoints.yaml
+```
 
 ## 项目结构
 
@@ -33,22 +103,24 @@
 │   ├── auto_task_runner.py # 自动任务调度
 │   ├── nav_test.py         # 前进 1m 测试
 │   ├── rotate_test.py      # 旋转 90° 测试
+│   ├── ssh-car.py          # SSH 远程控制工具
 │   ├── auto-sync.sh        # GitHub 自动同步
 │   ├── sync-once.sh/.bat   # 手动同步脚本
 │   └── start_map.sh        # 一键建图启动
+├── maps/                   # 场地地图
+│   ├── house.pgm
+│   └── house.png
 ├── logs/                   # 真机调试日志
-│   └── 模板_调试日志.md
-├── reports/                # 会话报告（人工+AI）
+│   ├── 模板_调试日志.md
+│   └── 小车调节日志.txt
+├── reports/                # 会话报告
 │   ├── README.md
 │   ├── 模板_人工报告.md
-│   └── 模板_AI报告.md
+│   ├── 模板_AI报告.md
+│   └── 调参极限分析报告.md
 ├── CLAUDE.md               # AI 助手规则
 ├── TROUBLESHOOTING.md      # 踩坑手册
-├── 真机信息.md              # 硬件清单
-├── 调参极限分析报告.md       # 调参分析
-├── ssh-car.py              # SSH 远程控制工具
-├── house.pgm / house.png   # 场地地图
-└── 小车调节日志.txt        # 调试记录
+└── README.md
 ```
 
 ## 核心功能
@@ -66,8 +138,8 @@
 ### 1. 连接小车
 
 ```bash
-python ssh-car.py          # 交互式 shell
-python ssh-car.py "ls"     # 执行单条命令
+python scripts/ssh-car.py          # 交互式 shell
+python scripts/ssh-car.py "ls"     # 执行单条命令
 ```
 
 ### 2. 启动巡逻
@@ -94,7 +166,7 @@ waypoints:
 
 ### 4. 地图查看
 
-`house.pgm` / `house.png` — 场地图，可直接用 ROS `map_server` 加载。
+`maps/house.pgm` / `maps/house.png` — 场地图，可直接用 ROS `map_server` 加载。
 
 ## 环境要求
 
