@@ -3,9 +3,15 @@ import paramiko
 import sys
 import os
 
-HOST = "192.168.36.46"
-USER = "abot"
-PASSWORD = "123456"
+HOST = os.environ.get("CAR_HOST", "192.168.36.46")
+USER = os.environ.get("CAR_USER", "abot")
+PASSWORD = os.environ.get("CAR_PASSWORD", "")
+
+if not PASSWORD:
+    print("错误：请设置环境变量 CAR_PASSWORD")
+    print("  Windows: set CAR_PASSWORD=你的密码")
+    print("  Linux:   export CAR_PASSWORD=你的密码")
+    sys.exit(1)
 
 
 def ssh_command(cmd: str) -> str:

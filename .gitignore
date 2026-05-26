@@ -4,6 +4,23 @@
 # 千问配置
 .qwen/
 
+# 编译产物
+src/out/
+build/
+devel/
+logs/
+*.o
+*.so
+*.a
+*.dll
+*.dylib
+*.exe
+*.app
+
+# ROS
+*.bag
+*.active
+
 # Python
 __pycache__/
 *.pyc

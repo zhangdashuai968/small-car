@@ -1,10 +1,10 @@
-# ÈÎÎñµãÎ»ÅäÖÃ£»¸ÄÕâÒ»·İ¾Í¹»ÁË£¬²»ÓÃ¶¯ .py
-# action ÈıÑ¡Ò»£ºgrab / place / pass
-#   grab  : µ½Î» ¡ú µ÷ vlm_detection(object) ¡ú ´¥·¢×¥È¡½Úµã (/grab=True)
-#   place : µ½Î» ¡ú µ÷ vlm_detection(object) ¡ú ´¥·¢·ÅÖÃ (/grab=False)
-#   pass  : Ö»Â·¹ı¡¢²»¶¯»úĞµ±Û
-# object : Î¹¸ø vl_locate µÄÄ¿±ê¹Ø¼ü´Ê£»pass Ê±ÌîÊ²Ã´¶¼ĞĞ£¨²»»áÓÃ£©
-# arm_pose: ¿ÉÑ¡£»µ½µãºóÏÈ°Ñ¶æ»ú°Úµ½Õâ¸ö×ËÌ¬ÔÙ¶¯×÷£¨²»Ğ´¾Í±£³ÖÏÖ×´£©
+# èˆªçº¿ç‚¹é…ç½®ï¼Œä¿®æ”¹ä¸€ä»½å°±å¤Ÿäº†ï¼Œä¸ç”¨åŠ¨ .py
+# action ä¸‰é€‰ä¸€ï¼šgrab / place / pass
+#   grab  : åˆ°ä½ â†’ è°ƒç”¨ vlm_detection(object) â†’ æœºæ¢°è‡‚æŠ“å– (/grab=True)
+#   place : åˆ°ä½ â†’ è°ƒç”¨ vlm_detection(object) â†’ æœºæ¢°è‡‚é‡Šæ”¾ (/grab=False)
+#   pass  : åªè·¯è¿‡ï¼Œä¸åšä»»ä½•æ“ä½œ
+# object : å–‚ç»™ vl_locate çš„ç›®æ ‡å…³é”®è¯ï¼Œpass æ—¶å¡«ä»€ä¹ˆéƒ½è¡Œï¼ˆä¸ç”Ÿæ•ˆï¼‰
+# arm_pose: å¯é€‰ï¼Œæœºæ¢°è‡‚é¢„è®¾å§¿æ€ï¼Œä¸å¡«å°±ç”¨é»˜è®¤å§¿æ€
 
 waypoints:
   - name: pickup_grape
@@ -12,40 +12,39 @@ waypoints:
     y:  2.485
     yaw: 0.0
     action: grab
-    object: ÆÏÌÑ
+    object: è‘¡è„
 
   - name: drop_center_1
     x:  0.297
     y:  1.215
     yaw: 0.0
     action: place
-    object: Í¼Æ¬ÖĞĞÄµã
+    object: å›¾ç‰‡ä¸­å¿ƒç‚¹
 
   - name: pickup_banana
     x:  1.442
     y:  2.207
     yaw: 0.0
     action: grab
-    object: Ïã½¶
+    object: é¦™è•‰
 
   - name: drop_center_2
     x:  2.0
     y:  1.5
     yaw: 0.0
     action: place
-    object: Í¼Æ¬ÖĞĞÄµã
+    object: å›¾ç‰‡ä¸­å¿ƒç‚¹
 
   - name: pickup_mangosteen
     x:  1.0
     y:  3.0
     yaw: 1.57
     action: grab
-    object: É½Öñ
+    object: å±±ç«¹
 
   - name: drop_center_3
     x:  0.0
     y:  2.0
     yaw: 3.14
     action: place
-    object: Í¼Æ¬ÖĞĞÄµã
-
+    object: å›¾ç‰‡ä¸­å¿ƒç‚¹
