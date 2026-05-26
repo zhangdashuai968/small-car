@@ -1,18 +1,21 @@
 # CLAUDE.md — ABOT M1 ARM 小车真机工作区
 
-## 定位（这个仓库装什么、不装什么）
+## 定位
 
-| | 装 | 不装 |
+**这个仓库只做一件事：真机实战。不做理论学习、不存学习笔记。**
+
+| | 装（实战） | 不装（学习） |
 |---|---|---|
 | ✅ | ROS 源码、launch 文件、参数（`src/`） | 学习路线、实验 spec |
 | ✅ | 运行脚本、航线、地图（`scripts/`） | 学习日志、学习笔记 |
-| ✅ | 真机调试日志（`小车调节日志.txt`） | 进度追踪表（PROGRESS.md） |
-| ✅ | 踩坑手册（`TROUBLESHOOTING.md`） | 速查表（cheatsheets） |
+| ✅ | 真机调试日志（`logs/`） | 进度追踪表（PROGRESS.md） |
+| ✅ | 真机随手记录（`小车调节日志.txt`） | 速查表（cheatsheets） |
+| ✅ | 踩坑手册（`TROUBLESHOOTING.md`） | |
 | ✅ | 硬件清单（`真机信息.md`） | |
 | ✅ | 会话报告（`reports/`） | |
 | ✅ | 自动同步脚本（`auto-sync.sh`） | |
 
-> **一句话**：这个仓库是"兵器库 + 航海日志"。学习资料在 [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)。
+> **一句话**：这个仓库是"兵器库 + 航海日志"。学习资料全在 [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)。
 
 ## 身份认知
 
@@ -37,7 +40,8 @@
 
 - 调试过程中的关键操作、命令输出、异常信息，**实时追加**到 `小车调节日志.txt`
 - 格式：`[HH:MM] 内容描述`
-- 如果调试涉及具体实验，同时更新 abot_arm_learning 的 `logs/YYYY-MM-DD_实验编号_简述.md`
+- 如果调试涉及具体实验，同时写结构化日志到 `logs/YYYY-MM-DD_实验编号_简述.md`（模板：`logs/模板_调试日志.md`）
+- 学习笔记不要放在这里——去 abot_arm_learning 的 `notes/` 写
 
 ## 安全规则（绝对不可违反）
 
