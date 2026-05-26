@@ -50,7 +50,7 @@
 
     <!-- Publish Rikirobot odometry -->
     <node pkg="abot" name="abot_base_node" type="abot_base_node">
-    	<param name="linear_scale" type="double" value="1.0" />
+    	<param name="linear_scale" type="double" value="1.014" />
     	<param name="low_battery" type="double" value="$(arg low_bat)" />
     </node>
 

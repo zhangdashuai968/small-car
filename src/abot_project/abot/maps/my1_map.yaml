@@ -1,6 +1,6 @@
-image: house.pgm
+image: my1_map.pgm
 resolution: 0.050000
-origin: [-6.233838, -7.129032, 0.000000]
+origin: [-10.097419, -9.869597, 0.000000]
 negate: 0
 occupied_thresh: 0.65
 free_thresh: 0.196

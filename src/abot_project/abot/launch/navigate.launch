@@ -1,0 +1,13 @@
+<launch>
+  <param name="/use_sim_time" value="false"/>
+
+  <include file="$(find abot)/launch/lidar/$(env ABOTLIDAR).launch" />
+  <include file="$(find abot)/launch/move_base.launch" />
+
+  <arg name="map_file" default="$(find abot)/maps/house.yaml"/>
+  <node pkg="map_server" name="map_server"  type="map_server" args="$(arg map_file)" />
+
+  <!-- AMCL -->
+  <include file="$(find abot)/launch/amcl.launch"/>
+  <!--node name="multi_mark" pkg="abot" type="show_mark.py" output="screen" /-->
+</launch>

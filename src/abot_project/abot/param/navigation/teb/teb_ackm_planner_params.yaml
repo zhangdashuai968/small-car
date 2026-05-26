@@ -6,7 +6,7 @@ TebLocalPlannerROS:
  # Trajectory
 
  teb_autosize: True
- dt_ref: 0.2
+ dt_ref: 0.3
  dt_hysteresis: 0.03
  global_plan_overwrite_orientation: True
  max_global_plan_lookahead_dist: 3.0
@@ -28,8 +28,8 @@ TebLocalPlannerROS:
 
  # GoalTolerance
 
- xy_goal_tolerance: 0.08
- yaw_goal_tolerance: 0.1
+ xy_goal_tolerance: 0.1
+ yaw_goal_tolerance: 0.2
  free_goal_vel: False
 
  # Obstacles
@@ -44,8 +44,8 @@ TebLocalPlannerROS:
 
  # Optimization
 
- no_inner_iterations: 6
- no_outer_iterations: 5
+ no_inner_iterations: 5
+ no_outer_iterations: 4
  optimization_activate: True
  optimization_verbose: False
  penalty_epsilon: 0.1

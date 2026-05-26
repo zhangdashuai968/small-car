@@ -1,8 +1,8 @@
 obstacle_range: 3.0
 raytrace_range: 3.5
-footprint: [[-0.21, -0.21], [-0.21, 0.21], [0.21, 0.21], [0.21, -0.21]]
-inflation_radius: 0.20
-cost_scaling_factor: 5.0
+footprint: [[-0.22, -0.22], [-0.22, 0.22], [0.22, 0.22], [0.22, -0.22]]
+inflation_radius: 0.25
+cost_scaling_factor: 3.0
 
 observation_sources: scan
 scan:

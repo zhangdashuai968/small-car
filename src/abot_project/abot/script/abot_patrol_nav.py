@@ -23,12 +23,13 @@ class PatrolNav():
  
         #set all navigation target pose
         self.locations = dict()
-        self.locations['one']   = Pose(Point(1.168, 1.096, 0.000), Quaternion(0.000, 0.000, -0.047, 0.999))
-        self.locations['two']   = Pose(Point(3.894, 1.270, 0.000), Quaternion(0.000, 0.000, -0.009, 1.000))
-        self.locations['three'] = Pose(Point(4.269, -0.224, 0.000), Quaternion(0.000, 0.000, -0.729, 0.685))
-        self.locations['four']  = Pose(Point(2.504, -0.970, 0.000), Quaternion(0.000, 0.000, 0.999, 0.037))
-        self.locations['five']  = Pose(Point(-1.019, -0.923, 0.000), Quaternion(0.000, 0.000, 0.713, 0.701))
-        self.locations['six']   = Pose(Point(0.069, 0.026, 0.000), Quaternion(0.000, 0.000, -0.007, 1.000))
+        self.locations['one']   = Pose(Point(0.014, 2.778, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
+        self.locations['two']   = Pose(Point(0.258, 1.646, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
+        self.locations['three'] = Pose(Point(1.432, 2.678, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
+        self.locations['four']  = Pose(Point(1.622, 1.476, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
+        self.locations['five']  = Pose(Point(2.674, 2.654, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
+        self.locations['six']   = Pose(Point(2.784, 1.507, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
+        self.locations['seven'] = Pose(Point(3.100, -0.216, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
  
         # Goal state return values
         goal_states = ['PENDING', 'ACTIVE', 'PREEMPTED', 'SUCCEEDED', 'ABORTED',
