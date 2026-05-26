@@ -5,7 +5,7 @@
 
 ## 硬件平台
 
-- **底盘**: ABOT M1 ARM 差速轮（四轮）
+- **底盘**: ABOT M1 ARM 麦克纳姆轮（四轮）
 - **计算**: NVIDIA Jetson Nano（Ubuntu 20.04 / ROS Noetic）
 - **传感器**: 思岚 RPLidar C1 | Astra RGBD 深度相机 | MPU6050 IMU（9轴）
 - **执行器**: 六自由度机械臂（吸盘抓取）
@@ -38,8 +38,8 @@
 | 项目 | 值 |
 |------|-----|
 | 型号 | ABOT M1 ARM |
-| 驱动方式 | 差速轮 (四轮) |
-| 环境变量 | `ABOTMODEL=x4`, `ABOTBASE=omni` |
+| 驱动方式 | 麦克纳姆轮 (四轮) |
+| 环境变量 | `ABOTMODEL=x4`, `ABOTBASE=omni`（麦轮全向模式） |
 | 底层 MCU | STM32F103RCT6 |
 | 通信协议 | rosserial (USB, 115200 bps) |
 | 里程计标定 | `linear_scale = 1.014` |
@@ -57,7 +57,7 @@
 
 | # | 描述 | 状态 |
 |----|------|------|
-| 1 | **差速轮发 tw.linear.y 导致轨迹漂移** — ABOTBASE=omni 配置与差速轮硬件不匹配 | 待架构变更 |
+| 1 | **轨迹漂移** — 麦轮可能存在滚子打滑或里程计标定不准，详见 `TROUBLESHOOTING.md` | 排查中 |
 | 2 | **双 WiFi 网段 IP 不固定** — 每次开机可能分配到 36.x 或 43.x 网段 | 需手动 ping 确认 |
 | 3 | **编码文件中文乱码** — 车上部分文件为 GBK 编码，拉到 Windows 后需转换 | 逐步修复 |
 | 4 | **AMCL 初始位姿不匹配** — 启动时如果车不在 (0.6, -0.4) 需要重新设 initialpose | 已配置默认值 |
