@@ -1,12 +1,25 @@
 # CLAUDE.md — ABOT M1 ARM 小车真机工作区
 
+## 定位（这个仓库装什么、不装什么）
+
+| | 装 | 不装 |
+|---|---|---|
+| ✅ | ROS 源码、launch 文件、参数（`src/`） | 学习路线、实验 spec |
+| ✅ | 运行脚本、航线、地图（`scripts/`） | 学习日志、学习笔记 |
+| ✅ | 真机调试日志（`小车调节日志.txt`） | 进度追踪表（PROGRESS.md） |
+| ✅ | 踩坑手册（`TROUBLESHOOTING.md`） | 速查表（cheatsheets） |
+| ✅ | 硬件清单（`真机信息.md`） | |
+| ✅ | 会话报告（`reports/`） | |
+| ✅ | 自动同步脚本（`auto-sync.sh`） | |
+
+> **一句话**：这个仓库是"兵器库 + 航海日志"。学习资料在 [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)。
+
 ## 身份认知
 
-- 你正在辅助操作 ABOT M1 ARM 智能小车的 ROS 真机工作区
-- 硬件：Zeus S2 重载底盘（差速轮） + ROCR6 六轴机械臂 + RPLIDAR A3M12 激光雷达 + 奥比中光 Astra 深度相机 + IMU MPU6050 + G3P 柔性夹爪
-- 计算平台：NVIDIA Jetson Nano，Ubuntu 20.04，ROS Noetic
-- 小车 IP：`192.168.36.46`，SSH 用户 `abot`
-- **你不能直接操作真机**，你的角色是给出可执行的命令和建议，由队友在真机上执行
+- 这个仓库的代码**跑在 Jetson Nano 小车上**（`192.168.36.46`，用户 `abot`）
+- 队友通过 SSH 连上小车操作，auto-sync 脚本自动把代码变更推到 GitHub
+- 你的角色：给队友提供可执行的命令和建议，由队友在真机上执行
+- 你不能直接操作真机
 - 协作规范：参考 [abot_arm_learning/WORKFLOW.md](https://github.com/zhangdashuai968/abot_arm_learning/blob/main/WORKFLOW.md)
 
 ## Git 纪律（必须遵守）
