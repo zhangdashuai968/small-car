@@ -1,15 +1,6 @@
 # 小车运动测试数据记录
 
 ## 测试环境
-- 底盘: 差速轮 (ABOTMODEL=x4, ABOTBASE=omni)
-- 控制器: 原语控制器 auto_task_runner.py (cmd_vel 直驱, 绕过 move_base)
-- 速度: V_LIN=0.2m/s, V_ROT=0.4rad/s
-- 路径: L形曼哈顿分解 (body模式, 先前进后左移)
-- K_LIN: Run4~6=1.0, Run7=2.5
-
-# 小车运动测试数据记录
-
-## 测试环境
 - 底盘: 差速轮 (ABOTMODEL=x4, ABOTBASE=omni) ← 物理差速，配置omni，是漂移根源
 - 控制器: 原语控制器 auto_task_runner.py (cmd_vel 直驱, 绕过 move_base)
 - 速度: V_LIN=0.2m/s, V_ROT=0.4rad/s

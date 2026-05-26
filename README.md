@@ -28,13 +28,24 @@
 │   └── abot_project/       # ABOT M1 项目主逻辑
 ├── scripts/                # 运行脚本
 │   ├── waypoints.yaml      # 巡航线点（抓取/放置动作编排）
+│   ├── waypoints_test.yaml # 测试航线
 │   ├── patrol_run.sh       # 启动巡逻任务
-│   ├── start_patrol_clean.py   # 巡逻清理程序
-│   ├── test_goal_one.py    # 单目标测试
 │   ├── auto_task_runner.py # 自动任务调度
+│   ├── nav_test.py         # 前进 1m 测试
+│   ├── rotate_test.py      # 旋转 90° 测试
 │   ├── auto-sync.sh        # GitHub 自动同步
 │   ├── sync-once.sh/.bat   # 手动同步脚本
-│   └── waypoints_test.yaml # 测试航线
+│   └── start_map.sh        # 一键建图启动
+├── logs/                   # 真机调试日志
+│   └── 模板_调试日志.md
+├── reports/                # 会话报告（人工+AI）
+│   ├── README.md
+│   ├── 模板_人工报告.md
+│   └── 模板_AI报告.md
+├── CLAUDE.md               # AI 助手规则
+├── TROUBLESHOOTING.md      # 踩坑手册
+├── 真机信息.md              # 硬件清单
+├── 调参极限分析报告.md       # 调参分析
 ├── ssh-car.py              # SSH 远程控制工具
 ├── house.pgm / house.png   # 场地地图
 └── 小车调节日志.txt        # 调试记录
@@ -63,7 +74,7 @@ python ssh-car.py "ls"     # 执行单条命令
 
 ```bash
 # SSH 到车上后
-cd ~/robot_ws
+cd ~/catkin_ws
 ./src/patrol_run.sh
 ```
 
@@ -104,4 +115,4 @@ waypoints:
 
 ## 许可证
 
-Private repository — 仅供团队内部使用。
+Public repository — ABOT M1 ARM 智能小车 ROS 工作区。

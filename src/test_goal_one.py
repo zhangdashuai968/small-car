@@ -1,9 +1,12 @@
 #!/usr/bin/env python
-import paramiko, time
+import paramiko, time, os
 
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect('192.168.43.211', username='abot', password='123456', timeout=5)
+c.connect(os.getenv('CAR_HOST', '192.168.43.211'),
+          username=os.getenv('CAR_USER', 'abot'),
+          password=os.getenv('CAR_PASSWORD'),
+          timeout=5)
 
 # Send goal to point one
 print("Sending goal to point one (1.168, 1.096)...")

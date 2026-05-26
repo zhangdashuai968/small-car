@@ -28,6 +28,15 @@ __pycache__/
 .venv/
 venv/
 
+# IDE
+.idea/
+.vscode/
+.vs/
+*.code-workspace
+
+# 备份文件
+*.bak
+
 # 系统文件
 Thumbs.db
 .DS_Store

@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import paramiko, time
+import paramiko, time, os
 
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect('192.168.43.211', username='abot', password='123456', timeout=5)
+c.connect(os.getenv('CAR_HOST', '192.168.43.211'),
+          username=os.getenv('CAR_USER', 'abot'),
+          password=os.getenv('CAR_PASSWORD'),
+          timeout=5)
 
 # 1. initialpose with covariance
 print("Sending initialpose...")
