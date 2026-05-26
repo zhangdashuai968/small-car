@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-���λ����������ֱ��(L��)���� + ԭ��ת + ץ/�š�
-ֱ�ӷ� cmd_vel ԭ����ƣ������� move_base/TEB/DWA���������� NAV_PATH(teb/dwa) �޹ء�
-ÿ����λ������һ��ֱ�� �� ������һ��ֱ��(ȫ��������������Ư) �� ���ԭ��ת��Ŀ�곯��
-λ�˷����� tf map->base_footprint(��������Ƶ)���� amcl+EKF �ṩ��
+多点位顺序直达(L形)分解 + 原地转 + 抓/放。
+直接发 cmd_vel 原语控制，不依赖 move_base/TEB/DWA，因此与 NAV_PATH(teb/dwa) 无关。
+每个目标点位分解为一直线 + 另一直线(全程保持车头朝向不漂) + 最后原地转到目标朝向。
+位姿来源 tf map->base_footprint(世界坐标系)，由 amcl+EKF 提供。
 
-ǰ�ã��ֶ������ã���
+前置(手动启动)：
   roscore
   roslaunch abot bringup.launch
-  roslaunch abot navigate.launch     # ֻ������ amcl/map/laser ����λ��move_base ���ü���
-  roslaunch ZachLab_grasp grasp.launch    # ץȡʱ����Ҫ
-  roslaunch vl_locate vl_locate.launch    # conda 39, ץȡʱ����Ҫ
+  roslaunch abot navigate.launch     # 只需提供 amcl/map/laser 做定位，move_base 不启用
+  roslaunch ZachLab_grasp grasp.launch    # 抓取时才需要
+  roslaunch vl_locate vl_locate.launch    # conda 39, 抓取时才需要
 
-�ܣ�python2 auto_task_runner.py [waypoints.yaml]
-�ж�(Ctrl-C)/���ܻ�ˢ�£�ͣ������λ��� home��/grab=False
+用法：python2 auto_task_runner.py [waypoints.yaml]
+中断(Ctrl-C)/异常或刷新：停止后回舵机 home，/grab=False
 """
 
 import os
@@ -36,18 +36,18 @@ from vl_locate.srv import GetObject
 SERVO_HOME = (88, 20)
 GRASP_WAIT_SEC = 25
 
-# --- ԭ����Ʋ���(�����) ---
-V_LIN     = 0.20   # m/s   ֱ��/�������ٶ�����
-V_ROT     = 0.40   # rad/s ԭ��ת���ٶ�����
-V_LIN_MIN = 0.04   # m/s   ��С���ٶ�(�˷���Ħ��)
-V_ROT_MIN = 0.10   # rad/s ��Сת��
-K_LIN     = 4.0    #���ٶ� P ����
+# --- 原语控制器参数(可调) ---
+V_LIN     = 0.20   # m/s   直线/横移线速度上限
+V_ROT     = 0.40   # rad/s 原地转角速度上限
+V_LIN_MIN = 0.04   # m/s   最小线速度(克服静摩擦)
+V_ROT_MIN = 0.10   # rad/s 最小转角速度
+K_LIN     = 4.0    # 线速度 P 增益
 K_LIN_HOLD = 5.0   # 非主运动轴P增益(压制漂移)
-K_YAW     = 1.5    #���� P ����
-POS_TOL   = 0.04   # m     ��λ�ݲ�
-YAW_TOL   = 0.03   # rad   �����ݲ�(~1.7��)
+K_YAW     = 1.5    # 角速度 P 增益
+POS_TOL   = 0.04   # m     终点位置容差
+YAW_TOL   = 0.03   # rad   终点角度容差(~1.7°)
 RATE_HZ   = 20
-STEP_TIMEOUT = 30.0  # s    ������ʱ(fail-fast)
+STEP_TIMEOUT = 30.0  # s    单步超时(fail-fast)
 
 BASE_FRAME = 'base_footprint'
 MAP_FRAME  = 'map'
@@ -65,26 +65,26 @@ class TaskRunner(object):
     def __init__(self, waypoints):
         rospy.init_node('auto_task_runner')
         self.waypoints = waypoints
-        self.axis_order = rospy.get_param('~axis_order', 'xy')  # 'xy'=��X��Y, 'yx'=��Y��X
+        self.axis_order = rospy.get_param('~axis_order', 'xy')  # 'xy'=先X后Y, 'yx'=先Y后X
 
         self._tf = tf.TransformListener()
         self._pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
         self._mb_cancel = rospy.Publisher('/move_base/cancel', GoalID, queue_size=1)
         self.servo_pub = rospy.Publisher('servo', Servo, queue_size=1, latch=True)
-        self.vlm = None  # �����أ�������������ץȡջ
+        self.vlm = None  # 延迟加载，避免依赖完整抓取栈
 
         rospy.loginfo('waiting tf %s->%s ...', MAP_FRAME, BASE_FRAME)
         try:
             self._tf.waitForTransform(MAP_FRAME, BASE_FRAME, rospy.Time(0), rospy.Duration(10.0))
         except tf.Exception:
-            rospy.logwarn('no %s->%s tf, ȷ�� navigate.launch ������ amcl ������', MAP_FRAME, BASE_FRAME)
+            rospy.logwarn('no %s->%s tf, 确认 navigate.launch 已启动 amcl 已收敛', MAP_FRAME, BASE_FRAME)
 
         signal.signal(signal.SIGINT, self._on_sigint)
         signal.signal(signal.SIGTERM, self._on_sigint)
         time.sleep(0.5)
         self.refresh()
 
-    # ---------- ״̬ ----------
+    # ---------- 状态 ----------
     def _cur(self):
         try:
             trans, rot = self._tf.lookupTransform(MAP_FRAME, BASE_FRAME, rospy.Time(0))
@@ -96,7 +96,7 @@ class TaskRunner(object):
     def refresh(self):
         rospy.loginfo('--- refresh state ---')
         self._stop()
-        self._mb_cancel.publish(GoalID())   # ȡ���κβ��� move_base goal�������� cmd_vel
+        self._mb_cancel.publish(GoalID())   # 取消任何残留 move_base goal，释放 cmd_vel
         self._servo_home()
         rospy.set_param('/grab', False)
         time.sleep(1.0)
@@ -115,7 +115,7 @@ class TaskRunner(object):
             rospy.signal_shutdown('sigint')
             sys.exit(0)
 
-    # ---------- ԭ�� ----------
+    # ---------- 原语 ----------
     def _stop(self):
         t = Twist()
         for _ in range(3):
@@ -123,7 +123,7 @@ class TaskRunner(object):
             rospy.sleep(0.02)
 
     def _drive_to_point(self, tx, ty, hold_yaw, pos_tol=POS_TOL, timeout=STEP_TIMEOUT):
-        """�ջ�ֱ�е� map �� (tx,ty)��ȫ���� hold_yaw��λ�Ƶ���ʱ���ظ���ֱ�ߡ�"""
+        """闭环直行到 map 下 (tx,ty)，全程锁 hold_yaw，位移到达时无需笔直直线。"""
         rate = rospy.Rate(RATE_HZ)
         t0 = rospy.Time.now()
         while not rospy.is_shutdown():
@@ -146,16 +146,16 @@ class TaskRunner(object):
                 vx_map = _clamp(K_LIN * ex, -V_LIN, V_LIN)
                 vy_map = _clamp(K_LIN_HOLD * ey, -V_LIN, V_LIN)
             sp = math.hypot(vx_map, vy_map)
-            if 1e-6 < sp < V_LIN_MIN:        # �˷���Ħ������С���ٶȣ����ַ���
+            if 1e-6 < sp < V_LIN_MIN:        # 克服静摩擦，保持最小速度，不反转
                 vx_map *= V_LIN_MIN / sp
                 vy_map *= V_LIN_MIN / sp
             th = cur[2]
             c = math.cos(th); s = math.sin(th)
             tw = Twist()
-            tw.linear.x =  c * vx_map + s * vy_map   # map->body ��ת -th
+            tw.linear.x =  c * vx_map + s * vy_map   # map->body 旋转 -th
             tw.linear.y = -s * vx_map + c * vy_map
             eyaw = _norm(hold_yaw - th)
-            if abs(eyaw) > 0.02:                     # ����������Ư��
+            if abs(eyaw) > 0.02:                     # 抑制航向漂移
                 wz = _clamp(K_YAW * eyaw, -V_ROT, V_ROT)
                 if abs(wz) < V_ROT_MIN:
                     wz = math.copysign(V_ROT_MIN, wz)
@@ -212,7 +212,7 @@ class TaskRunner(object):
         rospy.loginfo('  step3 -> %.2f', yaw)
         return self._rotate_to(yaw)
 
-    # ---------- ץ�� ----------
+    # ---------- 抓取 ----------
     def do_action(self, action, obj):
         if action == 'pass':
             return True
@@ -226,7 +226,7 @@ class TaskRunner(object):
         except rospy.ServiceException as e:
             rospy.logerr('vlm call failed: %s' % e)
             return False
-        rospy.sleep(GRASP_WAIT_SEC)   # TODO: �Ķ��� /success ��ʵ����ź�
+        rospy.sleep(GRASP_WAIT_SEC)   # TODO: 改成订阅 /success 做实闭环信号
         return True
 
     def run(self):
