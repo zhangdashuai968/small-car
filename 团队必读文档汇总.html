@@ -41,7 +41,7 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 .md hr{border:none;border-top:1px solid var(--line);margin:20px 0}
 .md img{max-width:100%}
 .missing{color:var(--danger)}
-</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>10 份</b></span><span class="tag">生成 <b>2026-05-27 22:03</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#quickstart">快速启动命令速查（建图 / 存图 / 定位）</a></li><li><a href="#rules">比赛规则（最终目标 · 硬约束）</a></li><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="quickstart" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 快速启动命令速查（建图 / 存图 / 定位）</h1><div class="src">来源: <code>启动命令速查.md</code></div><div class="md"><h1 id="_1">快速启动命令速查（建图 / 存图 / 定位）</h1>
+</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>10 份</b></span><span class="tag">生成 <b>2026-05-27 23:00</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#quickstart">快速启动命令速查（建图 / 存图 / 定位）</a></li><li><a href="#rules">比赛规则（最终目标 · 硬约束）</a></li><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="quickstart" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 快速启动命令速查（建图 / 存图 / 定位）</h1><div class="src">来源: <code>启动命令速查.md</code></div><div class="md"><h1 id="_1">快速启动命令速查（建图 / 存图 / 定位）</h1>
 <blockquote>
 <p><code>localize.launch</code> 不绑定某个建图 launch，二者通过地图文件 <code>comp.yaml</code> 配对。
 <strong>建图与定位互斥</strong>——都发 <code>map→odom</code>，同一时间永远只能起一个。</p>
@@ -56,7 +56,13 @@ sleep 1
 <blockquote>
 <p>报错 <code>No laser scan received ... on /scan</code> + <code>target_frame map does not exist (before running costmap)</code> 就是残留进程没清导致的：localize.launch <strong>本身没有 costmap</strong>，一旦出现 costmap 报错=有旧 <code>navigate.launch</code>（带 move_base）还活着，且它抢着雷达串口让新雷达开不了 → <code>/scan</code> 无数据 → amcl 不发 <code>map→odom</code>。先执行本节再走下面时序。</p>
 </blockquote>
-<h2 id="_2">完整时序</h2>
+<h2 id="_2">编译</h2>
+<pre><code class="language-bash">cd ~/catkin_ws &amp;&amp; source /opt/ros/melodic/setup.bash &amp;&amp; catkin_make
+</code></pre>
+<p>只编译单个包：</p>
+<pre><code class="language-bash">cd ~/catkin_ws &amp;&amp; source /opt/ros/melodic/setup.bash &amp;&amp; catkin_make --only-pkg-with-deps &lt;包名&gt;
+</code></pre>
+<h2 id="_3">完整时序</h2>
 <pre><code class="language-bash"># 1. 建图（gmapping 或 cartographer 二选一，都先起 bringup）
 roslaunch abot bringup.launch
 roslaunch abot lidar_slam.launch          # 或 cartographer_slam.launch
@@ -68,7 +74,53 @@ rosrun map_server map_saver -f $(rospack find abot)/maps/comp
 roslaunch abot bringup.launch
 roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 </code></pre>
-<h2 id="_3">关键点</h2>
+<h2 id="cmd_vel-move_base">运动执行（cmd_vel 原语，绕开 move_base）</h2>
+<p>定位起好后用以下脚本发 <code>cmd_vel</code>，都只沿 xy 轴走、锁航向，不碰 TEB/DWA：</p>
+<table>
+<thead>
+<tr>
+<th>脚本</th>
+<th>用途</th>
+<th>前置</th>
+<th>位姿来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>goal_nav.py</code></td>
+<td>手动导航：rviz 点目标 → A* 全局规划 → 逐段执行</td>
+<td>bringup + localize</td>
+<td><code>map→base</code>(amcl)</td>
+</tr>
+<tr>
+<td><code>auto_task_runner.py</code></td>
+<td>多点航线 + 抓放（读 waypoints.yaml）</td>
+<td>bringup + localize</td>
+<td><code>map→base</code>(amcl)</td>
+</tr>
+<tr>
+<td><code>seven_point_test.py</code></td>
+<td>7 点可达性测试（纯导航）</td>
+<td>bringup + localize</td>
+<td><code>map→base</code>(amcl)</td>
+</tr>
+<tr>
+<td><code>ten_point_odom_race.py</code></td>
+<td>10 点纯里程计<strong>保底</strong>（定位栈挂了也能跑）</td>
+<td>仅 bringup</td>
+<td><code>odom→base</code>(EKF)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="goal_navpy">手动导航 goal_nav.py</h3>
+<pre><code class="language-bash">rosrun abot goal_nav.py                 # 或 python2 goal_nav.py
+</code></pre>
+<ul>
+<li>rviz 操作：① 加一个 <strong>Path</strong> display，topic 设 <code>/goal_nav/path</code>；② 点工具栏 <strong>2D Nav Goal</strong> 在地图上发目标 → 显示规划线 → 车按 x/y 直线段开过去。</li>
+<li>A* 在 <code>/map</code> 栅格上算路，障碍按 <code>~inflation_radius</code>（默认 0.20m）膨胀避开挡板/围栏；4 连通只出直线段，严格不斜穿。</li>
+<li>是静态地图上的确定性全局规划，不加载 TEB/DWA 的反应式局部规划器。</li>
+</ul>
+<h2 id="_4">关键点</h2>
 <ul>
 <li><strong>建图 launch 用 basename 启动</strong>：<code>roslaunch abot lidar_slam.launch</code>（<strong>不带 <code>slam/</code> 子目录</strong>），否则报 RLException。</li>
 <li><strong>起点摆位</strong>：localize 的 amcl 初值写死 <code>(0,0,0)</code>，所以建图起点必须摆在<strong>比赛原点、车头朝 +x</strong>，使地图原点 = (0,0) = amcl home 对齐。</li>
