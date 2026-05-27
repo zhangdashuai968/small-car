@@ -93,3 +93,22 @@ cd ~/catkin_ws && source /opt/ros/melodic/setup.bash && catkin_make
 
 - 发运动指令前确认急停可达；机械臂回 home 再断电。
 - 改参数前备份原值；调试操作实时记 `logs/小车调节日志.txt`，整段实验记 `logs/YYYY-MM-DD_*.md`（模板 `logs/模板_调试日志.md`）。
+
+---
+
+## 7. 定期把车上实况备份到 git 分支（重要）
+
+> **为什么**：车上的实况（现场建的地图、live 调好的 params、车上版脚本）会随调试不断偏离 `main`。SD 卡挂了 / 误删 / 调崩了就全没了。所以**每搞一段时间、或每次大调整后，把车上当前状态打一个快照分支留底**。
+
+```bash
+# 在车上 ~/catkin_ws (= 本仓库) 执行
+git checkout -b car-snapshot/2026-05-28      # 用当天日期
+git add -A
+git commit -m "snapshot: 车上实况 2026-05-28（场地图/params/脚本现状）"
+git push -u origin car-snapshot/2026-05-28
+git checkout main                            # 回主线继续干活
+```
+
+- 快照分支**只为留底 / 可回滚**，不要求干净，不合回 main。
+- **场地地图**（`comp.pgm`/`comp.yaml` 等）尤其要备份——这是比赛能定位的命根子，别只躺在车上。
+- 命名统一 `car-snapshot/YYYY-MM-DD`，方便按时间找回滚点。
