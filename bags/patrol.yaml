@@ -1,0 +1,10 @@
+# Patrol path: 6 waypoints + return home, map frame L-shape navigation
+# Recorded 2026-05-27 with AMCL, relative to home (0.0448, -0.1177)
+waypoints:
+  - {name: WP1,  frame: map, x: -0.50, y: -2.76, yaw: 0.3, action: pass, object: ""}
+  - {name: WP2,  frame: map, x: -0.47, y: -1.48, yaw: 0.2, action: pass, object: ""}
+  - {name: WP3,  frame: map, x: -1.61, y: -2.84, yaw: 0.32, action: pass, object: ""}
+  - {name: WP4,  frame: map, x: -1.79, y: -1.49, yaw: -0.38, action: pass, object: ""}
+  - {name: WP5,  frame: map, x: -2.73, y: -2.93, yaw: 0.0, action: pass, object: ""}
+  - {name: WP6,  frame: map, x: -2.74, y: -1.50, yaw: 0.0, action: pass, object: ""}
+  - {name: HOME, frame: map, x:  0.00, y:  0.00, yaw: 0.0, action: pass, object: ""}
