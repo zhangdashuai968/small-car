@@ -31,4 +31,4 @@
 *.pyc   binary
 
 # 生成物: GitHub 折叠 diff, 减噪
-团队必读文档汇总.html linguist-generated=true
+docs/团队必读文档汇总.html linguist-generated=true

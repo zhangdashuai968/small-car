@@ -5,12 +5,12 @@
 本仓库 = 兵器库 + 航海日志。只存真机实战内容，不存学习资料。
 理论学习去 [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)。
 
-- 存：ROS 源码/launch/参数（`src/`）、脚本/航线/地图（`scripts/`）、调试日志（`logs/`）、会话报告（`reports/`）、踩坑手册（`TROUBLESHOOTING.md`）、比赛规则（`比赛规则.md`）
+- 存：ROS 源码/launch/参数（`src/`）、脚本/航线/地图（`scripts/`）、调试日志（`logs/`）、会话报告（`reports/`）、团队文档（`docs/`）
 - 不存：学习路线、实验 spec、学习日志、进度追踪表、速查表
 
 ## 比赛目标（一切工程的约束来源）
 
-最终目标 = 室内移动抓取搬运赛（详见 `比赛规则.md`）。**碰围栏/挡板 或 30s 不动即立即判负**——因此「只沿 xy 轴走、不漂移、原地转、fail-fast」是硬约束，不是偏好，给方案时必须遵守。
+最终目标 = 室内移动抓取搬运赛（详见 `docs/比赛规则.md`）。**碰围栏/挡板 或 30s 不动即立即判负**——因此「只沿 xy 轴走、不漂移、原地转、fail-fast」是硬约束，不是偏好，给方案时必须遵守。
 
 ## 身份
 
@@ -38,8 +38,9 @@ small-car/
 ├── bags/               ← rosbag; ⚠️ 内有与 scripts/ 分叉的 auto_task_runner.py
 ├── maps/ + abot/maps/  ← 栅格地图(comp.yaml=比赛图, house/my1_map=历史)
 ├── logs/ reports/      ← 调试日志 / 会话报告(均有模板)
-├── tools/gen_docs.py   ← 生成"团队必读文档汇总.html"
-└── *.md                ← README/CLAUDE/CONTRIBUTING/比赛规则/启动命令速查/TROUBLESHOOTING
+├── tools/gen_docs.py   ← 生成 docs/团队必读文档汇总.html
+├── docs/               ← 团队文档(架构总览/比赛规则/启动命令速查/TROUBLESHOOTING/汇总HTML)
+└── README · CLAUDE · CONTRIBUTING  ← 根目录三件套(门面/AI中枢/协作约定)
 ```
 
 ## 脚本索引（运动执行，均绕开 move_base）
@@ -52,7 +53,7 @@ small-car/
 | `seven_point_test.py` | 七点可达性测试(纯导航) | bringup+localize | `map→base`(amcl) |
 | `auto_task_runner.py` | 多点航线+抓放(读 waypoints.yaml) | bringup+localize | `map→base`(amcl) |
 
-> 命令速查见 `启动命令速查.md`；新脚本复用 `auto_task_runner` 锁航向原语。
+> 命令速查见 `docs/启动命令速查.md`；新脚本复用 `auto_task_runner` 锁航向原语。
 
 ## 运行 & 验证
 
@@ -115,8 +116,9 @@ rosrun tf tf_echo map base_footprint # map→base 有输出=amcl 收敛
 - 早报：[morning-newspaper](https://github.com/zhangdashuai968/morning-newspaper)
 - 硬件：`README.md`
 - 协作约定（git/编码/脚本放哪）：`CONTRIBUTING.md`
-- 比赛规则：`比赛规则.md`
-- 命令速查：`启动命令速查.md`
+- 架构总览（tf树/节点/数据流）：`docs/ARCHITECTURE.md`
+- 比赛规则：`docs/比赛规则.md`
+- 命令速查：`docs/启动命令速查.md`
 - 调参：`reports/调参极限分析报告.md`
-- 踩坑：`TROUBLESHOOTING.md`
+- 踩坑：`docs/TROUBLESHOOTING.md`
 - 文档汇总生成器：`tools/gen_docs.py`

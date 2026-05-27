@@ -13,15 +13,15 @@ import markdown
 
 # 仓库根 = 本文件(tools/gen_docs.py)的上上级目录, 路径相对化, 任何 clone 都能跑
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(REPO, "团队必读文档汇总.html")
+OUT = os.path.join(REPO, "docs", "团队必读文档汇总.html")
 
 # (锚点, 显示标题, 相对路径)
 DOCS = [
-    ("quickstart",  "快速启动命令速查（建图 / 存图 / 定位）",   "启动命令速查.md"),
-    ("rules",       "比赛规则（最终目标 · 硬约束）",            "比赛规则.md"),
+    ("quickstart",  "快速启动命令速查（建图 / 存图 / 定位）",   "docs/启动命令速查.md"),
+    ("rules",       "比赛规则（最终目标 · 硬约束）",            "docs/比赛规则.md"),
     ("overview",    "项目总览 README",                         "README.md"),
     ("guide",       "小车实验指南（技术教育详解）",              "src/小车实验指南技术教育详解(2).md"),
-    ("trouble",     "故障排查 TROUBLESHOOTING",                 "TROUBLESHOOTING.md"),
+    ("trouble",     "故障排查 TROUBLESHOOTING",                 "docs/TROUBLESHOOTING.md"),
     ("log0526",     "调试日志 2026-05-26 · SLAM建图与局部规划器解耦", "logs/2026-05-26_SLAM建图与局部规划器解耦.md"),
     ("tuning",      "调参极限分析报告",                          "reports/调参极限分析报告.md"),
     ("automap",     "自动建图指南 auto_map_guide",               "src/abot_project/abot/docs/auto_map_guide.md"),

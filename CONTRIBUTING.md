@@ -1,7 +1,7 @@
 # 协作指南 CONTRIBUTING
 
 > 团队成员 + Claude Code 共用的贡献约定。改任何东西前先读这页。
-> 仓库定位见 [`CLAUDE.md`](CLAUDE.md)，比赛硬约束见 [`比赛规则.md`](比赛规则.md)。
+> 仓库定位见 [`CLAUDE.md`](CLAUDE.md)，比赛硬约束见 [`docs/比赛规则.md`](docs/比赛规则.md)。
 
 ---
 
@@ -50,7 +50,7 @@ git -c http.proxy=http://127.0.0.1:2080 push origin main
 ## 3. 编码 / 换行（已自动化，别手动转）
 
 - 仓库根有 [`.gitattributes`](.gitattributes)（统一 LF）和 [`.editorconfig`](.editorconfig)（UTF-8/缩进）。
-- **所有文本文件一律 UTF-8 + LF**。历史上车上有 GBK 文件导致 Windows 乱码（见 `TROUBLESHOOTING.md` §5）。
+- **所有文本文件一律 UTF-8 + LF**。历史上车上有 GBK 文件导致 Windows 乱码（见 `docs/TROUBLESHOOTING.md` §5）。
 - 别再手动 `iconv` 或在编辑器里转 CRLF——交给上面两个配置。
 
 ---
