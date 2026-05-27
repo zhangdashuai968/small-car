@@ -8,6 +8,9 @@
 src/out/
 build/
 devel/
+install/
+.catkin_workspace
+*.egg-info/
 *.o
 *.so
 *.a
