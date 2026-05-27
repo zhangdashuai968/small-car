@@ -41,7 +41,7 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 .md hr{border:none;border-top:1px solid var(--line);margin:20px 0}
 .md img{max-width:100%}
 .missing{color:var(--danger)}
-</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>10 份</b></span><span class="tag">生成 <b>2026-05-27 23:00</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#quickstart">快速启动命令速查（建图 / 存图 / 定位）</a></li><li><a href="#rules">比赛规则（最终目标 · 硬约束）</a></li><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="quickstart" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 快速启动命令速查（建图 / 存图 / 定位）</h1><div class="src">来源: <code>启动命令速查.md</code></div><div class="md"><h1 id="_1">快速启动命令速查（建图 / 存图 / 定位）</h1>
+</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>10 份</b></span><span class="tag">生成 <b>2026-05-27 23:36</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#quickstart">快速启动命令速查（建图 / 存图 / 定位）</a></li><li><a href="#rules">比赛规则（最终目标 · 硬约束）</a></li><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="quickstart" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 快速启动命令速查（建图 / 存图 / 定位）</h1><div class="src">来源: <code>启动命令速查.md</code></div><div class="md"><h1 id="_1">快速启动命令速查（建图 / 存图 / 定位）</h1>
 <blockquote>
 <p><code>localize.launch</code> 不绑定某个建图 launch，二者通过地图文件 <code>comp.yaml</code> 配对。
 <strong>建图与定位互斥</strong>——都发 <code>map→odom</code>，同一时间永远只能起一个。</p>
@@ -251,11 +251,50 @@ roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 <p>基于 ROS 的自主导航 + 视觉抓取 + 机械臂操控实验平台
 属于 <a href="https://github.com/zhangdashuai968/morning-newspaper/blob/master/WORKFLOW.md">三仓库生态系统</a> 的工程代码仓库</p>
 </blockquote>
-<h2 id="_1">比赛目标与规则</h2>
+<h2 id="_1">📑 文档导航</h2>
+<table>
+<thead>
+<tr>
+<th>文档</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="CLAUDE.md"><code>CLAUDE.md</code></a></td>
+<td>AI 上手中枢：目录地图、脚本索引、当前导航方案、约定</td>
+</tr>
+<tr>
+<td><a href="CONTRIBUTING.md"><code>CONTRIBUTING.md</code></a></td>
+<td>协作约定：git 流程、代理、编码/换行、脚本放哪、真机验证</td>
+</tr>
+<tr>
+<td><a href="比赛规则.md"><code>比赛规则.md</code></a></td>
+<td>最终目标：场地、6 点抓放流程、得分、致命终止条件</td>
+</tr>
+<tr>
+<td><a href="启动命令速查.md"><code>启动命令速查.md</code></a></td>
+<td>清进程 → 建图 → 存图 → 定位 → 运动执行命令速查</td>
+</tr>
+<tr>
+<td><a href="TROUBLESHOOTING.md"><code>TROUBLESHOOTING.md</code></a></td>
+<td>踩坑手册（按症状→根因→解法）</td>
+</tr>
+<tr>
+<td><a href="reports"><code>reports/</code></a> · <a href="logs"><code>logs/</code></a></td>
+<td>会话报告 / 调试日志（均有模板）</td>
+</tr>
+<tr>
+<td><code>团队必读文档汇总.html</code></td>
+<td>上述核心文档的单文件离线汇总（<code>python tools/gen_docs.py</code> 生成）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">比赛目标与规则</h2>
 <p>本项目的最终目标是<strong>室内移动抓取搬运赛</strong>：3.6×3.6 m 场地，起点 → 6 个搬运点（奇数抓 / 偶数放）→ 终点。
 <strong>碰围栏/挡板 或 30s 不动即立即判负</strong>——这是工程上坚持「只沿 xy 轴走、不漂移、原地转」的硬约束。</p>
 <p>完整场地、任务流程、得分与终止条件见 <strong><a href="比赛规则.md"><code>比赛规则.md</code></a></strong>。</p>
-<h2 id="_2">硬件平台</h2>
+<h2 id="_3">硬件平台</h2>
 <ul>
 <li><strong>底盘</strong>: ABOT M1 ARM 麦克纳姆轮（四轮）</li>
 <li><strong>计算</strong>: NVIDIA Jetson Nano（Tegra X1，Ubuntu 18.04 / ROS Melodic）</li>
@@ -263,8 +302,8 @@ roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 <li><strong>执行器</strong>: 六自由度机械臂（吸盘抓取）</li>
 <li><strong>连接</strong>: 局域网 SSH（<code>192.168.36.46</code> 或 <code>192.168.43.211</code>，用户 <code>abot</code>）</li>
 </ul>
-<h2 id="_3">硬件详情</h2>
-<h3 id="_4">网络</h3>
+<h2 id="_4">硬件详情</h2>
+<h3 id="_5">网络</h3>
 <table>
 <thead>
 <tr>
@@ -295,7 +334,7 @@ roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 </tr>
 </tbody>
 </table>
-<h3 id="_5">计算平台</h3>
+<h3 id="_6">计算平台</h3>
 <table>
 <thead>
 <tr>
@@ -326,7 +365,7 @@ roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 </tr>
 </tbody>
 </table>
-<h3 id="_6">底盘</h3>
+<h3 id="_7">底盘</h3>
 <table>
 <thead>
 <tr>
@@ -361,7 +400,7 @@ roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 </tr>
 </tbody>
 </table>
-<h3 id="_7">传感器</h3>
+<h3 id="_8">传感器</h3>
 <table>
 <thead>
 <tr>
@@ -428,7 +467,7 @@ roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 <blockquote>
 <p>详见 <code>TROUBLESHOOTING.md</code> 和 <code>reports/调参极限分析报告.md</code></p>
 </blockquote>
-<h2 id="_8">启动流程</h2>
+<h2 id="_9">启动流程</h2>
 <pre><code class="language-bash"># 1. 基础驱动 + 里程计 + EKF
 roslaunch abot bringup.launch
 
@@ -445,7 +484,7 @@ rosrun abot auto_task_runner.py waypoints.yaml
 <blockquote>
 <p><strong>当前比赛方向（2026-05-26 起，绕开 move_base）</strong>：因 TEB/DWA 局部规划器不稳 + 贴挡板避障有判负风险，运动改走 <code>auto_task_runner.py</code> 的自闭环原语（只沿 xy 轴走 + 原地转，读 <code>map→base_footprint</code> tf 直接发 <code>cmd_vel</code>）。定位用 <code>localize.launch</code>（amcl，无 move_base）替代 <code>navigate.launch</code>。详见 <a href="logs/2026-05-26_SLAM建图与局部规划器解耦.md"><code>logs/2026-05-26_SLAM建图与局部规划器解耦.md</code></a>，约束见 <a href="比赛规则.md"><code>比赛规则.md</code></a>。</p>
 </blockquote>
-<h2 id="_9">项目结构</h2>
+<h2 id="_10">项目结构</h2>
 <pre><code>├── src/                    # ROS 工作区（catkin workspace）
 │   ├── lidar/              # 激光雷达驱动与点云处理
 │   ├── depth_camera/       # 深度相机驱动
@@ -484,7 +523,7 @@ rosrun abot auto_task_runner.py waypoints.yaml
 ├── TROUBLESHOOTING.md      # 踩坑手册
 └── README.md
 </code></pre>
-<h2 id="_10">核心功能</h2>
+<h2 id="_11">核心功能</h2>
 <table>
 <thead>
 <tr>
@@ -515,7 +554,7 @@ rosrun abot auto_task_runner.py waypoints.yaml
 </tr>
 </tbody>
 </table>
-<h2 id="_11">快速开始</h2>
+<h2 id="_12">快速开始</h2>
 <h3 id="1">1. 连接小车</h3>
 <pre><code class="language-bash">python scripts/ssh-car.py          # 交互式 shell
 python scripts/ssh-car.py &quot;ls&quot;     # 执行单条命令
@@ -537,14 +576,14 @@ cd ~/catkin_ws
 </code></pre>
 <h3 id="4">4. 地图查看</h3>
 <p><code>maps/house.pgm</code> / <code>maps/house.png</code> — 场地图，可直接用 ROS <code>map_server</code> 加载。</p>
-<h2 id="_12">环境要求</h2>
+<h2 id="_13">环境要求</h2>
 <ul>
 <li>车上：ROS Melodic（Ubuntu 18.04），ROS 节点为 Python 2.7</li>
 <li>本地（开发机）：Python 3（<code>paramiko</code>、<code>numpy</code>），用于 <code>scripts/ssh-car.py</code> 等工具</li>
 <li>OpenCV 4.x</li>
 <li>CMake 2.8.3+</li>
 </ul>
-<h2 id="_13">关联项目</h2>
+<h2 id="_14">关联项目</h2>
 <table>
 <thead>
 <tr>
@@ -570,7 +609,7 @@ cd ~/catkin_ws
 <blockquote>
 <p><strong>关系</strong>：<code>abot_arm_learning</code> 是"课堂"（学原理、做实验），<code>small-car</code> 是"战场"（实际部署、跑航线、真机调试）。<code>morning-newspaper</code> 是"闹钟"（每天早上提醒你进度到哪了）。</p>
 </blockquote>
-<h2 id="_14">许可证</h2>
+<h2 id="_15">许可证</h2>
 <p>Public repository — ABOT M1 ARM 智能小车 ROS 工作区。</p></div></section><section id="guide" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">4. 小车实验指南（技术教育详解）</h1><div class="src">来源: <code>src/小车实验指南技术教育详解(2).md</code></div><div class="md"><h1 id="_1">人工智能机械臂移动开发平台实验指导书</h1>
 <h2 id="_2">目录</h2>
 <ul>

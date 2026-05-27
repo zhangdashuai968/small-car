@@ -25,6 +25,46 @@
 - **不要再建议调 TEB/DWA 参数**——方案已定向，调参属于已废弃方向。
 - 细节见 `logs/2026-05-26_SLAM建图与局部规划器解耦.md`。
 
+## 目录地图
+
+```
+small-car/
+├── src/abot_project/   ← 自有 ROS 包(abot 主包 + grasp/vision/speech 等)，可改
+│   ├── abot/           ← 主包: launch/ param/ maps/ rviz/ scripts/ script/
+│   └── abot_project/scripts/  ← 新运动脚本归处(goal_nav, ten_point_*, seven_point_test)
+├── src/<其余>/         ← vendored 第三方包(robot_localization/lidar/depth_camera/
+│                          opencv_apps/robot_arm/imu_* 等)，**勿改、勿删**
+├── scripts/            ← 主机侧工具(ssh-car/sync/patrol_run) + 历史测试脚本
+├── bags/               ← rosbag; ⚠️ 内有与 scripts/ 分叉的 auto_task_runner.py
+├── maps/ + abot/maps/  ← 栅格地图(comp.yaml=比赛图, house/my1_map=历史)
+├── logs/ reports/      ← 调试日志 / 会话报告(均有模板)
+├── tools/gen_docs.py   ← 生成"团队必读文档汇总.html"
+└── *.md                ← README/CLAUDE/CONTRIBUTING/比赛规则/启动命令速查/TROUBLESHOOTING
+```
+
+## 脚本索引（运动执行，均绕开 move_base）
+
+| 脚本(`src/abot_project/scripts/`) | 用途 | 前置 | 位姿源 |
+|------|------|------|--------|
+| `goal_nav.py` | 手动导航：rviz 点目标 → A* 全局规划 → 逐段执行 | bringup+localize | `map→base`(amcl) |
+| `ten_point_race.py` | 基础十点比赛(抓放, 去抓取点前过放置点) | bringup+localize+grasp | `map→base`(amcl) |
+| `ten_point_odom_race.py` | 十点纯里程计**保底**(定位栈挂也能跑) | 仅 bringup | `odom→base`(EKF) |
+| `seven_point_test.py` | 七点可达性测试(纯导航) | bringup+localize | `map→base`(amcl) |
+| `auto_task_runner.py` | 多点航线+抓放(读 waypoints.yaml) | bringup+localize | `map→base`(amcl) |
+
+> 命令速查见 `启动命令速查.md`；新脚本复用 `auto_task_runner` 锁航向原语。
+
+## 运行 & 验证
+
+```bash
+roslaunch abot bringup.launch        # 底盘+IMU+EKF(odom→base)
+roslaunch abot localize.launch       # map_server+amcl(map→odom); 与建图互斥
+# 改完确认:
+rosnode list                         # 无残留 move_base/旧节点
+rostopic hz /scan                    # 雷达有数据
+rosrun tf tf_echo map base_footprint # map→base 有输出=amcl 收敛
+```
+
 ## Git
 
 - **会话开始**：提醒 `git pull`
@@ -74,6 +114,9 @@
 - 学习仓库：[abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)（实验 spec 在 `parallel/`，映射表 `small-car-实验映射表.md`）
 - 早报：[morning-newspaper](https://github.com/zhangdashuai968/morning-newspaper)
 - 硬件：`README.md`
+- 协作约定（git/编码/脚本放哪）：`CONTRIBUTING.md`
 - 比赛规则：`比赛规则.md`
+- 命令速查：`启动命令速查.md`
 - 调参：`reports/调参极限分析报告.md`
 - 踩坑：`TROUBLESHOOTING.md`
+- 文档汇总生成器：`tools/gen_docs.py`

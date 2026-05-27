@@ -3,6 +3,18 @@
 > 基于 ROS 的自主导航 + 视觉抓取 + 机械臂操控实验平台
 > 属于 [三仓库生态系统](https://github.com/zhangdashuai968/morning-newspaper/blob/master/WORKFLOW.md) 的工程代码仓库
 
+## 📑 文档导航
+
+| 文档 | 用途 |
+|------|------|
+| [`CLAUDE.md`](CLAUDE.md) | AI 上手中枢：目录地图、脚本索引、当前导航方案、约定 |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | 协作约定：git 流程、代理、编码/换行、脚本放哪、真机验证 |
+| [`比赛规则.md`](比赛规则.md) | 最终目标：场地、6 点抓放流程、得分、致命终止条件 |
+| [`启动命令速查.md`](启动命令速查.md) | 清进程 → 建图 → 存图 → 定位 → 运动执行命令速查 |
+| [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | 踩坑手册（按症状→根因→解法） |
+| [`reports/`](reports) · [`logs/`](logs) | 会话报告 / 调试日志（均有模板） |
+| `团队必读文档汇总.html` | 上述核心文档的单文件离线汇总（`python tools/gen_docs.py` 生成） |
+
 ## 比赛目标与规则
 
 本项目的最终目标是**室内移动抓取搬运赛**：3.6×3.6 m 场地，起点 → 6 个搬运点（奇数抓 / 偶数放）→ 终点。
