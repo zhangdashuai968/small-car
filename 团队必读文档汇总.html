@@ -41,21 +41,168 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 .md hr{border:none;border-top:1px solid var(--line);margin:20px 0}
 .md img{max-width:100%}
 .missing{color:var(--danger)}
-</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>8 份</b></span><span class="tag">生成 <b>2026-05-27 16:06</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="overview" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 项目总览 README</h1><div class="src">来源: <code>README.md</code></div><div class="md"><h1 id="small-car-abot-m1-arm">Small Car — ABOT M1 ARM 智能小车</h1>
+</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>10 份</b></span><span class="tag">生成 <b>2026-05-27 21:43</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#quickstart">快速启动命令速查（建图 / 存图 / 定位）</a></li><li><a href="#rules">比赛规则（最终目标 · 硬约束）</a></li><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="quickstart" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 快速启动命令速查（建图 / 存图 / 定位）</h1><div class="src">来源: <code>启动命令速查.md</code></div><div class="md"><h1 id="_1">快速启动命令速查（建图 / 存图 / 定位）</h1>
+<blockquote>
+<p><code>localize.launch</code> 不绑定某个建图 launch，二者通过地图文件 <code>comp.yaml</code> 配对。
+<strong>建图与定位互斥</strong>——都发 <code>map→odom</code>，同一时间永远只能起一个。</p>
+</blockquote>
+<h2 id="_2">完整时序</h2>
+<pre><code class="language-bash"># 1. 建图（gmapping 或 cartographer 二选一，都先起 bringup）
+roslaunch abot bringup.launch
+roslaunch abot lidar_slam.launch          # 或 cartographer_slam.launch
+
+# 2. 建好后存成 comp（localize.launch 默认就读这个名）
+rosrun map_server map_saver -f $(rospack find abot)/maps/comp
+
+# 3. 定位（与建图互斥，二选一，都发 map→odom）
+roslaunch abot bringup.launch
+roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
+</code></pre>
+<h2 id="_3">关键点</h2>
+<ul>
+<li><strong>建图 launch 用 basename 启动</strong>：<code>roslaunch abot lidar_slam.launch</code>（<strong>不带 <code>slam/</code> 子目录</strong>），否则报 RLException。</li>
+<li><strong>起点摆位</strong>：localize 的 amcl 初值写死 <code>(0,0,0)</code>，所以建图起点必须摆在<strong>比赛原点、车头朝 +x</strong>，使地图原点 = (0,0) = amcl home 对齐。</li>
+<li><strong>运动执行</strong>：定位起好后用 <code>auto_task_runner.py</code> 自闭环发 <code>cmd_vel</code>，不经 move_base/TEB/DWA。</li>
+<li>⚠️ <strong>cartographer 路径隐患</strong>：车上 <code>rplidar_lds.lua</code> 仍是旧配置 <code>provide_odom_frame=true</code>，现在跑 cartographer 会和 EKF 双发 <code>odom→base</code> 冲突；gmapping 路径不受影响。</li>
+</ul></div></section><section id="rules" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">2. 比赛规则（最终目标 · 硬约束）</h1><div class="src">来源: <code>比赛规则.md</code></div><div class="md"><h1 id="_1">室内移动抓取搬运赛 — 比赛规则</h1>
+<blockquote>
+<p>这是 small-car 项目的<strong>最终目标</strong>。仓库里的导航、定位、抓取全部为它服务。
+工程上「只沿 xy 轴走、不得漂移、原地转」不是偏好，是不撞挡板的生存约束（见文末「对工程的约束」）。</p>
+</blockquote>
+<hr>
+<h2 id="1">1. 场地</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>场地尺寸</td>
+<td>3.6 m × 3.6 m</td>
+</tr>
+<tr>
+<td>四周围栏</td>
+<td>高 30 cm</td>
+</tr>
+<tr>
+<td>起点</td>
+<td>左下角，40 × 40 cm</td>
+</tr>
+<tr>
+<td>终点</td>
+<td>右下角，40 × 40 cm</td>
+</tr>
+<tr>
+<td>挡板 (divider)</td>
+<td>长 2.4 m，分隔列</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>6 个任务点排成 <strong>2 行 × 3 列</strong>：上排 1 / 3 / 5，下排 2 / 4 / 6。</li>
+<li>每个任务点前有 40 × 40 cm 的「搬运点」，机器人必须<strong>完全进入</strong>才算到达。</li>
+<li>搬运区域（蓝，抓取）/ 放置区域（紫，放置）宽 23 cm。</li>
+</ul>
+<pre><code>        列1        列2        列3
+   ┌─────────┬─────────┬─────────┐
+上排│  点1 抓  │  点3 抓  │  点5 抓  │
+   ├─────────┼─────────┼─────────┤
+下排│  点2 放  │  点4 放  │  点6 放  │
+   └─────────┴─────────┴─────────┘
+ [起点 左下]              [终点 右下]
+</code></pre>
+<hr>
+<h2 id="2">2. 任务流程（固定顺序）</h2>
+<pre><code>起点 → 搬运点1(抓) → 点2(放) → 点3(抓) → 点4(放) → 点5(抓) → 点6(放) → 终点
+</code></pre>
+<ul>
+<li><strong>奇数点 1 / 3 / 5 = 抓取</strong>（搬运区域）</li>
+<li><strong>偶数点 2 / 4 / 6 = 放置</strong>（放置区域）</li>
+<li>抓取目标物品<strong>赛前由裁判随机抽取公布</strong>，所以物体关键词运行时才喂给 <code>vl_locate</code>。</li>
+</ul>
+<blockquote>
+<p>对应代码：<code>scripts/auto_task_runner.py</code> + <code>scripts/waypoints.yaml</code>。
+<code>waypoints.yaml</code> 必须填<strong>真实的 6 个搬运点坐标</strong>，grab / place 交替，最后到终点。</p>
+</blockquote>
+<hr>
+<h2 id="3">3. 得分</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>分值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>到达每个任务点</td>
+<td>5 / 点</td>
+</tr>
+<tr>
+<td>抓取成功</td>
+<td>10 × 3</td>
+</tr>
+<tr>
+<td>放置成功</td>
+<td>10 × 3</td>
+</tr>
+<tr>
+<td>到达终点</td>
+<td>10</td>
+</tr>
+<tr>
+<td>技术文档 / 答辩</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>两次机会取<strong>最高分</strong>。</li>
+<li>同分比<strong>用时</strong>。</li>
+</ul>
+<hr>
+<h2 id="4">4. 致命终止条件（碰一下就结束比赛）</h2>
+<blockquote>
+<p>触发任意一条，整场比赛立即结束、该次成绩定格。</p>
+</blockquote>
+<ul>
+<li>⚠️ <strong>触碰围栏 / 挡板 / 障碍物 → 立即结束</strong></li>
+<li>⚠️ <strong>启动后 30 s 未动 / 状态 30 s 无变化 → 结束</strong>（程序死机同理）</li>
+<li>队员进场、举手示意、机器人完全进入终点 → 结束</li>
+</ul>
+<hr>
+<h2 id="5-why-how">5. 对工程的约束（Why &amp; How）</h2>
+<p><strong>Why</strong>：碰任何东西 = 直接判负。这是「只沿 xy 轴走、不得漂移、原地转」的硬原因——不是偏好，是生存约束。</p>
+<p><strong>How to apply</strong>：</p>
+<ol>
+<li><strong>不贴挡板走</strong>。路线留足余量，别让 move_base 的 reactive 避障逼近障碍（碰 = 结束，风险高）；L 形 leg 走安全车道中线。</li>
+<li><strong>fail-fast，保持连续运动</strong>。「30 s 不动 = 判负」→ goal 卡住会触发判负，超时设置不能太长，卡住要快速放弃 + 继续动。</li>
+<li><strong>抓放精度要够</strong>。搬运点 40 × 40 cm 必须<strong>完全进入</strong>才算到达。</li>
+</ol>
+<blockquote>
+<p>相关背景见 <code>reports/调参极限分析报告.md</code>（轨迹漂移分析）、<code>logs/2026-05-26_SLAM建图与局部规划器解耦.md</code>（绕开 move_base 的原语控制方案）。</p>
+</blockquote></div></section><section id="overview" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">3. 项目总览 README</h1><div class="src">来源: <code>README.md</code></div><div class="md"><h1 id="small-car-abot-m1-arm">Small Car — ABOT M1 ARM 智能小车</h1>
 <blockquote>
 <p>基于 ROS 的自主导航 + 视觉抓取 + 机械臂操控实验平台
 属于 <a href="https://github.com/zhangdashuai968/morning-newspaper/blob/master/WORKFLOW.md">三仓库生态系统</a> 的工程代码仓库</p>
 </blockquote>
-<h2 id="_1">硬件平台</h2>
+<h2 id="_1">比赛目标与规则</h2>
+<p>本项目的最终目标是<strong>室内移动抓取搬运赛</strong>：3.6×3.6 m 场地，起点 → 6 个搬运点（奇数抓 / 偶数放）→ 终点。
+<strong>碰围栏/挡板 或 30s 不动即立即判负</strong>——这是工程上坚持「只沿 xy 轴走、不漂移、原地转」的硬约束。</p>
+<p>完整场地、任务流程、得分与终止条件见 <strong><a href="比赛规则.md"><code>比赛规则.md</code></a></strong>。</p>
+<h2 id="_2">硬件平台</h2>
 <ul>
 <li><strong>底盘</strong>: ABOT M1 ARM 麦克纳姆轮（四轮）</li>
-<li><strong>计算</strong>: NVIDIA Jetson Nano（Ubuntu 20.04 / ROS Noetic）</li>
+<li><strong>计算</strong>: NVIDIA Jetson Nano（Tegra X1，Ubuntu 18.04 / ROS Melodic）</li>
 <li><strong>传感器</strong>: 思岚 RPLidar C1 | Astra RGBD 深度相机 | MPU6050 IMU（9轴）</li>
 <li><strong>执行器</strong>: 六自由度机械臂（吸盘抓取）</li>
 <li><strong>连接</strong>: 局域网 SSH（<code>192.168.36.46</code> 或 <code>192.168.43.211</code>，用户 <code>abot</code>）</li>
 </ul>
-<h2 id="_2">硬件详情</h2>
-<h3 id="_3">网络</h3>
+<h2 id="_3">硬件详情</h2>
+<h3 id="_4">网络</h3>
 <table>
 <thead>
 <tr>
@@ -86,7 +233,7 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 </tr>
 </tbody>
 </table>
-<h3 id="_4">计算平台</h3>
+<h3 id="_5">计算平台</h3>
 <table>
 <thead>
 <tr>
@@ -97,15 +244,15 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 <tbody>
 <tr>
 <td>型号</td>
-<td>NVIDIA Jetson Nano</td>
+<td>NVIDIA Jetson Nano（Tegra X1，L4T R32.6.1）</td>
 </tr>
 <tr>
 <td>OS</td>
-<td>Ubuntu 20.04</td>
+<td>Ubuntu 18.04</td>
 </tr>
 <tr>
 <td>ROS 发行版</td>
-<td>Noetic</td>
+<td>Melodic（Python 2.7）</td>
 </tr>
 <tr>
 <td>工作空间</td>
@@ -117,7 +264,7 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 </tr>
 </tbody>
 </table>
-<h3 id="_5">底盘</h3>
+<h3 id="_6">底盘</h3>
 <table>
 <thead>
 <tr>
@@ -152,7 +299,7 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 </tr>
 </tbody>
 </table>
-<h3 id="_6">传感器</h3>
+<h3 id="_7">传感器</h3>
 <table>
 <thead>
 <tr>
@@ -211,15 +358,15 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 </tr>
 <tr>
 <td>4</td>
-<td><strong>AMCL 初始位姿不匹配</strong> — 启动时如果车不在 (0.6, -0.4) 需要重新设 initialpose</td>
-<td>已配置默认值</td>
+<td><strong>AMCL 初始位姿不匹配</strong> — <code>navigate.launch</code> 的 amcl 初值写死 (0.6, -0.4)，车没摆对会原地乱转</td>
+<td>新方案 <code>localize.launch</code> 改用 (0,0,0) + 建图起点=比赛原点对齐</td>
 </tr>
 </tbody>
 </table>
 <blockquote>
 <p>详见 <code>TROUBLESHOOTING.md</code> 和 <code>reports/调参极限分析报告.md</code></p>
 </blockquote>
-<h2 id="_7">启动流程</h2>
+<h2 id="_8">启动流程</h2>
 <pre><code class="language-bash"># 1. 基础驱动 + 里程计 + EKF
 roslaunch abot bringup.launch
 
@@ -233,7 +380,10 @@ roslaunch ZachLab_grasp grasp.launch
 # 4. 执行任务
 rosrun abot auto_task_runner.py waypoints.yaml
 </code></pre>
-<h2 id="_8">项目结构</h2>
+<blockquote>
+<p><strong>当前比赛方向（2026-05-26 起，绕开 move_base）</strong>：因 TEB/DWA 局部规划器不稳 + 贴挡板避障有判负风险，运动改走 <code>auto_task_runner.py</code> 的自闭环原语（只沿 xy 轴走 + 原地转，读 <code>map→base_footprint</code> tf 直接发 <code>cmd_vel</code>）。定位用 <code>localize.launch</code>（amcl，无 move_base）替代 <code>navigate.launch</code>。详见 <a href="logs/2026-05-26_SLAM建图与局部规划器解耦.md"><code>logs/2026-05-26_SLAM建图与局部规划器解耦.md</code></a>，约束见 <a href="比赛规则.md"><code>比赛规则.md</code></a>。</p>
+</blockquote>
+<h2 id="_9">项目结构</h2>
 <pre><code>├── src/                    # ROS 工作区（catkin workspace）
 │   ├── lidar/              # 激光雷达驱动与点云处理
 │   ├── depth_camera/       # 深度相机驱动
@@ -272,7 +422,7 @@ rosrun abot auto_task_runner.py waypoints.yaml
 ├── TROUBLESHOOTING.md      # 踩坑手册
 └── README.md
 </code></pre>
-<h2 id="_9">核心功能</h2>
+<h2 id="_10">核心功能</h2>
 <table>
 <thead>
 <tr>
@@ -303,7 +453,7 @@ rosrun abot auto_task_runner.py waypoints.yaml
 </tr>
 </tbody>
 </table>
-<h2 id="_10">快速开始</h2>
+<h2 id="_11">快速开始</h2>
 <h3 id="1">1. 连接小车</h3>
 <pre><code class="language-bash">python scripts/ssh-car.py          # 交互式 shell
 python scripts/ssh-car.py &quot;ls&quot;     # 执行单条命令
@@ -325,14 +475,14 @@ cd ~/catkin_ws
 </code></pre>
 <h3 id="4">4. 地图查看</h3>
 <p><code>maps/house.pgm</code> / <code>maps/house.png</code> — 场地图，可直接用 ROS <code>map_server</code> 加载。</p>
-<h2 id="_11">环境要求</h2>
+<h2 id="_12">环境要求</h2>
 <ul>
-<li>ROS Noetic（Ubuntu 20.04）</li>
-<li>Python 3.8+（<code>paramiko</code>、<code>numpy</code>）</li>
+<li>车上：ROS Melodic（Ubuntu 18.04），ROS 节点为 Python 2.7</li>
+<li>本地（开发机）：Python 3（<code>paramiko</code>、<code>numpy</code>），用于 <code>scripts/ssh-car.py</code> 等工具</li>
 <li>OpenCV 4.x</li>
 <li>CMake 2.8.3+</li>
 </ul>
-<h2 id="_12">关联项目</h2>
+<h2 id="_13">关联项目</h2>
 <table>
 <thead>
 <tr>
@@ -358,8 +508,8 @@ cd ~/catkin_ws
 <blockquote>
 <p><strong>关系</strong>：<code>abot_arm_learning</code> 是"课堂"（学原理、做实验），<code>small-car</code> 是"战场"（实际部署、跑航线、真机调试）。<code>morning-newspaper</code> 是"闹钟"（每天早上提醒你进度到哪了）。</p>
 </blockquote>
-<h2 id="_13">许可证</h2>
-<p>Public repository — ABOT M1 ARM 智能小车 ROS 工作区。</p></div></section><section id="guide" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">2. 小车实验指南（技术教育详解）</h1><div class="src">来源: <code>src/小车实验指南技术教育详解(2).md</code></div><div class="md"><h1 id="_1">人工智能机械臂移动开发平台实验指导书</h1>
+<h2 id="_14">许可证</h2>
+<p>Public repository — ABOT M1 ARM 智能小车 ROS 工作区。</p></div></section><section id="guide" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">4. 小车实验指南（技术教育详解）</h1><div class="src">来源: <code>src/小车实验指南技术教育详解(2).md</code></div><div class="md"><h1 id="_1">人工智能机械臂移动开发平台实验指导书</h1>
 <h2 id="_2">目录</h2>
 <ul>
 <li>第一章 机器人硬件介绍</li>
@@ -996,7 +1146,7 @@ while(True):
 
 cap.release()
 cv2.destroyAllWindows()
-</code></pre></div></section><section id="trouble" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">3. 故障排查 TROUBLESHOOTING</h1><div class="src">来源: <code>TROUBLESHOOTING.md</code></div><div class="md"><h1 id="_1">小车调试踩坑手册</h1>
+</code></pre></div></section><section id="trouble" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">5. 故障排查 TROUBLESHOOTING</h1><div class="src">来源: <code>TROUBLESHOOTING.md</code></div><div class="md"><h1 id="_1">小车调试踩坑手册</h1>
 <blockquote>
 <p>来源：实车实验 Run 4~10，每一条都有日志可查。按症状→根因→解法组织。</p>
 </blockquote>
@@ -1072,7 +1222,7 @@ cv2.destroyAllWindows()
 <li><code>logs/小车调节日志.txt</code> — 完整原始实验数据（Run 4~10）</li>
 <li><code>reports/调参极限分析报告.md</code> — 数学推导与实验分析</li>
 <li><code>README.md</code> — 硬件清单与当前状态</li>
-</ul></div></section><section id="log0526" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">4. 调试日志 2026-05-26 · SLAM建图与局部规划器解耦</h1><div class="src">来源: <code>logs/2026-05-26_SLAM建图与局部规划器解耦.md</code></div><div class="md"><h1 id="slam-gmapping">调试日志：SLAM 建图、定位解耦与 gmapping 调参</h1>
+</ul></div></section><section id="log0526" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">6. 调试日志 2026-05-26 · SLAM建图与局部规划器解耦</h1><div class="src">来源: <code>logs/2026-05-26_SLAM建图与局部规划器解耦.md</code></div><div class="md"><h1 id="slam-gmapping">调试日志：SLAM 建图、定位解耦与 gmapping 调参</h1>
 <h2 id="_1">基本信息</h2>
 <table>
 <thead>
@@ -1248,7 +1398,7 @@ python2 ~/bags/auto_task_runner.py slam_test.yaml   # 读 map-&gt;base_footprint
 <td>新建（body 系闭环测试 waypoint）</td>
 </tr>
 </tbody>
-</table></div></section><section id="tuning" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">5. 调参极限分析报告</h1><div class="src">来源: <code>reports/调参极限分析报告.md</code></div><div class="md"><h1 id="l">麦轮小车 L 形路径轨迹漂移分析报告</h1>
+</table></div></section><section id="tuning" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">7. 调参极限分析报告</h1><div class="src">来源: <code>reports/调参极限分析报告.md</code></div><div class="md"><h1 id="l">麦轮小车 L 形路径轨迹漂移分析报告</h1>
 <blockquote>
 <p>日期：2026-05-26
 实验范围：Run 4 ~ Run 10（共 7 次有效实验）
@@ -1518,7 +1668,7 @@ python2 ~/bags/auto_task_runner.py slam_test.yaml   # 读 map-&gt;base_footprint
 </table>
 <hr>
 <p><em>历史实验数据见 <code>../logs/小车调节日志.txt</code></em>
-<em>关键代码：<code>scripts/auto_task_runner.py</code> → <code>_drive_to_point()</code> 方法</em></p></div></section><section id="automap" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">6. 自动建图指南 auto_map_guide</h1><div class="src">来源: <code>src/abot_project/abot/docs/auto_map_guide.md</code></div><div class="md"><h1 id="_1">自动建图和保存功能使用指南</h1>
+<em>关键代码：<code>scripts/auto_task_runner.py</code> → <code>_drive_to_point()</code> 方法</em></p></div></section><section id="automap" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">8. 自动建图指南 auto_map_guide</h1><div class="src">来源: <code>src/abot_project/abot/docs/auto_map_guide.md</code></div><div class="md"><h1 id="_1">自动建图和保存功能使用指南</h1>
 <p>本指南介绍如何使用自动建图和保存功能，在闭合空间内自动创建地图并保存。</p>
 <h2 id="_2">功能概述</h2>
 <p>自动建图和保存功能包含以下组件：</p>
@@ -1561,7 +1711,7 @@ python2 ~/bags/auto_task_runner.py slam_test.yaml   # 读 map-&gt;base_footprint
 <li>如果出现路径错误，请检查launch文件路径是否正确</li>
 <li>如果地图保存失败，请检查是否有写入maps目录的权限</li>
 <li>如果SLAM无法启动，请确保相关依赖包已安装</li>
-</ol></div></section><section id="autoreadme" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">7. abot_project 自动化说明 README_AUTO</h1><div class="src">来源: <code>src/abot_project/README_AUTO.md</code></div><div class="md"><h1 id="_1">一键启动导航抓取任务</h1>
+</ol></div></section><section id="autoreadme" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">9. abot_project 自动化说明 README_AUTO</h1><div class="src">来源: <code>src/abot_project/README_AUTO.md</code></div><div class="md"><h1 id="_1">一键启动导航抓取任务</h1>
 <h2 id="_2">使用方法</h2>
 <h3 id="_3">一键启动（推荐）</h3>
 <pre><code class="language-bash">./scripts/one_click_start.sh
@@ -1587,7 +1737,7 @@ roslaunch abot_project auto_navigation_grasp.launch
 <li>导航到点7 → 任务完成</li>
 </ol>
 <h2 id="_5">修改导航点</h2>
-<p>编辑 <code>scripts/auto_navigation_grasp.py</code> 中的 <code>waypoints</code> 数组来修改导航点坐标。</p></div></section><section id="abotreadme" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">8. abot 包 README</h1><div class="src">来源: <code>src/abot_project/abot/README.md</code></div><div class="md"><h1 id="abot">ABot机器人自动建图包</h1>
+<p>编辑 <code>scripts/auto_navigation_grasp.py</code> 中的 <code>waypoints</code> 数组来修改导航点坐标。</p></div></section><section id="abotreadme" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">10. abot 包 README</h1><div class="src">来源: <code>src/abot_project/abot/README.md</code></div><div class="md"><h1 id="abot">ABot机器人自动建图包</h1>
 <p>本包提供了ABot机器人在闭合空间内自动建图并保存的功能。</p>
 <h2 id="_1">功能特性</h2>
 <ul>

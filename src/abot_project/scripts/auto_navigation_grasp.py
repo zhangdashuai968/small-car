@@ -27,13 +27,13 @@ class AutoNavigationGrasp:
         
         # Navigation points (x, y, yaw in radians)
         self.waypoints = [
-            (3.6, -0.9, 1.6),   # Point 1
-            (2.4, -0.9, 1.6),   # Point 2  
-            (3.6, -2.13, 1.6),  # Point 3
-            (2.4, -2.13, 1.6),  # Point 4
-            (3.6, -3.33, 1.6),  # Point 5
-            (2.4, -3.33, 1.6),  # Point 6
-            (2.4, -2.0, 0.0),   # Point 7
+            (3.6, 0.6, 0),   # Point 1
+            (2.4, 0.6, 0),   # Point 2
+            (3.6, 1.8, 0),   # Point 3
+            (2.4, 1.8, 0),   # Point 4
+            (3.6, 2.6, 0),   # Point 5
+            (2.4, 2.6, 0),   # Point 6
+            (2.4, 2.0, 0.0), # Point 7
         ]
         
         # Actions for each point (True=grab, False=place)
