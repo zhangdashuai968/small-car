@@ -1,0 +1,1654 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>abot small-car 团队必读文档汇总</title><style>
+:root{--bg:#0f1115;--card:#181b22;--card2:#1f232c;--ink:#e7eaf0;--mut:#9aa3b2;
+--line:#2b313c;--accent:#5b9dff;--ok:#39c08a;--warn:#e0a838;--danger:#e0556b;--code:#0b0d11;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;line-height:1.65;font-size:15px}
+.wrap{max-width:1000px;margin:0 auto;padding:32px 22px 100px}
+header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:8px}
+h1.page{font-size:27px;margin:0 0 8px}
+.sub{color:var(--mut);font-size:14px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.tag{background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:12.5px;color:var(--mut)}
+.tag b{color:var(--accent);font-weight:600}
+.toc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin:20px 0 8px}
+.toc .th{font-weight:700;color:#cdd5e2;margin-bottom:10px}
+.toc ol{margin:0;padding-left:22px}
+.toc li{margin:5px 0}
+.toc a{color:var(--accent);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+section.doc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 26px 26px;margin:26px 0}
+h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2px solid var(--accent)}
+.src{color:var(--mut);font-size:12.5px;margin-bottom:8px}
+.src code{background:#262b35;color:#ffd9a0;padding:1px 6px;border-radius:4px}
+.back{float:right;font-size:12.5px;color:var(--mut);text-decoration:none}
+.back:hover{color:var(--accent)}
+.md h1{font-size:20px;margin:26px 0 10px;color:#fff}
+.md h2{font-size:18px;margin:24px 0 10px;padding-left:11px;border-left:4px solid var(--accent);color:#dbe3f0}
+.md h3{font-size:15.5px;margin:18px 0 7px;color:#cdd5e2}
+.md h4{font-size:14.5px;margin:14px 0 6px;color:#bcc6d6}
+.md p{margin:9px 0}
+.md a{color:var(--accent)}
+.md ul,.md ol{margin:9px 0;padding-left:26px}
+.md li{margin:4px 0}
+.md code{font-family:"Cascadia Code",Consolas,monospace;background:#262b35;color:#ffd9a0;padding:1.5px 6px;border-radius:4px;font-size:13px}
+.md pre{background:var(--code);border:1px solid var(--line);border-radius:9px;padding:15px;overflow:auto;font-size:13px;line-height:1.55}
+.md pre code{background:none;color:#d6deea;padding:0}
+.md table{width:100%;border-collapse:collapse;margin:13px 0;font-size:13.5px;display:block;overflow-x:auto}
+.md th,.md td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+.md th{background:var(--card2);color:#cdd5e2;font-weight:600}
+.md blockquote{margin:12px 0;padding:8px 16px;border-left:4px solid var(--mut);background:var(--card2);color:var(--mut);border-radius:0 8px 8px 0}
+.md hr{border:none;border-top:1px solid var(--line);margin:20px 0}
+.md img{max-width:100%}
+.missing{color:var(--danger)}
+</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>8 份</b></span><span class="tag">生成 <b>2026-05-27 16:06</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="overview" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 项目总览 README</h1><div class="src">来源: <code>README.md</code></div><div class="md"><h1 id="small-car-abot-m1-arm">Small Car — ABOT M1 ARM 智能小车</h1>
+<blockquote>
+<p>基于 ROS 的自主导航 + 视觉抓取 + 机械臂操控实验平台
+属于 <a href="https://github.com/zhangdashuai968/morning-newspaper/blob/master/WORKFLOW.md">三仓库生态系统</a> 的工程代码仓库</p>
+</blockquote>
+<h2 id="_1">硬件平台</h2>
+<ul>
+<li><strong>底盘</strong>: ABOT M1 ARM 麦克纳姆轮（四轮）</li>
+<li><strong>计算</strong>: NVIDIA Jetson Nano（Ubuntu 20.04 / ROS Noetic）</li>
+<li><strong>传感器</strong>: 思岚 RPLidar C1 | Astra RGBD 深度相机 | MPU6050 IMU（9轴）</li>
+<li><strong>执行器</strong>: 六自由度机械臂（吸盘抓取）</li>
+<li><strong>连接</strong>: 局域网 SSH（<code>192.168.36.46</code> 或 <code>192.168.43.211</code>，用户 <code>abot</code>）</li>
+</ul>
+<h2 id="_2">硬件详情</h2>
+<h3 id="_3">网络</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>网段 A IP</td>
+<td><code>192.168.36.46</code></td>
+</tr>
+<tr>
+<td>网段 B IP</td>
+<td><code>192.168.43.211</code></td>
+</tr>
+<tr>
+<td>SSH 用户</td>
+<td><code>abot</code></td>
+</tr>
+<tr>
+<td>SSH 密码</td>
+<td>见环境变量 <code>CAR_PASSWORD</code></td>
+</tr>
+<tr>
+<td>ROS Master</td>
+<td><code>http://&lt;小车IP&gt;:11311</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_4">计算平台</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>型号</td>
+<td>NVIDIA Jetson Nano</td>
+</tr>
+<tr>
+<td>OS</td>
+<td>Ubuntu 20.04</td>
+</tr>
+<tr>
+<td>ROS 发行版</td>
+<td>Noetic</td>
+</tr>
+<tr>
+<td>工作空间</td>
+<td><code>~/catkin_ws</code></td>
+</tr>
+<tr>
+<td>串口设备</td>
+<td><code>/dev/abotbase</code> (底盘), <code>/dev/abotlidar</code> (激光)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_5">底盘</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>型号</td>
+<td>ABOT M1 ARM</td>
+</tr>
+<tr>
+<td>驱动方式</td>
+<td>麦克纳姆轮 (四轮)</td>
+</tr>
+<tr>
+<td>环境变量</td>
+<td><code>ABOTMODEL=x4</code>, <code>ABOTBASE=omni</code>（麦轮全向模式）</td>
+</tr>
+<tr>
+<td>底层 MCU</td>
+<td>STM32F103RCT6</td>
+</tr>
+<tr>
+<td>通信协议</td>
+<td>rosserial (USB, 115200 bps)</td>
+</tr>
+<tr>
+<td>里程计标定</td>
+<td><code>linear_scale = 1.014</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_6">传感器</h3>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>型号</th>
+<th>话题/备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>激光雷达</td>
+<td>思岚 RPLidar C1</td>
+<td><code>/scan</code>, 波特率 460800</td>
+</tr>
+<tr>
+<td>深度相机</td>
+<td>Astra RGBD</td>
+<td><code>/camera/rgb/image_raw</code>, <code>/camera/depth/points</code></td>
+</tr>
+<tr>
+<td>IMU</td>
+<td>MPU6050 (板载)</td>
+<td><code>/imu/data</code>, Madgwick 滤波后</td>
+</tr>
+<tr>
+<td>里程计</td>
+<td>轮式编码器 → EKF 融合</td>
+<td><code>/odom</code> (EKF 融合后)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="bug">已知 Bug</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>描述</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>轨迹漂移</strong> — 麦轮可能存在滚子打滑或里程计标定不准，详见 <code>TROUBLESHOOTING.md</code></td>
+<td>排查中</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>双 WiFi 网段 IP 不固定</strong> — 每次开机可能分配到 36.x 或 43.x 网段</td>
+<td>需手动 ping 确认</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>编码文件中文乱码</strong> — 车上部分文件为 GBK 编码，拉到 Windows 后需转换</td>
+<td>逐步修复</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>AMCL 初始位姿不匹配</strong> — 启动时如果车不在 (0.6, -0.4) 需要重新设 initialpose</td>
+<td>已配置默认值</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>详见 <code>TROUBLESHOOTING.md</code> 和 <code>reports/调参极限分析报告.md</code></p>
+</blockquote>
+<h2 id="_7">启动流程</h2>
+<pre><code class="language-bash"># 1. 基础驱动 + 里程计 + EKF
+roslaunch abot bringup.launch
+
+# 2. 地图 + 定位 + move_base
+roslaunch abot navigate.launch
+
+# 3. [可选] 视觉定位 + 抓取
+roslaunch vl_locate vl_locate.launch
+roslaunch ZachLab_grasp grasp.launch
+
+# 4. 执行任务
+rosrun abot auto_task_runner.py waypoints.yaml
+</code></pre>
+<h2 id="_8">项目结构</h2>
+<pre><code>├── src/                    # ROS 工作区（catkin workspace）
+│   ├── lidar/              # 激光雷达驱动与点云处理
+│   ├── depth_camera/       # 深度相机驱动
+│   ├── jetson_camera/      # Jetson 板载摄像头
+│   ├── camera_umd/         # 摄像头 UMD 驱动
+│   ├── imu_calib/          # IMU 标定
+│   ├── imu_filter_madgwick/ # Madgwick IMU 姿态滤波
+│   ├── robot_localization/ # 多传感器融合定位
+│   ├── m-explore/          # 自主探索建图
+│   ├── opencv_apps/        # OpenCV 视觉应用
+│   ├── robot_arm/          # 机械臂控制
+│   └── abot_project/       # ABOT M1 项目主逻辑
+├── scripts/                # 运行脚本
+│   ├── waypoints.yaml      # 巡航线点（抓取/放置动作编排）
+│   ├── waypoints_test.yaml # 测试航线
+│   ├── patrol_run.sh       # 启动巡逻任务
+│   ├── auto_task_runner.py # 自动任务调度
+│   ├── nav_test.py         # 前进 1m 测试
+│   ├── rotate_test.py      # 旋转 90° 测试
+│   ├── ssh-car.py          # SSH 远程控制工具
+│   ├── auto-sync.sh        # GitHub 自动同步
+│   ├── sync-once.sh/.bat   # 手动同步脚本
+│   └── start_map.sh        # 一键建图启动
+├── maps/                   # 场地地图
+│   ├── house.pgm
+│   └── house.png
+├── logs/                   # 真机调试日志
+│   ├── 模板_调试日志.md
+│   └── 小车调节日志.txt
+├── reports/                # 会话报告
+│   ├── README.md
+│   ├── 模板_人工报告.md
+│   ├── 模板_AI报告.md
+│   └── 调参极限分析报告.md
+├── CLAUDE.md               # AI 助手规则
+├── TROUBLESHOOTING.md      # 踩坑手册
+└── README.md
+</code></pre>
+<h2 id="_9">核心功能</h2>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>自主导航</strong></td>
+<td>LIDAR + IMU 融合定位，基于 <code>waypoints.yaml</code> 的航线巡逻</td>
+</tr>
+<tr>
+<td><strong>视觉抓取</strong></td>
+<td>深度相机识别目标物体（葡萄、香蕉、山竹）→ 机械臂抓取</td>
+</tr>
+<tr>
+<td><strong>物体放置</strong></td>
+<td>导航到投放点，释放物体到指定位置</td>
+</tr>
+<tr>
+<td><strong>探索建图</strong></td>
+<td><code>m-explore</code> 自主探索，构建占据栅格地图</td>
+</tr>
+<tr>
+<td><strong>远程操控</strong></td>
+<td><code>ssh-car.py</code> 远程命令执行 / 交互式 shell</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_10">快速开始</h2>
+<h3 id="1">1. 连接小车</h3>
+<pre><code class="language-bash">python scripts/ssh-car.py          # 交互式 shell
+python scripts/ssh-car.py &quot;ls&quot;     # 执行单条命令
+</code></pre>
+<h3 id="2">2. 启动巡逻</h3>
+<pre><code class="language-bash"># SSH 到车上后
+cd ~/catkin_ws
+./src/patrol_run.sh
+</code></pre>
+<h3 id="3">3. 航线配置</h3>
+<p>编辑 <code>scripts/waypoints.yaml</code>：</p>
+<pre><code class="language-yaml">waypoints:
+  - name: pickup_grape
+    x: -0.137
+    y: 2.485
+    yaw: 0.0
+    action: grab          # grab / place / pass
+    object: 葡萄           # 识别目标关键词
+</code></pre>
+<h3 id="4">4. 地图查看</h3>
+<p><code>maps/house.pgm</code> / <code>maps/house.png</code> — 场地图，可直接用 ROS <code>map_server</code> 加载。</p>
+<h2 id="_11">环境要求</h2>
+<ul>
+<li>ROS Noetic（Ubuntu 20.04）</li>
+<li>Python 3.8+（<code>paramiko</code>、<code>numpy</code>）</li>
+<li>OpenCV 4.x</li>
+<li>CMake 2.8.3+</li>
+</ul>
+<h2 id="_12">关联项目</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/zhangdashuai968/abot_arm_learning">abot_arm_learning</a></td>
+<td>配套学习路线图：6 阶段 32 实验，从 ROS 基础到 SLAM 到视觉伺服抓取</td>
+</tr>
+<tr>
+<td><a href="https://github.com/zhangdashuai968/morning-newspaper">morning-newspaper</a></td>
+<td>每日早报系统，包含学习进度追踪和每日工作日志</td>
+</tr>
+<tr>
+<td><a href="https://github.com/zhangdashuai968/morning-newspaper/blob/master/WORKFLOW.md">WORKFLOW.md</a></td>
+<td>三仓库生态系统完整说明</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>关系</strong>：<code>abot_arm_learning</code> 是"课堂"（学原理、做实验），<code>small-car</code> 是"战场"（实际部署、跑航线、真机调试）。<code>morning-newspaper</code> 是"闹钟"（每天早上提醒你进度到哪了）。</p>
+</blockquote>
+<h2 id="_13">许可证</h2>
+<p>Public repository — ABOT M1 ARM 智能小车 ROS 工作区。</p></div></section><section id="guide" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">2. 小车实验指南（技术教育详解）</h1><div class="src">来源: <code>src/小车实验指南技术教育详解(2).md</code></div><div class="md"><h1 id="_1">人工智能机械臂移动开发平台实验指导书</h1>
+<h2 id="_2">目录</h2>
+<ul>
+<li>第一章 机器人硬件介绍</li>
+<li>第二章 开箱使用说明  </li>
+<li>第三章 ABOT ROS 源码文件说明</li>
+<li>第四章 机器人关于环境变量的配置</li>
+<li>第五章 ROS 控制基础</li>
+<li>第六章 ROS SLAM</li>
+<li>第七章 ROS 安卓 APP</li>
+<li>第八章 机器人视觉</li>
+<li>第九章 机器人深度学习</li>
+<li>第十章 移动视觉抓取</li>
+<li>第十一章 外部传感器话题消息的使用</li>
+<li>第十二章 xArm 机械臂控制</li>
+<li>第十三章 Opencv 视觉基础</li>
+</ul>
+<hr>
+<h2 id="_3">第一章 机器人硬件介绍</h2>
+<h3 id="11">1.1 硬件框架</h3>
+<p>机器人硬件采用STM32F1驱动板组成系统通信框架</p>
+<h3 id="12">1.2 主控制器</h3>
+<p>ROS控制器采用Jetson nano主控，运行Ubuntu18.04系统，安装有ROS机器人操作系统，ROS版本为Melodic版本。</p>
+<h3 id="13">1.3 底层驱动板</h3>
+<p>底层驱动板为自主研发的机器人驱动板，跟上层主控采用ROSSERIAL协议通信，驱动板MCU采用STM32F103RCT6芯片，板载MPU6050 IMU角速度陀螺仪传感器。</p>
+<h3 id="14">1.4 激光雷达</h3>
+<p>思岚A1/A2雷达，可实现12M测距范围，5.5HZ扫描频率，8000次/秒测量频率。</p>
+<h3 id="15">1.5 深度摄像头</h3>
+<p>RGBD深度摄像头，RGB是彩色图像，D是depth（深度图像），可用于空间三维点云重建、视觉SLAM、视觉导航避障等应用。</p>
+<hr>
+<h2 id="_4">第二章 开箱使用说明</h2>
+<h3 id="21">2.1 使用前准备工作</h3>
+<p>准备使用步骤流程：
+1. 机器人先充满电（5-8小时，直到充电器显示绿灯）
+2. 开机上电后，用HDMI线连接显示器与Jetson nano进入系统桌面，连接无线WIFI，记下主控的IP
+3. 准备Windows系统电脑，安装ToDesk远程桌面软件（not essential）</p>
+<pre><code class="language-bash"># ToDesk安装步骤
+# 1. 打开todesk官网 https://www.todesk.com，选择Linux版本
+# 2. 选择立即下载，选择第二个arm64，点击所标网址下载
+# 3. 下载完成后，找到下载文件所在的文件夹，右键打开终端，输入以下代码：
+sudo apt-get install ./todesk-v4.7.2.0-arm64.deb
+# 4. 安装完成后，输入ToDesk即可打开软件
+</code></pre>
+<h3 id="22">2.2 网络环境说明</h3>
+<p>ROS基于局域网通信，请确保路由器设置成静态IP形式，主控系统和Windows系统电脑在同一个网段下。</p>
+<hr>
+<h2 id="abot-ros">第三章 ABOT ROS 源码文件说明</h2>
+<h3 id="31-abot-ros">3.1 ABOT ROS 机器人文件结构说明</h3>
+<p>在用户主目录下，<code>catkin_ws</code>为主要ROS工作空间。</p>
+<p><strong>主要源码包作用：</strong>
+- <code>imu_calib</code>: IMU校正源码
+- <code>m-explore</code>: 未知区域探索-自动建地图包
+- <code>robot_localization</code>: 非线性状态估计节点集合，融合多个传感器数据（里程计 IMU）
+- <code>camera_umd</code>: USB普通摄像头驱动包
+- <code>lidarrplidar</code>: 雷达驱动包、镭神16线雷达驱动包
+- <code>abot_project</code>: ABOT核心源码包</p>
+<p><strong>ABOT核心源码包内主要功能包：</strong>
+- <code>abot_follower</code>: 深度摄像头跟随包
+- <code>abot_nav</code>: 角速度线速度校正包
+- <code>abot_msgs</code>: 自定义消息类型
+- <code>abot_kcf</code>: KCF跟随包
+- <code>abot_object_detect</code>: 目标检测包
+- <code>abot</code>: 里程计发布包
+- <code>abot_lidar_follower</code>: 雷达跟随超声波跟随包
+- <code>abot_pid</code>: PID反馈调节包
+- <code>abot_line_follower</code>: 摄像头寻线包
+- <code>abot_deep_learning</code>: 深度学习检测包
+- <code>abot_ar_track</code>: AR跟随、二维码识别包
+- <code>abot_model</code>: URDF模型包
+- <code>abot_object_follower</code>: 目标跟随包
+- <code>abot_tracker_servo</code>: 云台跟随包
+- <code>abot_yolo_detection</code>: YOLOV4检测包
+- <code>abot_slam_3d</code>: 3D视觉建图
+- <code>abot_xarm</code>: 移动抓取包（配合ABOT移动抓取小车使用）</p>
+<hr>
+<h2 id="_5">第四章 机器人关于环境变量的配置</h2>
+<h3 id="41">4.1 打开环境变量配置文件</h3>
+<pre><code class="language-bash">$ gedit .bashrc
+</code></pre>
+<h3 id="42">4.2 相关环境变量解释</h3>
+<p><strong>CUDA路径设置 (Jetson系列专用):</strong></p>
+<pre><code class="language-bash">export CUBA_HOME=/usr/local/cuda-10.2
+export LD_LIBRARY_PATH=/usr/local/cuda-10.2/lib64:$LD_LIBRARY_PATH
+export PATH=/usr/local/cuda-10.2/bin:$PATH
+</code></pre>
+<p><strong>ROS环境变量:</strong></p>
+<pre><code class="language-bash">source /opt/ros/melodic/setup.bash
+source ~/catkin_ws/devel/setup.bash
+</code></pre>
+<p><strong>ROS网络配置:</strong></p>
+<pre><code class="language-bash">export ROS_IP=`ifconfig wlan0 | grep -w inet | cut -d : -f 2 | awk {'print $2'}`
+export ROS_HOSTNAME=`ifconfig wlan0 | grep -w inet | cut -d : -f 2 | awk {'print $2'}`
+export ROS_MASTER_URI=http://`ifconfig wlan0 | grep -w inet | cut -d : -f 2 | awk {'print $2'}`:11311
+</code></pre>
+<p><strong>指定摄像头 (支持多种摄像头):</strong></p>
+<pre><code class="language-bash">export CAMERA=intel
+</code></pre>
+<p><strong>车体指定:</strong></p>
+<pre><code class="language-bash">export ABOTMODEL=fx4
+</code></pre>
+<p><strong>车型指定与导航算法指定:</strong></p>
+<pre><code class="language-bash"># 车型：差速车型、麦克纳姆轮、阿克曼车型
+export ABOTBASE=omni
+
+# 导航算法：teb与dwa两种，阿克曼车型只能设置为teb
+export NAV_PATH=dwa
+</code></pre>
+<p><strong>IMU指定:</strong></p>
+<pre><code class="language-bash"># UGV大车FX4多线激光雷达LIOSAM建图时使用hfi型号IMU
+# 驱动板本身的IMU指定为mpu6050
+export ABOTIMU=mpu6050
+</code></pre>
+<p><strong>雷达型号指定:</strong></p>
+<pre><code class="language-bash"># 支持：lslidar_c16, rplidar, rslidar
+export ABOTLIDAR=rplidar
+</code></pre>
+<p><strong>摄像头校正:</strong></p>
+<pre><code class="language-bash"># action为使用模式，calibration为校正模式，二选一
+export AUTO_ARM_CALIB=action
+# export AUTO_ARM_CALIB=calibration
+</code></pre>
+<p><strong>手眼标定:</strong></p>
+<pre><code class="language-bash"># calibration为校正模式, action为使用模式，二选一
+export ABOT_IN_CALIB=calibration
+# export ABOT_IN_CALIB=action
+</code></pre>
+<hr>
+<h2 id="ros">第五章 ROS 控制基础</h2>
+<h3 id="51-ps2">5.1 键盘、PS2控制</h3>
+<p><strong>PS2手柄控制:</strong>
+- L1触发普通模式：左侧L1+左遥感（上下推）为前进后退，左侧L1+右遥感（左右推）为左右旋转
+- L2触发全向轮模式：左侧L2+左遥感(上下推)为前进后退，左侧L2+右遥感（左右推）为横移</p>
+<p><strong>键盘控制:</strong></p>
+<pre><code class="language-bash"># 启动底层连接
+roslaunch abot bringup.launch
+
+# 查看加载的话题
+rostopic list
+
+# 启动键盘控制
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+</code></pre>
+<p><strong>键盘控制基础:</strong>
+- 小写模式："i"前进，","后退，"j"与"l"是左转右转
+- 大写模式（Holonomic mode全向轮模式）：用于麦轮、Omni全向轮</p>
+<h3 id="52-imu">5.2 IMU自动校正</h3>
+<pre><code class="language-bash"># 启动底层连接
+roslaunch abot bringup.launch
+
+# IMU校正
+cd ~/catkin_ws/src/abot_project/abot/param/imu
+rosrun imu_calib do_calib
+</code></pre>
+<h3 id="53">5.3 角速度校正</h3>
+<pre><code class="language-bash"># 启动底层连接
+roslaunch abot bringup.launch
+
+# 启动角速度校正
+rosrun abot_nav calibrate_angular.py
+
+# 打开可视化工具
+rosrun rqt_reconfigure rqt_reconfigure
+</code></pre>
+<p><strong>角速度比例系数计算:</strong>
+- 情况1：小车停下后度数60度（实际转了370度）→ <code>anguler_scale = 370/360 = 1.028</code>
+- 情况2：小车停下后度数40度（实际转了350度）→ <code>anguler_scale = 350/360 = 0.972</code></p>
+<h3 id="54">5.4 线速度校正</h3>
+<pre><code class="language-bash"># 启动底层连接
+roslaunch abot bringup.launch
+
+# 启动线速度校正
+rosrun abot_nav calibrate_linear.py
+
+# 打开可视化工具
+rosrun rqt_reconfigure rqt_reconfigure
+</code></pre>
+<p><strong>线速度比例系数计算:</strong>
+- 小车走了1.1米 → <code>linear_scale = 1.1/1 = 1.1</code>
+- 小车走了0.9米 → <code>linear_scale = 0.9/1 = 0.9</code></p>
+<hr>
+<h2 id="ros-slam">第六章 ROS SLAM</h2>
+<h3 id="61-rosslam">6.1 ROS机器人SLAM构建地图与保存</h3>
+<p><strong>Gmapping SLAM算法构建地图:</strong></p>
+<pre><code class="language-bash"># 启动底层
+roslaunch abot bringup.launch
+
+# 启动SLAM
+roslaunch abot lidar_slam.launch
+
+# 启动RVIZ
+rviz
+# File → Open Config → ~/catkin_ws/src/abot_project/abot/rviz/slam.rviz
+
+# 启动键盘控制
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+
+# 保存地图
+cd ~/catkin_ws/src/abot_project/abot/maps
+# 执行保存地图脚本
+</code></pre>
+<p><strong>Hector SLAM算法构建地图:</strong></p>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot hector_slam.launch
+rviz
+# File → Open Config → ~/catkin_ws/src/abot_project/abot/rviz/slam.rviz
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+# 调整线速度到0.3m/s，角速度到0.5rad/s
+</code></pre>
+<p><strong>Karto SLAM算法构建地图:</strong></p>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot karto_slam.launch
+rviz
+# File → Open Config → ~/catkin_ws/src/abot_project/abot/rviz/slam.rviz
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+</code></pre>
+<p><strong>Cartographer SLAM算法构建地图:</strong></p>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot rplidar.launch
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+# 调整线速度到0.3m/s，角速度到0.5rad/s
+roslaunch abot cartographer_slam.launch
+rviz
+# File → Open Config → ~/catkin_ws/src/abot_project/abot/rviz/slam.rviz
+</code></pre>
+<h3 id="62-ros">6.2 ROS机器人全自动构建地图</h3>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+# 执行自动建地图命令
+# 机器人会自动探索未知区域，完成地图构建
+</code></pre>
+<h3 id="63-ros">6.3 ROS机器人单点与多点自动导航避障</h3>
+<p><strong>单点导航:</strong></p>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot navigate.launch
+rviz
+# 打开navigate.rviz文件
+# 使用2D Nav Goal在地图上给定目标点
+</code></pre>
+<p><strong>多点导航:</strong></p>
+<pre><code class="language-bash"># 编辑巡航点文件
+vim ~/catkin_ws/src/abot_project/abot/nodes/abot_patrol_nav.py
+
+# 启动巡航
+roslaunch abot bringup.launch
+# RVIZ中选择navigate.rviz文件
+roslaunch abot abot_patrol_nav.launch
+</code></pre>
+<h3 id="64-ros">6.4 ROS机器人深度双目与激光雷达构建三维建图与导航</h3>
+<p><strong>RTAB-Map 3D建图:</strong></p>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot_slam_3d abot_3dmap.launch
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+# 调整线速度到0.17，角速度到0.3
+</code></pre>
+<p><strong>RTAB-Map 3D导航:</strong></p>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot_slam_3d abot_3dnav.launch
+# 使用2D Pose Estimate校正位姿，2D Nav Goal选点导航
+</code></pre>
+<hr>
+<h2 id="ros-app">第七章 ROS 安卓 APP</h2>
+<h3 id="71-rosapp">7.1 ROS机器人安卓手机/平板APP的控制与远程监控</h3>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot camera.launch
+# 安装Make Map.apk，Master URI指向主控端IP
+</code></pre>
+<h3 id="72-rosapp">7.2 ROS机器人安卓手机/平板APP建地图</h3>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot camera.launch
+roslaunch abot lidar_slam.launch
+rviz
+# File → Open Config → ~/catkin_ws/src/abot_project/abot/rviz/slam.rviz
+</code></pre>
+<h3 id="73-rosapp">7.3 ROS机器人安卓手机/平板APP导航</h3>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot camera.launch
+roslaunch abot navigate.launch
+rviz
+# File → Open Config → ~/catkin_ws/src/abot_project/abot/rviz/navigate.rviz
+</code></pre>
+<hr>
+<h2 id="_6">第八章 机器人视觉</h2>
+<h3 id="81-hsv_toolhsv">8.1 利用hsv_tool查找hsv色值</h3>
+<pre><code class="language-bash"># 进入工具目录
+cd ~/catkin_ws/src/abot_project/abot_object_detect/tools
+python abot_hsv.py
+</code></pre>
+<h3 id="82">8.2 色块识别实践</h3>
+<pre><code class="language-bash">roslaunch abot camera.launch
+roslaunch abot_object_detect abot_ball_object.launch
+rosrun rqt_image_view rqt_image_view
+# 选择&quot;object_image&quot;话题
+</code></pre>
+<h3 id="83">8.3 人脸识别与身份识别实践</h3>
+<pre><code class="language-bash"># 基于Haar的人脸识别
+roslaunch abot camera.launch
+roslaunch abot_object_detect abot_facehaar_object.launch
+rosrun rqt_image_view rqt_image_view
+
+# 基于face_recognition的人脸识别
+roslaunch abot_object_detect abot_face_object.launch
+
+# 基于face_recognition的身份识别
+roslaunch abot_object_detect abot_facename_object.launch
+</code></pre>
+<h3 id="84-pid">8.4 PID单线视觉寻线实践</h3>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+roslaunch abot_line_follower camera.launch
+roslaunch abot_line_follower abot_line.launch
+</code></pre>
+<h3 id="85-ar-ar">8.5 AR 标签姿态定位检测与AR跟随</h3>
+<pre><code class="language-bash"># 创建AR标签
+rosrun ar_track_alvar createMarker -s 5 0
+rosrun ar_track_alvar createMarker -s 5 1
+rosrun ar_track_alvar createMarker -s 5 2
+
+# AR标签检测
+roslaunch abot_ar_track abot_ar_camera.launch
+rviz
+# 打开 ~/catkin_ws/src/abot_project/abot_ar_track/rviz/abot_ar_tags.rviz
+
+# AR跟随
+roslaunch abot bringup.launch
+roslaunch abot_ar_track abot_ar_depth.launch
+roslaunch abot_ar_track abot_ar_follower.launch
+</code></pre>
+<h3 id="86-kcf">8.6 KCF特定目标追踪</h3>
+<pre><code class="language-bash">roslaunch abot bringup.launch
+# 启动后按住左键框选追踪目标
+</code></pre>
+<h3 id="87-svm">8.7 SVM人体追踪</h3>
+<pre><code class="language-bash">roslaunch abot camera.launch
+roslaunch abot_object_detect abot_people_object.launch
+rosrun rqt_image_view rqt_image_view
+</code></pre>
+<h3 id="88">8.8 基于深度摄像头的跟随</h3>
+<pre><code class="language-bash">roslaunch abot camera.launch
+roslaunch abot_follower follower.launch
+</code></pre>
+<h3 id="89-rosopencv_apps">8.9 ROS机器人Opencv_apps常用图形处理示例</h3>
+<pre><code class="language-bash">roslaunch abot camera.launch
+
+# 目标追踪
+roslaunch opencv_apps camshift.launch
+
+# 哈夫变换圆形检测
+roslaunch opencv_apps hough_circles.launch
+
+# 轮廓检测
+roslaunch opencv_apps find_contours.launch
+
+# 包检测
+roslaunch opencv_apps convex_hull.launch
+
+# 特征点检测分析
+roslaunch opencv_apps goodfeature_track.launch
+roslaunch opencv_apps lk_flow.launch
+
+# 模糊处理
+roslaunch opencv_apps smoothing.launch
+
+# 图像金字塔
+roslaunch opencv_apps pyramids.launch
+</code></pre>
+<hr>
+<h2 id="_7">第九章 机器人深度学习</h2>
+<h3 id="91-jetson-deep-learning">9.1 基于jetson deep learning的目标分类与目标检测</h3>
+<pre><code class="language-bash">roslaunch abot camera.launch
+
+# 目标分类
+roslaunch abot_deep_learning abot_classify.launch
+rostopic echo /abot_classify_node/classification
+
+# 目标检测
+roslaunch abot_deep_learning abot_detect.launch
+rostopic echo /abot_detect_node/detections
+</code></pre>
+<h3 id="92-yolo-v4">9.2 基于yolo v4的目标检测</h3>
+<pre><code class="language-bash">roslaunch abot camera.launch
+roslaunch abot_yolo_detection abot_detection.launch
+rosrun rqt_image_view rqt_image_view
+# 查看话题：/abot_object_detection/output_image
+</code></pre>
+<hr>
+<h2 id="_8">第十章 移动视觉抓取</h2>
+<h3 id="101">10.1 机械臂控制协议讲解</h3>
+<p><strong>JSON控制格式:</strong></p>
+<p><strong>夹爪控制:</strong></p>
+<pre><code class="language-json">{&quot;abotxArmCmd&quot;: 2, &quot;Gripper&quot;: 100, &quot;time&quot;: 1000}
+</code></pre>
+<p><strong>姿态控制:</strong></p>
+<pre><code class="language-json">{&quot;abotxArmCmd&quot;: 1, &quot;Pose&quot;: {&quot;x&quot;: 100,&quot;y&quot;: 100,&quot;z&quot;: 100,&quot;rotary&quot;: 90},&quot;time&quot;: 1000}
+</code></pre>
+<p><strong>舵机轨迹控制:</strong></p>
+<pre><code class="language-json">{&quot;abotxArmCmd&quot;: 3, &quot;Trajectory&quot;: {&quot;id2&quot;: 500, &quot;id3&quot;: 500, &quot;id4&quot;:500,&quot;id5&quot;: 500,&quot;id6&quot;: 500}, &quot;time&quot;: 1000}
+</code></pre>
+<h3 id="102">10.2 查找色块识别</h3>
+<pre><code class="language-bash">roscd abot_object_detect/tools
+python abot_hsv.py
+</code></pre>
+<h3 id="103">10.3 机械臂的手眼标定</h3>
+<p><strong>配置校正模式环境:</strong></p>
+<pre><code class="language-bash">$ vim .bashrc
+# 设置 export AUTO_ARM_CALIB=calibration
+# 屏蔽 export AUTO_ARM_CALIB=action
+$ source .bashrc
+
+roslaunch abot bringup.launch
+roslaunch abot_xarm abot_xarm_camera.launch
+</code></pre>
+<p><strong>开始标定:</strong></p>
+<pre><code class="language-bash">roslaunch abot_xarm abot_move_grasp.launch
+rosrun rqt_reconfigure rqt_reconfigure
+# 调整x,y,z让机械臂到达校正点，记录值并写入launch文件
+</code></pre>
+<h3 id="104">10.4 移动抓取</h3>
+<pre><code class="language-bash"># 启动底层和摄像头
+roslaunch abot bringup.launch
+roslaunch abot_xarm abot_xarm_camera.launch
+
+# 启动移动抓取
+roslaunch abot_xarm abot_move_grasp.launch
+</code></pre>
+<hr>
+<h2 id="_9">第十一章 外部传感器话题消息的使用</h2>
+<pre><code class="language-bash"># 启动底盘连接
+roslaunch abot bringup.launch
+
+# 查看所有话题
+rostopic list
+
+# 空气传感器
+rostopic echo /airquality
+
+# 温湿度传感器
+rostopic echo /dht
+
+# 按键传感器
+rostopic echo /button
+
+# 巡线传感器
+rostopic echo /trackline
+
+# 超声波传感器
+rostopic echo /sonar
+</code></pre>
+<hr>
+<h2 id="xarm">第十二章 xArm 机械臂控制</h2>
+<h3 id="121-xarm">12.1 基于xArm机械臂的运动学理论</h3>
+<p><strong>正向运动学Python实现:</strong></p>
+<pre><code class="language-python">import numpy as np
+import sympy as sym
+from sympy import pi
+
+# DH表参数定义
+d_1, a_1, a_2, a_3, a_4 = sym.symbols(&quot;d_1, a_1, a_2, a_3, a_4&quot;)
+theta_1, theta_2, theta_3, theta_4 = sym.symbols(&quot;theta_1, theta_2, theta_3, theta_4&quot;)
+
+# 坐标系变换
+T01 = DH(0, 0, theta_1, d_1)
+T12 = DH(-pi/2, a_1, theta_2, 0)
+T23 = DH(0, a_2, theta_3, 0)
+T34 = DH(0, a_3, theta_4, 0)
+T45 = DH(0, a_4, -pi/2, 0)
+T56 = DH(-pi/2, 0, 0, 0)
+
+# 基坐标系到工具坐标系变换
+T06 = T01 * T12 * T23 * T34 * T45 * T56
+</code></pre>
+<hr>
+<h2 id="opencv">第十三章 Opencv 视觉基础</h2>
+<h3 id="123">12.3 实验步骤</h3>
+<p><strong>OpenCV环境配置:</strong></p>
+<pre><code class="language-bash">pip3 install opencv-contrib-python -i https://pypi.tuna.tsinghua.edu.cn/simple
+</code></pre>
+<p><strong>Python导入OpenCV:</strong></p>
+<pre><code class="language-python">import cv2
+</code></pre>
+<h3 id="124">12.4 图像读取与保存</h3>
+<p><strong>读入图片:</strong></p>
+<pre><code class="language-python">import cv2
+img = cv2.imread('cat.jpg')  # 默认BGR彩图
+img_gray = cv2.imread('cat.jpg', cv2.IMREAD_GRAYSCALE)  # 灰度图
+</code></pre>
+<p><strong>显示图片:</strong></p>
+<pre><code class="language-python">cv2.imshow('image', img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+</code></pre>
+<p><strong>保存图片:</strong></p>
+<pre><code class="language-python">cv2.imwrite('output.jpg', img)
+</code></pre>
+<h3 id="125">12.5 摄像头与视频流</h3>
+<p><strong>打开USB摄像头:</strong></p>
+<pre><code class="language-python">import cv2
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+while True:
+    success, img = cap.read()
+    cv2.imshow(&quot;Result&quot;, img)
+    if cv2.waitKey(1) &amp; 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+</code></pre>
+<h3 id="126">12.6 图像色彩空间的转换</h3>
+<p><strong>RGB转HSV:</strong></p>
+<pre><code class="language-python">import cv2
+img = cv2.imread('image.jpg')
+hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+</code></pre>
+<h3 id="127">12.7 图像处理与计算机视觉基础</h3>
+<p><strong>图像阈值化:</strong></p>
+<pre><code class="language-python">import cv2
+img = cv2.imread('cat.jpg', 0)
+ret, thresh1 = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
+</code></pre>
+<p><strong>Canny边缘检测:</strong></p>
+<pre><code class="language-python">edges = cv2.Canny(img, 100, 200)
+</code></pre>
+<p><strong>高斯滤波:</strong></p>
+<pre><code class="language-python">blur = cv2.GaussianBlur(img, (5, 5), 0)
+</code></pre>
+<p><strong>形态学操作（膨胀）:</strong></p>
+<pre><code class="language-python">kernel = np.ones((5, 5), np.uint8)
+dilation = cv2.dilate(img, kernel, iterations=1)
+</code></pre>
+<h3 id="1274-hsv">12.7.4 HSV颜色分割</h3>
+<p><strong>实时HSV色值查找工具:</strong></p>
+<pre><code class="language-python">import cv2
+import numpy as np
+
+def nothing(x):
+    pass
+
+cap = cv2.VideoCapture(0)
+cv2.namedWindow(&quot;HSVBars&quot;)
+cv2.createTrackbar(&quot;LH&quot;, &quot;HSVBars&quot;, 0, 179, nothing)
+cv2.createTrackbar(&quot;LS&quot;, &quot;HSVBars&quot;, 0, 255, nothing)
+cv2.createTrackbar(&quot;LV&quot;, &quot;HSVBars&quot;, 0, 255, nothing)
+cv2.createTrackbar(&quot;UH&quot;, &quot;HSVBars&quot;, 179, 179, nothing)
+cv2.createTrackbar(&quot;US&quot;, &quot;HSVBars&quot;, 255, 255, nothing)
+cv2.createTrackbar(&quot;UV&quot;, &quot;HSVBars&quot;, 255, 255, nothing)
+
+while True:
+    _, frame = cap.read()
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    l_h = cv2.getTrackbarPos(&quot;LH&quot;, &quot;HSVBars&quot;)
+    l_s = cv2.getTrackbarPos(&quot;LS&quot;, &quot;HSVBars&quot;)
+    l_v = cv2.getTrackbarPos(&quot;LV&quot;, &quot;HSVBars&quot;)
+    u_h = cv2.getTrackbarPos(&quot;UH&quot;, &quot;HSVBars&quot;)
+    u_s = cv2.getTrackbarPos(&quot;US&quot;, &quot;HSVBars&quot;)
+    u_v = cv2.getTrackbarPos(&quot;UV&quot;, &quot;HSVBars&quot;)
+
+    lower_blue = np.array([l_h, l_s, l_v])
+    upper_blue = np.array([u_h, u_s, u_v])
+    mask = cv2.inRange(hsv, lower_blue, upper_blue)
+    result = cv2.bitwise_and(frame, frame, mask=mask)
+
+    cv2.imshow(&quot;Orgin&quot;, frame)
+    cv2.imshow(&quot;Result&quot;, result)
+
+    if cv2.waitKey(1) &amp; 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+</code></pre>
+<h3 id="128-opencv">12.8 OpenCV实战案例</h3>
+<p><strong>人脸识别:</strong></p>
+<pre><code class="language-python">import cv2
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+img = cv2.imread('face.jpg')
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+for (x, y, w, h) in faces:
+    cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+cv2.imshow('Faces found', img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+</code></pre>
+<p><strong>实时人脸识别:</strong></p>
+<pre><code class="language-python">import cv2
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    for (x, y, w, h) in faces:
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+    cv2.imshow('Faces found', frame)
+    if cv2.waitKey(1) &amp; 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+</code></pre>
+<p><strong>目标跟踪（MeanShift算法）:</strong></p>
+<pre><code class="language-python">import cv2
+import numpy as np
+
+cap = cv2.VideoCapture(0)
+ret, frame = cap.read()
+r, h, c, w = 240, 100, 400, 160
+track_window = (c, r, w, h)
+roi = frame[r:r+h, c:c+w]
+hsv_roi = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+mask = cv2.inRange(hsv_roi, np.array((0., 60., 32.)), np.array((180., 255., 255.)))
+roi_hist = cv2.calcHist([hsv_roi], [0], mask, [180], [0, 180])
+cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
+
+while(True):
+    ret, frame = cap.read()
+    if ret == True:
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+        ret, track_window = cv2.meanShift(dst, track_window, term_crit)
+        x, y, w, h = track_window
+        img2 = cv2.rectangle(frame, (x, y), (x+w, y+h), 255, 2)
+        cv2.imshow('img2', img2)
+        if cv2.waitKey(1) &amp; 0xFF == ord('q'):
+            break
+    else:
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+</code></pre></div></section><section id="trouble" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">3. 故障排查 TROUBLESHOOTING</h1><div class="src">来源: <code>TROUBLESHOOTING.md</code></div><div class="md"><h1 id="_1">小车调试踩坑手册</h1>
+<blockquote>
+<p>来源：实车实验 Run 4~10，每一条都有日志可查。按症状→根因→解法组织。</p>
+</blockquote>
+<hr>
+<h2 id="1">1. 轨迹漂移</h2>
+<blockquote>
+<p>轨迹漂移的完整实验数据分析见 <code>reports/调参极限分析报告.md</code>。</p>
+<p><strong>一句话结论</strong>：麦轮全向底盘存在轨迹漂移，<code>ABOTBASE=omni</code> 配置正确。优先排查：麦轮滚子打滑、轮子安装方向、里程计标定、轮距/轴距参数。</p>
+</blockquote>
+<hr>
+<h2 id="2">2. 导航与定位</h2>
+<h3 id="21-amcl">2.1 AMCL 初始位姿错误导致粒子发散</h3>
+<p><strong>症状</strong>：小车启动后 AMCL 长时间不收敛，位姿漂移严重。</p>
+<p><strong>根因</strong>：<code>initial_pose_x/y/a</code> 设为 (0,0,0)，但小车实际停放位置不是原点。AMCL 在错误位置初始化粒子，需要大量激光匹配才能修正。</p>
+<p><strong>解法</strong>：
+- 在 <code>amcl.launch</code> 中设置正确的初始位姿（当前: x=0.6, y=-0.4, yaw=0）
+- 或启动后用 <code>rostopic pub /initialpose</code> 手动设定
+- 使用 <code>patrol_run.sh</code> 中的自动 initialpose 流程</p>
+<h3 id="22-move_base">2.2 move_base 耗时过长</h3>
+<p><strong>症状</strong>：move_base 规划+执行一个目标点耗时远超预期，controller 反复调整。</p>
+<p><strong>根因</strong>：
+- <code>controller_patience</code> 设为 15 秒，每次调整都等到超时才放弃
+- TEB 的 <code>weight_max_vel_theta</code> 太小（=1），规划器倾向旋转而非平移</p>
+<p><strong>解法</strong>：
+- <code>controller_patience</code> → 5 秒（<code>move_base_params.yaml</code>）
+- <code>weight_max_vel_theta</code> → 10（<code>teb_omni_planner_params.yaml</code>）
+- <code>oscillation_timeout</code> → 15（留足够时间恢复）</p>
+<h3 id="23">2.3 激光雷达扫描到车体导致避障异常</h3>
+<p><strong>症状</strong>：小车原地打转或路径规划避开"自己"，因为激光扫到了车体边缘。</p>
+<p><strong>根因</strong>：<code>laser_filters</code> 的 <code>min_x</code> 不够大，车体部分被激光束覆盖。</p>
+<p><strong>解法</strong>：<code>x4_laserfilter.yaml</code> 中 <code>min_x</code> → -0.25（遮掉更多车体前方区域）。</p>
+<h3 id="24-cartographer-tracking_frame">2.4 Cartographer tracking_frame 配错</h3>
+<p><strong>症状</strong>：建图时轨迹扭曲，点云无法对齐。</p>
+<p><strong>根因</strong>：<code>tracking_frame</code> 和 <code>published_frame</code> 设为 <code>laser</code>，应该是 <code>base_footprint</code>。Cartographer 需要知道机器人的坐标系而非传感器坐标系。</p>
+<p><strong>解法</strong>：<code>rplidar_lds.lua</code> 中改 <code>tracking_frame = "base_footprint"</code>，<code>published_frame = "base_footprint"</code>。</p>
+<hr>
+<h2 id="3">3. 硬件与通信</h2>
+<h3 id="31">3.1 不同激光雷达型号波特率不同</h3>
+<p><strong>症状</strong>：换了激光雷达后无数据输出。</p>
+<p><strong>根因</strong>：
+- A1/A2: 115200
+- A3: 256000
+- C1: 460800</p>
+<p><strong>解法</strong>：在 <code>rplidar.launch</code> 中切换 <code>serial_baudrate</code>，默认已设为 460800（C1）。</p>
+<h3 id="32">3.2 里程计线性标定不准</h3>
+<p><strong>症状</strong>：走 1 米实际位移误差 &gt; 2cm。</p>
+<p><strong>根因</strong>：轮径磨损、地面摩擦力差异导致编码器计数偏移。</p>
+<p><strong>解法</strong>：在 <code>bringup.launch</code> 中微调 <code>linear_scale</code>（当前: 1.014）。标定方法：让小车走 1 米，量测实际距离，<code>linear_scale *= 目标/实际</code>。</p>
+<hr>
+<h2 id="4">4. 环境与网络</h2>
+<h3 id="41-ip">4.1 双网段 IP 切换</h3>
+<p><strong>症状</strong>：SSH 突然连不上，ping 不通。</p>
+<p><strong>根因</strong>：小车接在不同的 WiFi 下会有不同 IP：
+- 网段 A: <code>192.168.36.46</code>
+- 网段 B: <code>192.168.43.211</code></p>
+<p><strong>解法</strong>：
+- 两个都 ping 一下，哪个通用哪个
+- 记入 <code>README.md</code>（硬件详情章节）
+- 连上车后 <code>hostname -I</code> 确认当前 IP</p>
+<h3 id="42-ros_master_uri">4.2 ROS_MASTER_URI 未设置</h3>
+<p><strong>症状</strong>：本地笔记本无法 <code>rostopic list</code> 看小车话题。</p>
+<p><strong>根因</strong>：ROS 多机通信需要设置 <code>ROS_MASTER_URI=http://小车IP:11311</code>。</p>
+<p><strong>解法</strong>：笔记本端执行 <code>export ROS_MASTER_URI=http://192.168.43.211:11311</code>，并确保 <code>ROS_IP</code> 设为本机 IP。</p>
+<hr>
+<h2 id="5">5. 编码坑</h2>
+<h3 id="51-windows-linux">5.1 Windows ↔ Linux 文件乱码</h3>
+<p><strong>症状</strong>：YAML 文件中文注释在 Windows 上显示乱码。</p>
+<p><strong>根因</strong>：车上文件用 GBK 编码，Windows 本地默认也是 GBK，但编辑器可能用 UTF-8 打开。</p>
+<p><strong>解法</strong>：所有文件统一用 UTF-8 编码。<code>iconv -f gbk -t utf-8</code> 转换。</p>
+<hr>
+<h2 id="_2">参考</h2>
+<ul>
+<li><code>logs/小车调节日志.txt</code> — 完整原始实验数据（Run 4~10）</li>
+<li><code>reports/调参极限分析报告.md</code> — 数学推导与实验分析</li>
+<li><code>README.md</code> — 硬件清单与当前状态</li>
+</ul></div></section><section id="log0526" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">4. 调试日志 2026-05-26 · SLAM建图与局部规划器解耦</h1><div class="src">来源: <code>logs/2026-05-26_SLAM建图与局部规划器解耦.md</code></div><div class="md"><h1 id="slam-gmapping">调试日志：SLAM 建图、定位解耦与 gmapping 调参</h1>
+<h2 id="_1">基本信息</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>日期</td>
+<td>2026-05-26</td>
+</tr>
+<tr>
+<td>实验编号</td>
+<td>SLAM-01</td>
+</tr>
+<tr>
+<td>执行人</td>
+<td>oy</td>
+</tr>
+<tr>
+<td>关联 spec</td>
+<td><code>abot_arm_learning/parallel/</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="_2">环境</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>小车 IP</td>
+<td>192.168.43.211</td>
+</tr>
+<tr>
+<td>ROS Master</td>
+<td>http://192.168.43.211:11311</td>
+</tr>
+<tr>
+<td>系统</td>
+<td>Melodic / Ubuntu 18.04 / Tegra X1</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="_3">目标</h2>
+<p>解决局部规划器(TEB/DWA)不稳定 + 开环里程计漂移两个问题：用激光 SLAM/定位锚定位姿，运动改走自闭环原语（不经 move_base）。</p>
+<hr>
+<h2 id="_4">操作步骤</h2>
+<pre><code class="language-bash"># 建图模式
+roslaunch abot bringup.launch          # odom + odom-&gt;base_footprint tf + cmd_vel
+roslaunch abot lidar_slam.launch       # rplidar + gmapping -&gt; /map + map-&gt;odom
+
+# 已知图导航模式(二选一，与 gmapping 互斥)
+roslaunch abot localize.launch         # 新建: lidar + map_server(comp.yaml) + amcl, 无 move_base
+
+# 运动执行(两模式通用)
+python2 ~/bags/auto_task_runner.py slam_test.yaml   # 读 map-&gt;base_footprint 闭环发 cmd_vel
+</code></pre>
+<hr>
+<h2 id="_5">结果</h2>
+<ul>
+<li>局部规划器解耦：确认 <code>client.py</code> 硬依赖 move_base（<code>wait_for_server</code>），<code>auto_task_runner.py</code> 不依赖（读 <code>map-&gt;base_footprint</code> tf 自闭环）。新建 <code>localize.launch</code>（amcl 去掉 move_base）。</li>
+<li>gmapping 建图跑通，<code>map-&gt;base_footprint</code> tf 正常发布。</li>
+<li><code>auto_task_runner.py</code> 闭环 body 系（后退 0.35 + 右移 3.0、action=pass）收敛无报错，step2 右移 3m 用时 ~16s（3m÷0.20）。</li>
+</ul>
+<hr>
+<h2 id="_6">异常记录</h2>
+<h3 id="1gmapping-mapodomtf">异常 1：gmapping 不发 map→odom，tf 树断开</h3>
+<p><strong>症状</strong>：<code>rosrun tf tf_echo map base_footprint</code> 报 "map does not exist" / "not part of the same tree"；gmapping 日志首帧 <code>Laser Pose= -2.41 -15.33</code>（贴地图下边界 ymin=-15）。</p>
+<p><strong>排查</strong>：<code>rostopic echo -n1 /odom/pose/pose/position</code> → x=-2.45, y=-15.35，odom 未归零。</p>
+<p><strong>根因</strong>：odom 跨多次测试累积未重启，机器人"以为"在 15m 外，落在 gmapping 地图窗口 <code>[-15,15]</code> 之外，建不出有效图、不发 tf。</p>
+<p><strong>解法</strong>：先关 gmapping → 重启 <code>bringup.launch</code>（EKF odom 归零）→ 再起 gmapping，机器人落在地图中心 (0,0)，map→odom 正常。</p>
+<h3 id="2">异常 2：建图不实时 + 移动时雷达偏移</h3>
+<p><strong>症状</strong>：地图几分钟不刷新；移动/转弯时 <code>/scan</code> 红点偏离地图墙体，地图 smeary（双墙、扇形拖影）。</p>
+<p><strong>根因</strong>：gmapping 更新阈值过粗——<code>map_update_interval=15.0</code>（每 15s 才重绘）、<code>linearUpdate/angularUpdate=0.7</code>（每 0.7m 或 0.7rad≈40° 才 scan-match 一次，间隔靠 odom 推算→漂）、<code>temporalUpdate=-0.5</code>（静止不更新，车没走满阈值时图冻数分钟）。</p>
+<p><strong>解法</strong>：改 <code>param/slam/slam_gmapping.xml</code>：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>旧</th>
+<th>新</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>map_update_interval</td>
+<td>15.0</td>
+<td>2.0</td>
+</tr>
+<tr>
+<td>linearUpdate</td>
+<td>0.7</td>
+<td>0.2</td>
+</tr>
+<tr>
+<td>angularUpdate</td>
+<td>0.7</td>
+<td>0.2</td>
+</tr>
+<tr>
+<td>temporalUpdate</td>
+<td>-0.5</td>
+<td>2.0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>状态：未闭环</strong>。改完 scp + 重启后用户报"仍不实时"，诊断进行中（待确认 <code>rosparam get /slam_gmapping/map_update_interval</code> 是否=2.0、文件是否 scp 到位、gmapping 是否真重启、<code>rostopic hz /map</code>）。最可能是没重启 gmapping 或 scp 路径不对。</p>
+<p><strong>后续决策</strong>：因 gmapping 实时性反复出问题，转向 <strong>cartographer</strong>（2D + 在线相关性扫描匹配，submap 0.3s 级发布，实时性天生更好）。见下方"cartographer 耦合"。</p>
+<hr>
+<h2 id="cartographer-gmapping">cartographer 耦合（gmapping 替代方案）</h2>
+<p>"耦合" = 时序工作流，<strong>不是同时跑</strong>（cartographer 与 amcl 仍互斥，都最终提供 map→odom）：</p>
+<pre><code>cartographer 建图(实时) → map_saver 存 comp.pgm/.yaml → amcl(localize.launch) 读图定位
+</code></pre>
+<p><strong>关键修复</strong>：<code>rplidar_lds.lua</code> 原配置 <code>provide_odom_frame=true</code> + <code>published_frame=base_footprint</code> → cartographer 会发整条 <code>map→odom→base_footprint</code>，和 bringup 的 EKF（已发 <code>odom→base_footprint</code>）<strong>双发冲突</strong>。改为 <code>published_frame=odom</code> + <code>provide_odom_frame=false</code> → cartographer 只发 <code>map→odom</code>，EKF 继续管 <code>odom→base_footprint</code>（robot_localization 共存的标准配法）。<code>use_odometry</code> 暂保持 false。</p>
+<p><strong>存图</strong>：cartographer 的 <code>cartographer_occupancy_grid_node</code> 发 <code>/map</code>，与 gmapping 一样直接 <code>map_saver -f $(rospack find abot)/maps/comp</code>（不需 .pbstream，除非用 cartographer 纯定位模式）。</p>
+<p><strong>待验证</strong>：scp <code>rplidar_lds.lua</code> 后跑阶段1，确认 ① <code>tf_echo map base_footprint</code> 有输出（链路 map→odom(carto)→base(EKF)）、② odom→base 不翻倍、③ rviz submap 实时刷新。</p>
+<hr>
+<h2 id="_7">关键结论</h2>
+<ol>
+<li><strong>两个互斥模式</strong>（都发 <code>map-&gt;odom</code>，永远二选一）：建图 = <code>bringup</code>+gmapping(<code>lidar_slam</code>)；已知图导航 = <code>bringup</code>+amcl(<code>localize.launch</code>)。<strong>不能与 <code>cartographer_slam</code>/<code>navigate.launch</code> 叠加</strong>（amcl 与 SLAM 抢 map→odom、map_server 抢 /map、lidar 抢串口）。</li>
+<li><strong>数据流</strong>：轮速+IMU→[EKF]→odom→base；激光→[gmapping/amcl]→map→odom；合成 map→base 给 <code>auto_task_runner</code> 闭环发 cmd_vel。全程不经 move_base/TEB/DWA。</li>
+<li><strong>建图原点 = 比赛原点的做法</strong>：不必为挪原点单独重建；重建时把车物理摆到比赛原点、重启 bringup 归零、再起 gmapping，则地图原点=比赛原点=(0,0)，与 <code>localize.launch</code> 里 amcl 初值 (0,0,0) 对齐。车头朝向 = 地图 +x 轴。</li>
+</ol>
+<hr>
+<h2 id="_8">待办 / 下一步</h2>
+<ul>
+<li>[ ] 闭合异常 2：确认参数生效、gmapping 实时刷新</li>
+<li>[ ] 从比赛原点慢走重建地图 → <code>map_saver -f $(rospack find abot)/maps/comp</code></li>
+<li>[ ] 卷尺实测 <code>auto_task_runner</code> 右移 3m 真实距离，对比开环 manhattan 的 ~2% 欠走，验证 SLAM 闭环是否消漂</li>
+<li>[ ] 切 <code>localize.launch</code> + 多点 waypoints 跑导航抓取</li>
+</ul>
+<hr>
+<h2 id="_9">本次文件变更</h2>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>变更</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>abot/launch/localize.launch</code></td>
+<td>新建（amcl 无 move_base）；map_file→comp.yaml；amcl 初值 (0,0,0)</td>
+</tr>
+<tr>
+<td><code>abot/param/slam/slam_gmapping.xml</code></td>
+<td>改 4 参数（见异常 2）</td>
+</tr>
+<tr>
+<td><code>abot/launch/include/cartographer/rplidar_lds.lua</code></td>
+<td>改 2 行（published_frame→odom、provide_odom_frame→false），与 EKF 共存</td>
+</tr>
+<tr>
+<td><code>abot/rviz/lidar_slam.rviz</code></td>
+<td>新建（建图用：Grid/TF/LaserScan/Map）</td>
+</tr>
+<tr>
+<td><code>abot/rviz/localize.rviz</code></td>
+<td>新建（导航用：多 amcl 粒子云）</td>
+</tr>
+<tr>
+<td><code>scripts/slam_test.yaml</code></td>
+<td>新建（body 系闭环测试 waypoint）</td>
+</tr>
+</tbody>
+</table></div></section><section id="tuning" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">5. 调参极限分析报告</h1><div class="src">来源: <code>reports/调参极限分析报告.md</code></div><div class="md"><h1 id="l">麦轮小车 L 形路径轨迹漂移分析报告</h1>
+<blockquote>
+<p>日期：2026-05-26
+实验范围：Run 4 ~ Run 10（共 7 次有效实验）
+状态：<strong>根因待重新排查</strong>（此前误判为差速轮，已更正为麦克纳姆轮）</p>
+</blockquote>
+<hr>
+<h2 id="0">0. 重要更正</h2>
+<p><strong>2026-05-26 更正</strong>：此前本报告及 README、CLAUDE.md、TROUBLESHOOTING.md 中均将底盘描述为"差速轮"，并据此得出结论"<code>ABOTBASE=omni</code> 与差速轮硬件不匹配 → MCU 无法执行 <code>tw.linear.y</code> → 轨迹漂移"。<strong>该前提错误。</strong></p>
+<p>小车实际底盘为<strong>麦克纳姆轮（Mecanum）四轮</strong>，<code>ABOTBASE=omni</code> 为正确配置。麦轮原生支持 <code>tw.linear.x</code>、<code>tw.linear.y</code>、<code>tw.angular.z</code> 三个自由度，MCU 可将全向指令分解为四个麦轮的独立转速，不存在"无法执行侧移指令"的问题。</p>
+<p>以下第 1~4 节保留原始分析（含错误前提）作为历史记录，第 5 节给出基于麦轮的正确排查方向。</p>
+<hr>
+<h2 id="1">1. 问题表现（实验数据有效）</h2>
+<p>小车执行 body 帧 L 形曼哈顿分解路径（先前进 38cm，再左移 280cm，最后原地旋转到目标朝向）时，出现三类异常：</p>
+<table>
+<thead>
+<tr>
+<th>异常</th>
+<th>表现</th>
+<th>期望</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>X 方向漂移（后退）</td>
+<td>左移阶段车身向后方滑动 6~16cm</td>
+<td>0cm</td>
+</tr>
+<tr>
+<td>Y 方向超调</td>
+<td>左移距离超出目标 6~11cm</td>
+<td>≤4cm（2% 以内）</td>
+</tr>
+<tr>
+<td>车身 wobble</td>
+<td>左移过程中车身扭动，轨迹非直线</td>
+<td>直线平移</td>
+</tr>
+</tbody>
+</table>
+<h3 id="map">终点精度汇总（map 帧）</h3>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>K_LIN</th>
+<th>ΔX</th>
+<th>ΔY</th>
+<th>距离误差</th>
+<th>角度误差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6</td>
+<td>1.0</td>
+<td>-15.5cm</td>
+<td>+6.0cm</td>
+<td>16.6cm (5.8%)</td>
+<td>-6.7°</td>
+</tr>
+<tr>
+<td>7</td>
+<td>2.5</td>
+<td>-10.6cm</td>
+<td>+6.5cm</td>
+<td>12.4cm (4.4%)</td>
+<td>+3.4°</td>
+</tr>
+<tr>
+<td>7b</td>
+<td>2.5</td>
+<td>-12.0cm</td>
+<td>-1.1cm</td>
+<td>12.1cm (4.3%)</td>
+<td>+4.1°</td>
+</tr>
+<tr>
+<td>9</td>
+<td>2.5</td>
+<td>-6.1cm</td>
+<td>+4.2cm</td>
+<td>7.4cm (2.6%)</td>
+<td>+1.2°</td>
+</tr>
+<tr>
+<td>10</td>
+<td>4.0</td>
+<td>-13.1cm</td>
+<td>-2.0cm</td>
+<td>13.2cm (4.7%)</td>
+<td>+2.8°</td>
+</tr>
+</tbody>
+</table>
+<h3 id="body">左移阶段 body 帧漂移</h3>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>K_LIN</th>
+<th>body X 漂移</th>
+<th>body Y 漂移</th>
+<th>主问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6</td>
+<td>1.0</td>
+<td>-15.5cm 后退</td>
+<td>+6.0cm 超调</td>
+<td>严重后退</td>
+</tr>
+<tr>
+<td>7</td>
+<td>2.5</td>
+<td>-7.9cm 后退</td>
+<td>+9.6cm 超调</td>
+<td>后退</td>
+</tr>
+<tr>
+<td>7b</td>
+<td>2.5</td>
+<td>-5.6cm 后退</td>
+<td>+10.7cm 超调</td>
+<td>后退</td>
+</tr>
+<tr>
+<td>9</td>
+<td>2.5</td>
+<td>+1.7cm 前进</td>
+<td>+7.3cm 超调</td>
+<td>左超调</td>
+</tr>
+<tr>
+<td>10</td>
+<td>4.0</td>
+<td>-6.8cm 后退</td>
+<td>+11.4cm 超调</td>
+<td>后退</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="2">2. 原分析（前提错误，存档）</h2>
+<p>~~小车底盘是<strong>差速轮</strong>（ABOTMODEL=x4），但系统配置为 <code>ABOTBASE=omni</code>（全向轮模式）。差速轮只有两个原生自由度，不具备侧移能力。MCU 收到 <code>tw.linear.y</code> 后无法执行纯侧移，将 omni 指令混算为等效的"侧前方"运动，导致轨迹漂移。~~</p>
+<p><strong>上述分析因底盘型号误判而作废。</strong></p>
+<hr>
+<h2 id="3">3. 调参过程（数据有效）</h2>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>K_LIN 从 1.0 增至 2.5</td>
+<td>X 漂移改善约 50%，Y 无改善</td>
+</tr>
+<tr>
+<td>K_LIN 从 2.5 增至 4.0</td>
+<td>无进一步改善</td>
+</tr>
+<tr>
+<td>K_LIN_HOLD = 5.0</td>
+<td>无效</td>
+</tr>
+<tr>
+<td>多次重复实验（7b、9、10）</td>
+<td>误差在噪声范围内波动，无趋势</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="4">4. 原结论（作废）</h2>
+<p>~~问题的本质不是参数不够好，而是控制架构与硬件不匹配。废弃 <code>tw.linear.y</code>，用"旋转→直行→旋转"替代侧移。~~</p>
+<p><strong>该结论基于错误前提，已作废。</strong></p>
+<hr>
+<h2 id="5">5. 基于麦轮的根因排查方向</h2>
+<h3 id="51">5.1 优先排查：麦轮滚子打滑</h3>
+<p>麦轮滚子（被动小轮）磨损后摩擦力下降，侧移时滚子不能有效滚动，导致实际运动方向偏离指令方向。表现与观测到的"左移超调 + 后退"一致。</p>
+<p><strong>验证方法</strong>：
+1. 检查四个麦轮滚子外观，看有无明显磨损、裂纹、转动卡滞
+2. 悬空状态下手动旋转每个滚子，感受阻力是否一致
+3. 更换磨损滚子或整车麦轮后复测</p>
+<h3 id="52">5.2 优先排查：麦轮安装方向</h3>
+<p>麦轮有正反安装要求——四个轮子的滚子方向必须与底盘运动学模型一致。装错一个（例如左前轮的滚子方向镜像），MCU 仍按正确模型分解速度，但该轮实际运动方向相反，导致车身扭动和漂移。</p>
+<p><strong>验证方法</strong>：
+1. 检查 ABOT M1 ARM 的官方麦轮安装图示
+2. 确认四个轮子滚子方向是否符合标准 X 形或 O 形布局
+3. 特别检查是否有轮子被拆卸后装反</p>
+<h3 id="53">5.3 里程计标定</h3>
+<p>当前 <code>linear_scale = 1.014</code>，未经严格标定验证。</p>
+<p><strong>验证方法</strong>：
+1. 让小车在直线上走 1m，测量实际距离，<code>linear_scale *= 目标/实际</code>
+2. 侧移测试：让小车纯侧移 1m，单独标定侧移方向的 scale
+3. 角速度标定：旋转 360°，比较 odom 输出与实际角度</p>
+<h3 id="54">5.4 轮距/轴距参数</h3>
+<p><code>ABOTMODEL=x4</code> 对应的轮距（track）和轴距（wheelbase）参数需要与实际测量值一致。偏差会导致旋转和侧移时的运动学分解出错。</p>
+<p><strong>验证方法</strong>：
+1. 实测小车四个麦轮中心之间的横向和纵向距离
+2. 对比 <code>ABOTMODEL=x4</code> 的配置文件中的参数值
+3. 不一致则修正参数或改用自定义模型</p>
+<h3 id="55">5.5 四轮接地均衡性</h3>
+<p>麦轮需要四个轮子均匀接地，任何一个悬空或压力不均都会导致该轮滚子打滑加剧。</p>
+<p><strong>验证方法</strong>：
+1. 在平坦地面上按压小车四角，感受悬挂回弹是否一致
+2. 在小车四角各放一张纸，看是否能抽出（压力测试）
+3. 调整悬挂或更换场地</p>
+<h3 id="56-amcl">5.6 AMCL 位姿估计噪声</h3>
+<p>Run 9（最佳，不可复现）提示 AMCL 位姿估计可能存在偶然波动，不一定是控制策略在起作用。</p>
+<p><strong>验证方法</strong>：
+1. 在已知位姿下（如靠墙对齐）做闭环测试，排除 AMCL 噪声
+2. 比较 <code>/odom</code> 和 <code>/amcl_pose</code> 的漂移量
+3. 用 <code>rqt_plot</code> 实时观察 pose 方差</p>
+<hr>
+<h2 id="6">6. 排查优先级</h2>
+<table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>排查项</th>
+<th>复杂度</th>
+<th>预期影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P0</td>
+<td>麦轮安装方向检查</td>
+<td>低（目视）</td>
+<td>高</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>滚子磨损检查</td>
+<td>低（目视+手动）</td>
+<td>高</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>里程计标定</td>
+<td>中（需测量）</td>
+<td>中</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>四轮接地均衡</td>
+<td>低</td>
+<td>中</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>轮距/轴距参数</td>
+<td>低（目视测量）</td>
+<td>中</td>
+</tr>
+<tr>
+<td>P5</td>
+<td>AMCL 噪声排除</td>
+<td>高</td>
+<td>低</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><em>历史实验数据见 <code>../logs/小车调节日志.txt</code></em>
+<em>关键代码：<code>scripts/auto_task_runner.py</code> → <code>_drive_to_point()</code> 方法</em></p></div></section><section id="automap" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">6. 自动建图指南 auto_map_guide</h1><div class="src">来源: <code>src/abot_project/abot/docs/auto_map_guide.md</code></div><div class="md"><h1 id="_1">自动建图和保存功能使用指南</h1>
+<p>本指南介绍如何使用自动建图和保存功能，在闭合空间内自动创建地图并保存。</p>
+<h2 id="_2">功能概述</h2>
+<p>自动建图和保存功能包含以下组件：</p>
+<ol>
+<li><code>auto_map_save.py</code> - 核心Python脚本，负责启动SLAM建图、等待指定时间后停止建图并保存地图</li>
+<li><code>run_auto_map.sh</code> - 启动脚本，简化运行过程</li>
+<li><code>auto_map_save.launch</code> - ROS launch文件，用于启动自动建图节点</li>
+</ol>
+<h2 id="_3">使用方法</h2>
+<h3 id="1launch">方法1：使用Launch文件（推荐）</h3>
+<pre><code class="language-bash">roslaunch abot auto_map_save.launch map_save_time:=120 map_name:=my_map
+</code></pre>
+<p>参数说明：
+- <code>map_save_time</code>：建图时间（秒），默认120秒
+- <code>map_name</code>：保存的地图名称，默认为auto_map</p>
+<h3 id="2">方法2：使用启动脚本</h3>
+<pre><code class="language-bash">chmod +x ~/catkin_ws/src/abot_project/abot/scripts/run_auto_map.sh
+~/catkin_ws/src/abot_project/abot/scripts/run_auto_map.sh 120 my_map
+</code></pre>
+<h3 id="3python">方法3：直接运行Python脚本</h3>
+<pre><code class="language-bash">rosrun abot auto_map_save.py _map_save_time:=120 _map_name:=my_map
+</code></pre>
+<h2 id="_4">工作流程</h2>
+<ol>
+<li>启动SLAM建图（使用lidar_slam.launch中的配置）</li>
+<li>机器人在环境中移动进行探索建图</li>
+<li>等待指定时间后自动停止SLAM</li>
+<li>使用map_server的map_saver保存地图</li>
+<li>地图文件保存到maps目录中</li>
+</ol>
+<h2 id="_5">注意事项</h2>
+<ol>
+<li>确保机器人在闭合空间内，以便获得完整地图</li>
+<li>建图时间应根据环境大小适当调整</li>
+<li>确保ROS环境已正确设置</li>
+<li>机器人需要配备激光雷达以进行SLAM建图</li>
+</ol>
+<h2 id="_6">故障排除</h2>
+<ol>
+<li>如果出现路径错误，请检查launch文件路径是否正确</li>
+<li>如果地图保存失败，请检查是否有写入maps目录的权限</li>
+<li>如果SLAM无法启动，请确保相关依赖包已安装</li>
+</ol></div></section><section id="autoreadme" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">7. abot_project 自动化说明 README_AUTO</h1><div class="src">来源: <code>src/abot_project/README_AUTO.md</code></div><div class="md"><h1 id="_1">一键启动导航抓取任务</h1>
+<h2 id="_2">使用方法</h2>
+<h3 id="_3">一键启动（推荐）</h3>
+<pre><code class="language-bash">./scripts/one_click_start.sh
+</code></pre>
+<h3 id="2launch">方法2：使用launch文件</h3>
+<pre><code class="language-bash"># 手动启动各个服务（按顺序）
+roslaunch abot bringup.launch
+roslaunch abot navigate.launch  
+conda activate 39 &amp;&amp; roslaunch vl_locate vl_locate.launch
+roslaunch ZachLab_grasp grasp.launch
+
+# 运行自动化任务
+roslaunch abot_project auto_navigation_grasp.launch
+</code></pre>
+<h2 id="_4">任务流程</h2>
+<ol>
+<li>导航到点1 → 抓取蓝方块</li>
+<li>导航到点2 → 放置到图片中心点</li>
+<li>导航到点3 → 抓取红方块</li>
+<li>导航到点4 → 放置到图片中心点</li>
+<li>导航到点5 → 抓取绿方块</li>
+<li>导航到点6 → 放置到图片中心点</li>
+<li>导航到点7 → 任务完成</li>
+</ol>
+<h2 id="_5">修改导航点</h2>
+<p>编辑 <code>scripts/auto_navigation_grasp.py</code> 中的 <code>waypoints</code> 数组来修改导航点坐标。</p></div></section><section id="abotreadme" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">8. abot 包 README</h1><div class="src">来源: <code>src/abot_project/abot/README.md</code></div><div class="md"><h1 id="abot">ABot机器人自动建图包</h1>
+<p>本包提供了ABot机器人在闭合空间内自动建图并保存的功能。</p>
+<h2 id="_1">功能特性</h2>
+<ul>
+<li>自动启动SLAM建图</li>
+<li>在指定时间后自动停止建图</li>
+<li>自动保存生成的地图</li>
+<li>支持参数配置（建图时间、地图名称等）</li>
+</ul>
+<h2 id="_2">组成部分</h2>
+<h3 id="python">Python脚本</h3>
+<ul>
+<li><code>auto_map_save.py</code> - 核心自动建图和保存脚本</li>
+</ul>
+<h3 id="launch">Launch文件</h3>
+<ul>
+<li><code>auto_map_save.launch</code> - 启动自动建图节点的launch文件</li>
+</ul>
+<h3 id="shell">Shell脚本</h3>
+<ul>
+<li><code>run_auto_map.sh</code> - 便捷启动脚本</li>
+<li><code>start_auto_mapping.sh</code> - 快速启动脚本</li>
+</ul>
+<h3 id="_3">文档</h3>
+<ul>
+<li><code>docs/auto_map_guide.md</code> - 详细使用指南</li>
+</ul>
+<h2 id="_4">依赖项</h2>
+<ul>
+<li>ROS Melodic (Ubuntu 18.04)</li>
+<li>SLAM相关包 (gmapping, cartographer等)</li>
+<li>map_server包</li>
+<li>机器人硬件：激光雷达、Mecanum轮底盘</li>
+</ul>
+<h2 id="_5">使用方法</h2>
+<h3 id="1launch">方法1：使用Launch文件（推荐）</h3>
+<pre><code class="language-bash">roslaunch abot auto_map_save.launch map_save_time:=120 map_name:=my_map
+</code></pre>
+<h3 id="2">方法2：使用启动脚本</h3>
+<pre><code class="language-bash">./scripts/start_auto_mapping.sh
+</code></pre>
+<h3 id="3python">方法3：直接运行Python脚本</h3>
+<pre><code class="language-bash">rosrun abot auto_map_save.py _map_save_time:=120 _map_name:=my_map
+</code></pre>
+<h2 id="_6">参数说明</h2>
+<ul>
+<li><code>map_save_time</code>：建图时间（秒），默认120秒</li>
+<li><code>map_name</code>：保存的地图名称，默认为auto_map</li>
+<li><code>map_directory</code>：地图保存目录，默认为包内的maps目录</li>
+</ul>
+<h2 id="_7">地图保存位置</h2>
+<p>生成的地图文件将保存在<code>maps</code>目录中，包含<code>.pgm</code>（图像）和<code>.yaml</code>（配置）文件。</p>
+<h2 id="_8">注意事项</h2>
+<ol>
+<li>确保机器人在闭合空间内，以便获得完整地图</li>
+<li>建图时间应根据环境大小适当调整</li>
+<li>确保机器人配备了正常工作的激光雷达</li>
+<li>确保ROS环境已正确设置</li>
+</ol>
+<h2 id="_9">故障排除</h2>
+<ol>
+<li>如果出现路径错误，请检查launch文件路径是否正确</li>
+<li>如果地图保存失败，请检查是否有写入maps目录的权限</li>
+<li>如果SLAM无法启动，请确保相关依赖包已安装</li>
+</ol></div></section></div></body></html>
