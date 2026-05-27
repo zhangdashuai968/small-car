@@ -3,10 +3,17 @@
 > 基于 ROS 的自主导航 + 视觉抓取 + 机械臂操控实验平台
 > 属于 [三仓库生态系统](https://github.com/zhangdashuai968/morning-newspaper/blob/master/WORKFLOW.md) 的工程代码仓库
 
+## 比赛目标与规则
+
+本项目的最终目标是**室内移动抓取搬运赛**：3.6×3.6 m 场地，起点 → 6 个搬运点（奇数抓 / 偶数放）→ 终点。
+**碰围栏/挡板 或 30s 不动即立即判负**——这是工程上坚持「只沿 xy 轴走、不漂移、原地转」的硬约束。
+
+完整场地、任务流程、得分与终止条件见 **[`比赛规则.md`](比赛规则.md)**。
+
 ## 硬件平台
 
 - **底盘**: ABOT M1 ARM 麦克纳姆轮（四轮）
-- **计算**: NVIDIA Jetson Nano（Ubuntu 20.04 / ROS Noetic）
+- **计算**: NVIDIA Jetson Nano（Tegra X1，Ubuntu 18.04 / ROS Melodic）
 - **传感器**: 思岚 RPLidar C1 | Astra RGBD 深度相机 | MPU6050 IMU（9轴）
 - **执行器**: 六自由度机械臂（吸盘抓取）
 - **连接**: 局域网 SSH（`192.168.36.46` 或 `192.168.43.211`，用户 `abot`）
@@ -27,9 +34,9 @@
 
 | 项目 | 值 |
 |------|-----|
-| 型号 | NVIDIA Jetson Nano |
-| OS | Ubuntu 20.04 |
-| ROS 发行版 | Noetic |
+| 型号 | NVIDIA Jetson Nano（Tegra X1，L4T R32.6.1） |
+| OS | Ubuntu 18.04 |
+| ROS 发行版 | Melodic（Python 2.7） |
 | 工作空间 | `~/catkin_ws` |
 | 串口设备 | `/dev/abotbase` (底盘), `/dev/abotlidar` (激光) |
 
@@ -60,7 +67,7 @@
 | 1 | **轨迹漂移** — 麦轮可能存在滚子打滑或里程计标定不准，详见 `TROUBLESHOOTING.md` | 排查中 |
 | 2 | **双 WiFi 网段 IP 不固定** — 每次开机可能分配到 36.x 或 43.x 网段 | 需手动 ping 确认 |
 | 3 | **编码文件中文乱码** — 车上部分文件为 GBK 编码，拉到 Windows 后需转换 | 逐步修复 |
-| 4 | **AMCL 初始位姿不匹配** — 启动时如果车不在 (0.6, -0.4) 需要重新设 initialpose | 已配置默认值 |
+| 4 | **AMCL 初始位姿不匹配** — `navigate.launch` 的 amcl 初值写死 (0.6, -0.4)，车没摆对会原地乱转 | 新方案 `localize.launch` 改用 (0,0,0) + 建图起点=比赛原点对齐 |
 
 > 详见 `TROUBLESHOOTING.md` 和 `reports/调参极限分析报告.md`
 
@@ -80,6 +87,8 @@ roslaunch ZachLab_grasp grasp.launch
 # 4. 执行任务
 rosrun abot auto_task_runner.py waypoints.yaml
 ```
+
+> **当前比赛方向（2026-05-26 起，绕开 move_base）**：因 TEB/DWA 局部规划器不稳 + 贴挡板避障有判负风险，运动改走 `auto_task_runner.py` 的自闭环原语（只沿 xy 轴走 + 原地转，读 `map→base_footprint` tf 直接发 `cmd_vel`）。定位用 `localize.launch`（amcl，无 move_base）替代 `navigate.launch`。详见 [`logs/2026-05-26_SLAM建图与局部规划器解耦.md`](logs/2026-05-26_SLAM建图与局部规划器解耦.md)，约束见 [`比赛规则.md`](比赛规则.md)。
 
 ## 项目结构
 
@@ -170,8 +179,8 @@ waypoints:
 
 ## 环境要求
 
-- ROS Noetic（Ubuntu 20.04）
-- Python 3.8+（`paramiko`、`numpy`）
+- 车上：ROS Melodic（Ubuntu 18.04），ROS 节点为 Python 2.7
+- 本地（开发机）：Python 3（`paramiko`、`numpy`），用于 `scripts/ssh-car.py` 等工具
 - OpenCV 4.x
 - CMake 2.8.3+
 
