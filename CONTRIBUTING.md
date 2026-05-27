@@ -74,7 +74,7 @@ git -c http.proxy=http://127.0.0.1:2080 push origin main
 
 ```bash
 pip install markdown
-python tools/gen_docs.py        # 在仓库任意位置都能跑, 输出到仓库根
+python tools/gen_docs.py        # 在仓库任意位置都能跑, 输出到 docs/团队必读文档汇总.html
 ```
 
 要增删收录文档，改 `tools/gen_docs.py` 里的 `DOCS` 列表。
@@ -93,6 +93,7 @@ cd ~/catkin_ws && source /opt/ros/melodic/setup.bash && catkin_make
 
 - 发运动指令前确认急停可达；机械臂回 home 再断电。
 - 改参数前备份原值；调试操作实时记 `logs/小车调节日志.txt`，整段实验记 `logs/YYYY-MM-DD_*.md`（模板 `logs/模板_调试日志.md`）。
+- **写完日志/报告，必须补一节「下一步 / 交接」**：写清楚下一个人该先干什么、注意什么风险、卡在哪。方便换人接手不断档（reports 的 AI 模板已有「下一次会话建议」，实验日志也要写「待办 / 下一步」）。
 
 ---
 
@@ -112,3 +113,22 @@ git checkout main                            # 回主线继续干活
 - 快照分支**只为留底 / 可回滚**，不要求干净，不合回 main。
 - **场地地图**（`comp.pgm`/`comp.yaml` 等）尤其要备份——这是比赛能定位的命根子，别只躺在车上。
 - 命名统一 `car-snapshot/YYYY-MM-DD`，方便按时间找回滚点。
+
+---
+
+## 8. 代码评审：feature 分支 → PR → /review（运动脚本必走）
+
+> **代码改动（尤其运动/导航脚本）走 PR 评审，别直推 main。** 在挡板边上跑的代码，一个 bug = 撞挡板 = 判负，上车前先静态过一遍。
+
+```bash
+git checkout -b feat/xxx           # 开 feature 分支
+# ... 写代码 ...
+git push -u origin feat/xxx
+# 到 GitHub 对 main 开 PR
+```
+
+然后在 Claude Code 输入框打 **`/review <PR号>`** → 评审意见作为行内评论贴到 PR。
+
+- **力度**：robot 代码用 `high` 或 `max`（宁可多报几条不确定的，也别漏）。
+- **局限**：`/review` 只查**代码对不对**，查不了**车上跑得对不对**（漂移 / amcl / 时序）——它是上车前的静态预检，**不替代真机验证**。
+- 文档 / 配置类改动可直推 main，不必走 PR。
