@@ -1,0 +1,13 @@
+# SLAM 闭环漂移测试：body 系镜像 manhattan(后退 0.35 + 右移 3.0)，纯走位不抓取。
+# 用法: python2 auto_task_runner.py slam_test.yaml
+# 前置: bringup.launch + lidar_slam.launch(gmapping) 均在跑, map->base_footprint tf 已有。
+# 闭环读 map->base_footprint(gmapping 校正), 对比开环 manhattan_test.py(读 /odom 未校正)的漂移。
+# frame: body → x=车头前向(负=后退), y=车体左向(负=右移); yaw=终点绝对 map 航向(起点=0 则填 0)。
+waypoints:
+  - name: slam_back_right
+    frame: body
+    x: -0.35
+    y: -3.00
+    yaw: 0.0
+    action: pass
+    object: ""
