@@ -41,7 +41,7 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 .md hr{border:none;border-top:1px solid var(--line);margin:20px 0}
 .md img{max-width:100%}
 .missing{color:var(--danger)}
-</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>10 份</b></span><span class="tag">生成 <b>2026-05-27 23:50</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#quickstart">快速启动命令速查（建图 / 存图 / 定位）</a></li><li><a href="#rules">比赛规则（最终目标 · 硬约束）</a></li><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="quickstart" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 快速启动命令速查（建图 / 存图 / 定位）</h1><div class="src">来源: <code>docs/启动命令速查.md</code></div><div class="md"><h1 id="_1">快速启动命令速查（建图 / 存图 / 定位）</h1>
+</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>10 份</b></span><span class="tag">生成 <b>2026-05-28 00:36</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#quickstart">快速启动命令速查（建图 / 存图 / 定位）</a></li><li><a href="#rules">比赛规则（最终目标 · 硬约束）</a></li><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="quickstart" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 快速启动命令速查（建图 / 存图 / 定位）</h1><div class="src">来源: <code>docs/启动命令速查.md</code></div><div class="md"><h1 id="_1">快速启动命令速查（建图 / 存图 / 定位）</h1>
 <blockquote>
 <p><code>localize.launch</code> 不绑定某个建图 launch，二者通过地图文件 <code>comp.yaml</code> 配对。
 <strong>建图与定位互斥</strong>——都发 <code>map→odom</code>，同一时间永远只能起一个。</p>
@@ -113,7 +113,8 @@ roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 </tbody>
 </table>
 <h3 id="goal_navpy">手动导航 goal_nav.py</h3>
-<pre><code class="language-bash">rosrun abot goal_nav.py                 # 或 python2 goal_nav.py
+<pre><code class="language-bash"># 脚本不在 abot 包内, 用 python2 绝对路径(rosrun abot 找不到)
+python2 ~/catkin_ws/src/abot_project/scripts/goal_nav.py
 </code></pre>
 <ul>
 <li>rviz 操作：① 加一个 <strong>Path</strong> display，topic 设 <code>/goal_nav/path</code>；② 点工具栏 <strong>2D Nav Goal</strong> 在地图上发目标 → 显示规划线 → 车按 x/y 直线段开过去。</li>
@@ -317,13 +318,13 @@ python scripts/ssh-car.py            # 交互式 shell；或 ssh-car.py &quot;�
 # 1. 比赛主流程（车上，定位 + 闭环运动）
 roslaunch abot bringup.launch        # 底盘 + IMU + EKF
 roslaunch abot localize.launch       # map_server(comp.yaml) + amcl
-rosrun abot ten_point_race.py        # 十点抓放（或 goal_nav.py 手动导航）
+python2 ~/catkin_ws/src/abot_project/scripts/ten_point_race.py   # 十点抓放
 
 # 定位栈不可用时的纯里程计保底（只需 bringup）
-rosrun abot ten_point_odom_race.py
+python2 ~/catkin_ws/src/abot_project/scripts/ten_point_odom_race.py
 </code></pre>
 <blockquote>
-<p>完整建图/存图/定位/运动命令（含清残留进程）见 <a href="docs/启动命令速查.md"><code>docs/启动命令速查.md</code></a>。脚本索引见 <a href="CLAUDE.md"><code>CLAUDE.md</code></a>。</p>
+<p>运动脚本在 <code>src/abot_project/scripts/</code>（<strong>不在 <code>abot</code> 包，用 <code>python2 &lt;路径&gt;</code> 跑，<code>rosrun abot</code> 找不到</strong>）。完整命令（含清残留进程、goal_nav 手动导航）见 <a href="docs/启动命令速查.md"><code>docs/启动命令速查.md</code></a>，脚本索引见 <a href="CLAUDE.md"><code>CLAUDE.md</code></a>。</p>
 </blockquote>
 <hr>
 <h2 id="_5">🔧 硬件</h2>
@@ -375,7 +376,8 @@ rosrun abot ten_point_odom_race.py
 src/&lt;其余&gt;/         vendored 第三方包(robot_localization/lidar/depth_camera…)，勿改
 scripts/            主机侧工具(ssh-car/sync/patrol_run) + 历史测试脚本
 src/abot_project/scripts/   新运动脚本(goal_nav/ten_point_*/seven_point_test)
-maps/  logs/  reports/  docs/  tools/
+src/abot_project/abot/maps/ 地图(comp.yaml=比赛图; launch 加载这份)
+scripts/  logs/  reports/  docs/  tools/  bags/
 </code></pre>
 <blockquote>
 <p>完整目录地图与「脚本放哪、哪份为准」见 <a href="CLAUDE.md"><code>CLAUDE.md</code></a> 与 <a href="CONTRIBUTING.md"><code>CONTRIBUTING.md</code></a>。</p>

@@ -36,7 +36,7 @@ small-car/
 │                          opencv_apps/robot_arm/imu_* 等)，**勿改、勿删**
 ├── scripts/            ← 主机侧工具(ssh-car/sync/patrol_run) + 历史测试脚本
 ├── bags/               ← rosbag; ⚠️ 内有与 scripts/ 分叉的 auto_task_runner.py
-├── maps/ + abot/maps/  ← 栅格地图(comp.yaml=比赛图, house/my1_map=历史)
+│       (地图在 abot/maps/: comp.yaml=比赛图, house/my1_map=历史, launch 加载这份)
 ├── logs/ reports/      ← 调试日志 / 会话报告(均有模板)
 ├── tools/gen_docs.py   ← 生成 docs/团队必读文档汇总.html
 ├── docs/               ← 团队文档(架构总览/比赛规则/启动命令速查/TROUBLESHOOTING/汇总HTML)

@@ -52,13 +52,13 @@ python scripts/ssh-car.py            # 交互式 shell；或 ssh-car.py "命令"
 # 1. 比赛主流程（车上，定位 + 闭环运动）
 roslaunch abot bringup.launch        # 底盘 + IMU + EKF
 roslaunch abot localize.launch       # map_server(comp.yaml) + amcl
-rosrun abot ten_point_race.py        # 十点抓放（或 goal_nav.py 手动导航）
+python2 ~/catkin_ws/src/abot_project/scripts/ten_point_race.py   # 十点抓放
 
 # 定位栈不可用时的纯里程计保底（只需 bringup）
-rosrun abot ten_point_odom_race.py
+python2 ~/catkin_ws/src/abot_project/scripts/ten_point_odom_race.py
 ```
 
-> 完整建图/存图/定位/运动命令（含清残留进程）见 [`docs/启动命令速查.md`](docs/启动命令速查.md)。脚本索引见 [`CLAUDE.md`](CLAUDE.md)。
+> 运动脚本在 `src/abot_project/scripts/`（**不在 `abot` 包，用 `python2 <路径>` 跑，`rosrun abot` 找不到**）。完整命令（含清残留进程、goal_nav 手动导航）见 [`docs/启动命令速查.md`](docs/启动命令速查.md)，脚本索引见 [`CLAUDE.md`](CLAUDE.md)。
 
 ---
 
@@ -84,7 +84,8 @@ src/abot_project/   自有 ROS 包(abot 主包 + grasp/vision/speech…)，可�
 src/<其余>/         vendored 第三方包(robot_localization/lidar/depth_camera…)，勿改
 scripts/            主机侧工具(ssh-car/sync/patrol_run) + 历史测试脚本
 src/abot_project/scripts/   新运动脚本(goal_nav/ten_point_*/seven_point_test)
-maps/  logs/  reports/  docs/  tools/
+src/abot_project/abot/maps/ 地图(comp.yaml=比赛图; launch 加载这份)
+scripts/  logs/  reports/  docs/  tools/  bags/
 ```
 
 > 完整目录地图与「脚本放哪、哪份为准」见 [`CLAUDE.md`](CLAUDE.md) 与 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
