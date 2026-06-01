@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>TEB 振荡分析 — 6点手动导航回放</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#c9d1d9;font-family:system-ui,sans-serif;padding:20px}
+h1{color:#58a6ff;margin-bottom:4px}
+.sub{color:#8b949e;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px}
+.card h2{color:#f0883e;font-size:14px;margin-bottom:12px}
+.card.full{grid-column:1/-1}
+.metrics{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.metric{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 20px;text-align:center;min-width:120px}
+.metric .val{font-size:28px;font-weight:700}
+.metric .lbl{font-size:11px;color:#8b949e;margin-top:4px}
+.val.bad{color:#f85149}
+.val.warn{color:#d2991d}
+.val.ok{color:#3fb950}
+.insight{background:#1a1f2b;border-left:3px solid #f0883e;padding:12px 16px;margin:12px 0;border-radius:0 8px 8px 0}
+.insight strong{color:#f0883e}
+</style>
+</head>
+<body>
+
+<h1>TEB 振荡分析</h1>
+<div class="sub">数据源: 6点手动2D Nav Goal, 129s, 615条cmd_vel | 参数: weight_kinematics_nh=0, weight_obstacle=100, costmap_rate=5Hz</div>
+
+<div class="metrics" id="metrics"></div>
+
+<div class="grid">
+  <div class="card full">
+    <h2>合速度 (body系) 随时间变化</h2>
+    <canvas id="chartSpeed" height="120"></canvas>
+    <div class="insight"><strong>关键观察:</strong> 速度曲线呈现锯齿状——从未有过平稳巡航段。每一次加速后几乎立即减速，形成持续振荡。</div>
+  </div>
+  <div class="card full">
+    <h2>角速度 (ω) 随时间变化</h2>
+    <canvas id="chartAngular" height="100"></canvas>
+    <div class="insight"><strong>关键观察:</strong> 角速度几乎从未归零。weight_kinematics_nh=0 让 TEB 每一帧都在修正航向，产生 0.288 rad/s 的平均旋转噪声。</div>
+  </div>
+  <div class="card">
+    <h2>速度分布直方图</h2>
+    <canvas id="chartHist" height="200"></canvas>
+  </div>
+  <div class="card">
+    <h2>运动状态占比</h2>
+    <canvas id="chartPie" height="200"></canvas>
+  </div>
+  <div class="card full">
+    <h2>加速度/减速度翻转检测 (振荡计数)</h2>
+    <canvas id="chartFlips" height="120"></canvas>
+    <div class="insight"><strong>关键观察:</strong> 红绿交替 = 加速↔减速翻转。86次翻转/129s = <strong>每1.5秒翻转一次</strong>。正常导航应该只有几次翻转（加速-巡航-减速）。</div>
+  </div>
+</div>
+
+<script src="../bags/replay_data.js"></script>
+<script>
+// --- Data processing ---
+const V = cmdVelData;
+const G = goalData;
+const t0 = V[0].t;
+const tEnd = V[V.length-1].t;
+const FAST_THRESH = 0.64; // 0.8 * 0.8
+
+// --- Metrics ---
+const speeds = V.map(v => v.sp);
+const nonzero = speeds.filter(s => s > 0.01);
+const meanSp = nonzero.reduce((a,b)=>a+b,0)/nonzero.length;
+const maxSp = Math.max(...speeds);
+const zeroPct = ((speeds.length - nonzero.length) / speeds.length * 100).toFixed(0);
+const angVels = V.map(v => Math.abs(v.vz));
+const meanAng = angVels.reduce((a,b)=>a+b,0)/angVels.length;
+
+// Count stop episodes
+let stops = 0, inStop = false, totalStop = 0;
+for (let i = 1; i < V.length; i++) {
+    const sp = V[i].sp; const prev = V[i-1].sp;
+    if (sp < 0.01 && prev >= 0.01) { inStop = true; stops++; }
+    if (sp >= 0.01 && prev < 0.01) inStop = false;
+}
+// Flip count
+let flips = 0, trend = 0;
+for (let i = 1; i < V.length; i++) {
+    const dv = V[i].sp - V[i-1].sp;
+    if (Math.abs(dv) > 0.02) {
+        const t = dv > 0 ? 1 : -1;
+        if (trend && t !== trend) flips++;
+        trend = t;
+    }
+}
+
+document.getElementById('metrics').innerHTML = `
+<div class="metric"><div class="val bad">${flips}x</div><div class="lbl">加减速翻转/129s</div></div>
+<div class="metric"><div class="val bad">${(flips/(tEnd/60)).toFixed(1)}</div><div class="lbl">翻转/分钟</div></div>
+<div class="metric"><div class="val warn">${meanSp.toFixed(2)}</div><div class="lbl">平均非零速度 m/s</div></div>
+<div class="metric"><div class="val ok">${maxSp.toFixed(2)}</div><div class="lbl">最高速度 m/s</div></div>
+<div class="metric"><div class="val bad">${zeroPct}%</div><div class="lbl">零速占比</div></div>
+<div class="metric"><div class="val warn">${(meanAng*57.3).toFixed(1)}&deg;/s</div><div class="lbl">平均角速度</div></div>
+<div class="metric"><div class="val bad">${stops}</div><div class="lbl">停顿次数</div></div>
+<div class="metric"><div class="val bad">${(flips/(tEnd)*60).toFixed(0)}s</div><div class="lbl">每次翻转间隔</div></div>
+`;
+
+// --- Chart: Speed over time ---
+const labels = V.map(v => v.t.toFixed(1));
+const speedData = V.map(v => v.sp);
+const goalLines = G.map(g => ({
+    x: labels.findIndex(l => parseFloat(l) >= g.t),
+    label: `(${g.x.toFixed(1)}, ${g.y.toFixed(1)})`
+}));
+
+new Chart(document.getElementById('chartSpeed'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: '合速度 (m/s)',
+            data: speedData,
+            borderColor: '#58a6ff',
+            backgroundColor: 'rgba(88,166,255,0.1)',
+            borderWidth: 1.2,
+            pointRadius: 0,
+            fill: true
+        }, {
+            label: '快速路阈值 (0.64 m/s)',
+            data: Array(labels.length).fill(FAST_THRESH),
+            borderColor: '#3fb950',
+            borderWidth: 1,
+            borderDash: [5,5],
+            pointRadius: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        animation: false,
+        scales: {
+            x: { ticks: { color: '#8b949e', maxTicksLimit: 20 }, grid: { color: '#21262d' } },
+            y: { min: 0, max: 1.0, ticks: { color: '#8b949e' }, grid: { color: '#21262d' },
+                title: { display: true, text: 'm/s', color: '#8b949e' } }
+        },
+        plugins: {
+            legend: { labels: { color: '#c9d1d9' } },
+            annotation: goalLines.length > 0 ? {} : undefined
+        }
+    }
+});
+
+// --- Chart: Angular velocity ---
+new Chart(document.getElementById('chartAngular'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: '角速度 (rad/s)',
+            data: V.map(v => v.vz),
+            borderColor: '#f0883e',
+            borderWidth: 1.2,
+            pointRadius: 0,
+            fill: true,
+            backgroundColor: 'rgba(240,136,62,0.08)'
+        }]
+    },
+    options: {
+        responsive: true,
+        animation: false,
+        scales: {
+            x: { ticks: { color: '#8b949e', maxTicksLimit: 20 }, grid: { color: '#21262d' } },
+            y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' },
+                title: { display: true, text: 'rad/s', color: '#8b949e' } }
+        },
+        plugins: { legend: { labels: { color: '#c9d1d9' } } }
+    }
+});
+
+// --- Chart: Speed histogram ---
+const bins = [0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.64, 0.8];
+const hist = Array(bins.length-1).fill(0);
+const binLabels = bins.slice(0,-1).map((b,i) => `${b.toFixed(2)}-${bins[i+1].toFixed(2)}`);
+speeds.forEach(s => {
+    for (let i = bins.length-1; i >= 0; i--) {
+        if (s >= bins[i]) { hist[i]++; break; }
+    }
+});
+
+new Chart(document.getElementById('chartHist'), {
+    type: 'bar',
+    data: {
+        labels: binLabels,
+        datasets: [{
+            label: '消息数',
+            data: hist,
+            backgroundColor: hist.map((_, i) => bins[i] >= FAST_THRESH ? '#3fb950' : bins[i] > 0 ? '#d2991d' : '#f85149')
+        }]
+    },
+    options: {
+        responsive: true,
+        animation: false,
+        scales: {
+            x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' }, title: { display: true, text: '速度区间 (m/s)', color: '#8b949e' } },
+            y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+        },
+        plugins: { legend: { labels: { color: '#c9d1d9' } } }
+    }
+});
+
+// --- Chart: Motion state pie ---
+let pureIdle = 0, pureRot = 0, pureMove = 0, moveRot = 0;
+V.forEach(v => {
+    const rot = Math.abs(v.vz) > 0.01;
+    const mov = v.sp > 0.01;
+    if (!rot && !mov) pureIdle++;
+    else if (rot && !mov) pureRot++;
+    else if (!rot && mov) pureMove++;
+    else moveRot++;
+});
+
+new Chart(document.getElementById('chartPie'), {
+    type: 'doughnut',
+    data: {
+        labels: ['纯静止', '纯旋转', '纯平移', '平移+旋转'],
+        datasets: [{
+            data: [pureIdle, pureRot, pureMove, moveRot],
+            backgroundColor: ['#30363d', '#f0883e', '#3fb950', '#58a6ff']
+        }]
+    },
+    options: {
+        responsive: true,
+        animation: false,
+        plugins: { legend: { labels: { color: '#c9d1d9' } } }
+    }
+});
+
+// --- Chart: Speed trend flips ---
+const flipData = [];
+let t0_flip = 0, lastTrend = 0;
+for (let i = 2; i < V.length; i++) {
+    const dv = V[i].sp - V[i-2].sp;
+    if (Math.abs(dv) > 0.02) {
+        const t = dv > 0 ? 1 : -1;
+        if (lastTrend && t !== lastTrend) {
+            flipData.push({ t: V[i].t, dir: t });
+        }
+        lastTrend = t;
+    }
+}
+
+// Create flip event markers
+const flipTimes = flipData.map(f => f.t);
+const flipValues = flipData.map(f => f.dir > 0 ? 0.02 : -0.02);
+
+new Chart(document.getElementById('chartFlips'), {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: '加速事件 (+)',
+            data: flipData.filter(f => f.dir > 0).map(f => ({x: f.t, y: 0.03})),
+            backgroundColor: '#3fb950',
+            pointRadius: 3,
+            pointStyle: 'triangle'
+        }, {
+            label: '减速事件 (-)',
+            data: flipData.filter(f => f.dir < 0).map(f => ({x: f.t, y: -0.03})),
+            backgroundColor: '#f85149',
+            pointRadius: 3,
+            pointStyle: 'triangle'
+        }, {
+            label: '合速度背景',
+            data: V.map(v => ({x: v.t, y: v.sp})),
+            borderColor: 'rgba(88,166,255,0.15)',
+            backgroundColor: 'transparent',
+            borderWidth: 0.5,
+            pointRadius: 0,
+            showLine: true
+        }]
+    },
+    options: {
+        responsive: true,
+        animation: false,
+        scales: {
+            x: { ticks: { color: '#8b949e', maxTicksLimit: 20 }, grid: { color: '#21262d' } },
+            y: { min: -0.1, max: 1.0, ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }
+        },
+        plugins: { legend: { labels: { color: '#c9d1d9' } } }
+    }
+});
+</script>
+</body>
+</html>

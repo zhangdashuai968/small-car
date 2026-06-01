@@ -1,0 +1,38 @@
+# 6点Z字形扫描航线 (源自 move_base 2D Nav Goal)
+# 所有角度取零，纯平移到达
+waypoints:
+  - name: scan_01
+    x: -0.538
+    y: -2.642
+    yaw: 0.0
+    action: pass
+
+  - name: scan_02
+    x: -0.475
+    y: -1.499
+    yaw: 0.0
+    action: pass
+
+  - name: scan_03
+    x: -1.688
+    y: -2.735
+    yaw: 0.0
+    action: pass
+
+  - name: scan_04
+    x: -1.736
+    y: -1.382
+    yaw: 0.0
+    action: pass
+
+  - name: scan_05
+    x: -2.977
+    y: -2.702
+    yaw: 0.0
+    action: pass
+
+  - name: scan_06
+    x: -2.834
+    y: -1.393
+    yaw: 0.0
+    action: pass

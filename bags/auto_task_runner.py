@@ -29,8 +29,21 @@ import tf
 
 from geometry_msgs.msg import Twist
 from actionlib_msgs.msg import GoalID
-from riki_msgs.msg import Servo
-from vl_locate.srv import GetObject
+from sensor_msgs.msg import LaserScan
+
+try:
+    from riki_msgs.msg import Servo
+    HAS_SERVO = True
+except ImportError:
+    Servo = None
+    HAS_SERVO = False
+
+try:
+    from vl_locate.srv import GetObject
+    HAS_VLM = True
+except ImportError:
+    GetObject = None
+    HAS_VLM = False
 
 
 SERVO_HOME = (88, 20)
@@ -48,6 +61,7 @@ POS_TOL   = 0.04   # m     终点位置容差
 YAW_TOL   = 0.03   # rad   终点角度容差(~1.7°)
 RATE_HZ   = 20
 STEP_TIMEOUT = 30.0  # s    单步超时(fail-fast)
+FAST_RATIO = 0.8    # 快速路阈值: 速度 >= 80% V_LIN 算快速路
 
 BASE_FRAME = 'base_footprint'
 MAP_FRAME  = 'map'
@@ -70,7 +84,7 @@ class TaskRunner(object):
         self._tf = tf.TransformListener()
         self._pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
         self._mb_cancel = rospy.Publisher('/move_base/cancel', GoalID, queue_size=1)
-        self.servo_pub = rospy.Publisher('servo', Servo, queue_size=1, latch=True)
+        self.servo_pub = rospy.Publisher('servo', Servo, queue_size=1, latch=True) if HAS_SERVO else None
         self.vlm = None  # 延迟加载，避免依赖完整抓取栈
 
         rospy.loginfo('waiting tf %s->%s ...', MAP_FRAME, BASE_FRAME)
@@ -102,6 +116,8 @@ class TaskRunner(object):
         time.sleep(1.0)
 
     def _servo_home(self):
+        if not HAS_SERVO:
+            return
         m = Servo()
         m.Servo1, m.Servo2 = SERVO_HOME
         self.servo_pub.publish(m)
@@ -123,13 +139,17 @@ class TaskRunner(object):
             rospy.sleep(0.02)
 
     def _drive_to_point(self, tx, ty, hold_yaw, pos_tol=POS_TOL, timeout=STEP_TIMEOUT):
-        """闭环直行到 map 下 (tx,ty)，全程锁 hold_yaw，位移到达时无需笔直直线。"""
+        """闭环直行到 map 下 (tx,ty)，全程锁 hold_yaw。
+        返回 (ok, fast_s, fine_s) — fast=速度≥80%V_LIN, fine=速度<80%V_LIN"""
         rate = rospy.Rate(RATE_HZ)
         t0 = rospy.Time.now()
+        t_last = t0
+        t_fast = 0.0
+        t_fine = 0.0
         while not rospy.is_shutdown():
             cur = self._cur()
             if cur is None:
-                self._stop(); return False
+                self._stop(); return (False, 0, 0)
             ex = tx - cur[0]
             ey = ty - cur[1]
             dist = math.hypot(ex, ey)
@@ -138,7 +158,7 @@ class TaskRunner(object):
                 break
             if (rospy.Time.now() - t0).to_sec() > timeout:
                 rospy.logwarn('    drive_to (%.2f,%.2f) TIMEOUT dist=%.3f', tx, ty, dist)
-                self._stop(); return False
+                self._stop(); return (False, 0, 0)
             # 非主运动轴用更高增益压制漂移
             if abs(ex) < abs(ey):
                 vx_map = _clamp(K_LIN_HOLD * ex, -V_LIN, V_LIN)
@@ -161,24 +181,34 @@ class TaskRunner(object):
                 if abs(wz) < V_ROT_MIN:
                     wz = math.copysign(V_ROT_MIN, wz)
                 tw.angular.z = wz
+            # 计时: body系合速度 >= 80% V_LIN 算快速路
+            now = rospy.Time.now()
+            dt = (now - t_last).to_sec()
+            body_sp = math.hypot(tw.linear.x, tw.linear.y)
+            if body_sp >= FAST_RATIO * V_LIN:
+                t_fast += dt
+            else:
+                t_fine += dt
+            t_last = now
             self._pub.publish(tw)
             rate.sleep()
         self._stop()
-        return True
+        return (True, t_fast, t_fine)
 
     def _rotate_to(self, target_yaw, yaw_tol=YAW_TOL, timeout=STEP_TIMEOUT):
+        """返回 (ok, rot_s)"""
         rate = rospy.Rate(RATE_HZ)
         t0 = rospy.Time.now()
         while not rospy.is_shutdown():
             cur = self._cur()
             if cur is None:
-                self._stop(); return False
+                self._stop(); return (False, 0)
             e = _norm(target_yaw - cur[2])
             if abs(e) < yaw_tol:
                 break
             if (rospy.Time.now() - t0).to_sec() > timeout:
                 rospy.logwarn('    rotate_to %.2f TIMEOUT err=%.3f', target_yaw, e)
-                self._stop(); return False
+                self._stop(); return (False, 0)
             wz = _clamp(K_YAW * e, -V_ROT, V_ROT)
             if abs(wz) < V_ROT_MIN:
                 wz = math.copysign(V_ROT_MIN, wz)
@@ -187,9 +217,13 @@ class TaskRunner(object):
             self._pub.publish(tw)
             rate.sleep()
         self._stop()
-        return True
+        return (True, (rospy.Time.now() - t0).to_sec())
 
     def goto(self, x, y, yaw, frame='map'):
+        t0 = rospy.Time.now()
+        t_fast = 0.0
+        t_fine = 0.0
+        t_rot = 0.0
         cur = self._cur()
         if cur is None:
             rospy.logerr('no tf pose, abort goto')
@@ -199,12 +233,12 @@ class TaskRunner(object):
             c = math.cos(hold); s = math.sin(hold)
             fwd_x = cur[0] + x * c
             fwd_y = cur[1] + x * s
-            tx = fwd_x + y * (-s)
-            ty = fwd_y + y * c
             # leg1: body-x (forward/back)
             rospy.loginfo('  step1 -> (%.3f, %.3f) hold_yaw=%.2f', fwd_x, fwd_y, hold)
-            if not self._drive_to_point(fwd_x, fwd_y, hold):
+            ok, f1, d1 = self._drive_to_point(fwd_x, fwd_y, hold)
+            if not ok:
                 return False
+            t_fast += f1; t_fine += d1
             # re-read yaw after leg1, recompute leg2 target
             cur = self._cur()
             if cur is None:
@@ -215,23 +249,36 @@ class TaskRunner(object):
             tx = cur[0] + y * (-s)
             ty = cur[1] + y * c
             rospy.loginfo('  step2 -> (%.3f, %.3f) hold_yaw=%.2f', tx, ty, hold)
-            if not self._drive_to_point(tx, ty, hold):
+            ok, f2, d2 = self._drive_to_point(tx, ty, hold)
+            if not ok:
                 return False
+            t_fast += f2; t_fine += d2
         else:
             # map frame: L-shape (X first, then Y) for Mecanum stability
             rospy.loginfo('  leg1 X -> (%.3f, %.3f) hold_yaw=%.2f', x, cur[1], hold)
-            if not self._drive_to_point(x, cur[1], hold):
+            ok, f1, d1 = self._drive_to_point(x, cur[1], hold)
+            if not ok:
                 return False
+            t_fast += f1; t_fine += d1
             cur = self._cur()
             if cur is None:
                 rospy.logerr('no tf pose after leg1, abort goto')
                 return False
             hold = cur[2]
             rospy.loginfo('  leg2 Y -> (%.3f, %.3f) hold_yaw=%.2f', x, y, hold)
-            if not self._drive_to_point(x, y, hold):
+            ok, f2, d2 = self._drive_to_point(x, y, hold)
+            if not ok:
                 return False
+            t_fast += f2; t_fine += d2
         rospy.loginfo('  final yaw -> %.2f', yaw)
-        return self._rotate_to(yaw)
+        ok, t_rot = self._rotate_to(yaw)
+        if not ok:
+            return False
+        t_total = (rospy.Time.now() - t0).to_sec()
+        t_prep = t_total - t_fast - t_fine - t_rot
+        rospy.loginfo('  [STAGE] 准备=%.2fs 快速路=%.2fs 微调=%.2fs(减速%.2fs+旋转%.2fs) 总计=%.2fs',
+                      t_prep, t_fast, t_fine + t_rot, t_fine, t_rot, t_total)
+        return True
     def do_action(self, action, obj):
         if action == 'pass':
             return True
@@ -240,6 +287,9 @@ class TaskRunner(object):
             if duration > 0:
                 rospy.loginfo('  waiting %.1fs ...', duration)
                 rospy.sleep(duration)
+            return True
+        if not HAS_VLM:
+            rospy.logwarn('vl_locate not installed, skip action=%s', action)
             return True
         if self.vlm is None:
             rospy.loginfo('waiting /vlm_detection...')
