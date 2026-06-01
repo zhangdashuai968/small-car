@@ -1,0 +1,65 @@
+{
+  "bag_duration_s": 53.7,
+  "goals": [
+    {
+      "idx": 1,
+      "preempted": true,
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "goal_xy": [
+        -0.677,
+        -2.794
+      ],
+      "straight_dist_m": 2.875,
+      "t_prepare_s": 0,
+      "t_fast_s": 0,
+      "t_fine_s": 10.31,
+      "t_total_s": 10.31,
+      "fast_dist_m": 0.0,
+      "avg_speed_fast_mps": 0,
+      "path_efficiency_pct": 0
+    },
+    {
+      "idx": 2,
+      "preempted": true,
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "goal_xy": [
+        -1.741,
+        -2.795
+      ],
+      "straight_dist_m": 3.293,
+      "t_prepare_s": 0.38,
+      "t_fast_s": 9.02,
+      "t_fine_s": 0.18,
+      "t_total_s": 9.59,
+      "fast_dist_m": 3.376,
+      "avg_speed_fast_mps": 0.374,
+      "path_efficiency_pct": 97.5
+    },
+    {
+      "idx": 3,
+      "preempted": false,
+      "start_xy": [
+        -1.698,
+        -1.775
+      ],
+      "goal_xy": [
+        -2.792,
+        -2.748
+      ],
+      "straight_dist_m": 1.463,
+      "t_prepare_s": 0.02,
+      "t_fast_s": 0,
+      "t_fine_s": 23.22,
+      "t_total_s": 23.24,
+      "fast_dist_m": 0.0,
+      "avg_speed_fast_mps": 0,
+      "path_efficiency_pct": 0
+    }
+  ]
+}
