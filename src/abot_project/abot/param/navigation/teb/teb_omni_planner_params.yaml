@@ -20,7 +20,7 @@ TebLocalPlannerROS:
   max_vel_x: 0.8
   max_vel_x_backwards: 0.2
   max_vel_y: 0.8
-  max_vel_theta: 1.2
+  max_vel_theta: 0.0
   acc_lim_x: 1.5
   acc_lim_y: 1.5
   acc_lim_theta: 2.5
@@ -34,7 +34,7 @@ TebLocalPlannerROS:
   # GoalTolerance
 
   xy_goal_tolerance: 0.05
-  yaw_goal_tolerance: 0.1
+  yaw_goal_tolerance: 6.283
   free_goal_vel: False
   # complete_global_plan: True
 
