@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>TEB 算法源码全景 — ABOT 全向底盘</title>
+<style>
+:root {
+  --bg: #0d1117; --fg: #c9d1d9; --muted: #8b949e;
+  --border: #30363d; --accent: #58a6ff; --accent2: #f78166;
+  --green: #3fb950; --yellow: #d2991d; --red: #f85149;
+  --card: #161b22; --code: #1c2128;
+  --pink: #db61a2; --purple: #a371f7;
+}
+* { margin:0; padding:0; box-sizing:border-box }
+body {
+  font-family: -apple-system, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", sans-serif;
+  background: var(--bg); color: var(--fg); font-size: 15px; line-height: 1.7;
+  padding: 2em;
+}
+h1 { font-size: 2em; margin-bottom: .2em; color: var(--accent); }
+h1 .sub { font-size: .5em; color: var(--muted); display: block; margin-top: .3em; }
+h2 { font-size: 1.4em; margin-top: 2.5em; margin-bottom: .8em; padding-bottom: .3em;
+     border-bottom: 2px solid var(--border); color: var(--accent); }
+h3 { font-size: 1.1em; margin-top: 1.5em; color: var(--green); }
+h4 { font-size: 1em; margin-top: 1.2em; color: var(--yellow); }
+p { margin: .5em 0; }
+code { background: var(--code); padding: .15em .4em; border-radius: 4px; font-size: .88em;
+       font-family: "Cascadia Code","Fira Code",Consolas,monospace; }
+pre { background: var(--code); padding: 1em 1.2em; border-radius: 8px; overflow-x: auto;
+      margin: .8em 0; font-size: 13px; line-height: 1.5; border: 1px solid var(--border); }
+pre code { background: none; padding: 0; }
+pre .kw { color: var(--red); }
+pre .fn { color: var(--purple); }
+pre .cm { color: var(--muted); font-style: italic; }
+pre .str { color: var(--green); }
+pre .num { color: var(--yellow); }
+
+/* Cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1em; margin: 1em 0; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.2em; }
+.card h3 { margin-top: 0; font-size: 1em; }
+.card .path { font-size: 12px; color: var(--muted); font-family: monospace; word-break: break-all; }
+.card .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+             margin-right: 4px; margin-top: 4px; }
+.tag.core { background: #da363322; color: var(--red); border: 1px solid #da363344; }
+.tag.edge { background: #3fb95022; color: var(--green); border: 1px solid #3fb95044; }
+.tag.vert { background: #d2991d22; color: var(--yellow); border: 1px solid #d2991d44; }
+.tag.util { background: #a371f722; color: var(--purple); border: 1px solid #a371f744; }
+.tag.ros  { background: #58a6ff22; color: var(--accent); border: 1px solid #58a6ff44; }
+
+/* Pipe */
+.pipe { display: flex; flex-wrap: wrap; gap: .6em; align-items: center; margin: 1em 0;
+        padding: 1em; background: var(--card); border-radius: 8px; border: 1px solid var(--border); }
+.pipe-step { background: var(--code); border: 1px solid var(--border); border-radius: 6px;
+             padding: .6em 1em; text-align: center; font-size: 13px; }
+.pipe-arrow { color: var(--accent); font-size: 1.3em; }
+.pipe-step .label { font-size: 11px; color: var(--muted); }
+.pipe-step .main { font-weight: 600; }
+
+/* SVG panel */
+svg { width: 100%; max-width: 1100px; margin: 1em auto; display: block; }
+svg text { font-family: -apple-system,"Segoe UI","Noto Sans CJK SC",sans-serif; }
+
+/* Flow */
+.flow { margin: 1em 0; }
+.flow-row { display: flex; align-items: flex-start; gap: .8em; margin: .5em 0; }
+.flow-num { background: var(--accent); color: #fff; min-width: 28px; height: 28px;
+            border-radius: 50%; text-align: center; line-height: 28px; font-weight: 700; font-size: 13px; }
+.flow-box { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: .8em 1.2em; flex: 1; }
+.flow-box .title { font-weight: 600; color: var(--accent); }
+.flow-box .detail { font-size: 13px; color: var(--muted); }
+
+/* TOC */
+.toc { position: fixed; top: 1em; right: 1em; background: var(--card); border: 1px solid var(--border);
+       border-radius: 8px; padding: 1em; font-size: 13px; max-width: 240px; z-index: 10; opacity: .85; }
+.toc a { display: block; color: var(--muted); text-decoration: none; padding: .2em 0; }
+.toc a:hover { color: var(--accent); }
+.toc h4 { margin-top: 0; color: var(--fg); }
+
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 14px; }
+th,td { border: 1px solid var(--border); padding: .5em .8em; text-align: left; }
+th { background: var(--code); font-weight: 600; color: var(--accent); }
+tr:hover { background: var(--code); }
+
+.callout { border-left: 4px solid var(--accent); padding: .8em 1.2em; margin: 1em 0;
+           background: #58a6ff0a; border-radius: 0 8px 8px 0; font-size: 14px; }
+.callout.warn { border-left-color: var(--yellow); background: #d2991d0a; }
+.callout.good { border-left-color: var(--green); background: #3fb9500a; }
+</style>
+</head>
+<body>
+
+<nav class="toc">
+  <h4>TEB 源码导航</h4>
+  <a href="#overview">🏠 全景图</a>
+  <a href="#pipeline">⚙️ 数据管道</a>
+  <a href="#penalties">🧮 惩罚函数</a>
+  <a href="#edges">🔗 约束边族谱</a>
+  <a href="#yaml2cpp">🔄 YAML→C++映射</a>
+  <a href="#builder">🏗️ 图构建流程</a>
+  <a href="#solver">🔢 LM求解</a>
+  <a href="#fullgraph">🌐 完整图结构</a>
+</nav>
+
+<h1>🔬 TEB 算法源码全景
+  <span class="sub">/opt/ros/melodic/include/teb_local_planner/ · 12,818 行 C++ 头文件 · 作者 Christoph Rösmann (TU Dortmund)</span>
+</h1>
+
+<div class="callout good">
+<strong>核心理念</strong>：TEB = 把路径优化问题建成一个<strong>超图</strong>（Hyper-Graph），然后用稀疏 <strong>Levenberg-Marquardt</strong> 算法求解。每条 YAML 参数最终变成图里一条"边"的权重。全 12818 行纯头文件 C++，零外部依赖（仅 g2o + Eigen）。
+</div>
+
+<!-- ==================== 全景 ==================== -->
+<h2 id="overview">🏠 一、文件全景地图</h2>
+
+<svg viewBox="0 0 1100 680" xmlns="http://www.w3.org/2000/svg" font-size="12">
+  <defs>
+    <filter id="shadow"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.4"/></filter>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <!-- 外壳 -->
+  <rect x="20" y="20" width="320" height="640" fill="#161b22" stroke="#30363d" stroke-width="2" rx="10" filter="url(#shadow)"/>
+  <text x="180" y="50" text-anchor="middle" font-weight="700" font-size="14" fill="#f85149">🧠 核心引擎 (core)</text>
+
+  <!-- optimal_planner -->
+  <rect x="40" y="68" width="280" height="48" fill="#da363310" stroke="#f85149" stroke-width="1.5" rx="6"/>
+  <text x="180" y="87" text-anchor="middle" font-weight="600" fill="#f85149">optimal_planner.h</text>
+  <text x="180" y="105" text-anchor="middle" font-size="11" fill="#8b949e">726 行 · 图构建 + LM 求解</text>
+
+  <!-- timed_elastic_band -->
+  <rect x="40" y="126" width="280" height="48" fill="#da363310" stroke="#f85149" stroke-width="1.5" rx="6"/>
+  <text x="180" y="145" text-anchor="middle" font-weight="600" fill="#f85149">timed_elastic_band.h</text>
+  <text x="180" y="163" text-anchor="middle" font-size="11" fill="#8b949e">659 行 · 位姿+ΔT 序列数据结构</text>
+
+  <!-- teb_config -->
+  <rect x="40" y="184" width="280" height="48" fill="#da363310" stroke="#f85149" stroke-width="1.5" rx="6"/>
+  <text x="180" y="203" text-anchor="middle" font-weight="600" fill="#f85149">teb_config.h</text>
+  <text x="180" y="221" text-anchor="middle" font-size="11" fill="#8b949e">405 行 · YAML→C++ 参数映射</text>
+
+  <!-- homotopy -->
+  <rect x="40" y="242" width="136" height="48" fill="#da363310" stroke="#f85149" stroke-width="1" rx="6"/>
+  <text x="108" y="261" text-anchor="middle" font-size="12" font-weight="600" fill="#f85149">homotopy_class</text>
+  <text x="108" y="279" text-anchor="middle" font-size="11" fill="#8b949e">576 行</text>
+
+  <rect x="184" y="242" width="136" height="48" fill="#da363310" stroke="#f85149" stroke-width="1" rx="6"/>
+  <text x="252" y="261" text-anchor="middle" font-size="12" font-weight="600" fill="#f85149">h_signature</text>
+  <text x="252" y="279" text-anchor="middle" font-size="11" fill="#8b949e">429 行</text>
+
+  <!-- recovery + vis -->
+  <rect x="40" y="300" width="136" height="48" fill="#da363310" stroke="#f85149" stroke-width="1" rx="6"/>
+  <text x="108" y="319" text-anchor="middle" font-size="12" font-weight="600" fill="#f85149">recovery</text>
+  <text x="108" y="337" text-anchor="middle" font-size="11" fill="#8b949e">134 行</text>
+
+  <rect x="184" y="300" width="136" height="48" fill="#da363310" stroke="#f85149" stroke-width="1" rx="6"/>
+  <text x="252" y="319" text-anchor="middle" font-size="12" font-weight="600" fill="#f85149">visualization</text>
+  <text x="252" y="337" text-anchor="middle" font-size="11" fill="#8b949e">281 行</text>
+
+  <!-- g2o_types 分区 -->
+  <rect x="40" y="362" width="280" height="292" fill="#3fb95010" stroke="#3fb950" stroke-width="1.5" rx="6" stroke-dasharray="6,3"/>
+  <text x="60" y="385" font-weight="700" font-size="13" fill="#3fb950">📐 g2o_types/ 约束边族群</text>
+
+  <rect x="52" y="396" width="126" height="42" fill="#3fb95015" stroke="#3fb950" stroke-width="1" rx="4"/>
+  <text x="115" y="413" text-anchor="middle" font-size="11" font-weight="600" fill="#3fb950">edge_velocity</text>
+  <text x="115" y="430" text-anchor="middle" font-size="10" fill="#8b949e">速度上界 273行</text>
+
+  <rect x="184" y="396" width="126" height="42" fill="#3fb95015" stroke="#3fb950" stroke-width="1" rx="4"/>
+  <text x="247" y="413" text-anchor="middle" font-size="11" font-weight="600" fill="#3fb950">edge_acceleration</text>
+  <text x="247" y="430" text-anchor="middle" font-size="10" fill="#8b949e">加速度上界 734行</text>
+
+  <rect x="52" y="446" width="126" height="42" fill="#3fb95015" stroke="#3fb950" stroke-width="1" rx="4"/>
+  <text x="115" y="463" text-anchor="middle" font-size="11" font-weight="600" fill="#3fb950">edge_obstacle</text>
+  <text x="115" y="480" text-anchor="middle" font-size="10" fill="#8b949e">障碍物距离 295行</text>
+
+  <rect x="184" y="446" width="126" height="42" fill="#3fb95015" stroke="#3fb950" stroke-width="1" rx="4"/>
+  <text x="247" y="463" text-anchor="middle" font-size="11" font-weight="600" fill="#3fb950">edge_kinematics</text>
+  <text x="247" y="480" text-anchor="middle" font-size="10" fill="#8b949e">非完整约束 230行</text>
+
+  <rect x="52" y="496" width="126" height="42" fill="#3fb95015" stroke="#3fb950" stroke-width="1" rx="4"/>
+  <text x="115" y="513" text-anchor="middle" font-size="11" font-weight="600" fill="#3fb950">edge_time_optimal</text>
+  <text x="115" y="530" text-anchor="middle" font-size="10" fill="#8b949e">时间最优 116行</text>
+
+  <rect x="184" y="496" width="126" height="42" fill="#3fb95015" stroke="#3fb950" stroke-width="1" rx="4"/>
+  <text x="247" y="513" text-anchor="middle" font-size="11" font-weight="600" fill="#3fb950">edge_shortest_path</text>
+  <text x="247" y="530" text-anchor="middle" font-size="10" fill="#8b949e">最短路径 89行</text>
+
+  <rect x="52" y="546" width="126" height="42" fill="#3fb95015" stroke="#3fb950" stroke-width="1" rx="4"/>
+  <text x="115" y="563" text-anchor="middle" font-size="11" font-weight="600" fill="#3fb950">edge_via_point</text>
+  <text x="115" y="580" text-anchor="middle" font-size="10" fill="#8b949e">途经点 120行</text>
+
+  <rect x="184" y="546" width="126" height="42" fill="#3fb95015" stroke="#3fb950" stroke-width="1" rx="4"/>
+  <text x="247" y="563" text-anchor="middle" font-size="11" font-weight="600" fill="#3fb950">edge_dynamic_obstacle</text>
+  <text x="247" y="580" text-anchor="middle" font-size="10" fill="#8b949e">动态障碍 153行</text>
+
+  <rect x="52" y="596" width="126" height="42" fill="#d2991d20" stroke="#d2991d" stroke-width="1" rx="4"/>
+  <text x="115" y="613" text-anchor="middle" font-size="11" font-weight="600" fill="#d2991d">vertex_pose</text>
+  <text x="115" y="630" text-anchor="middle" font-size="10" fill="#8b949e">位姿顶点 234行</text>
+
+  <rect x="184" y="596" width="126" height="42" fill="#d2991d20" stroke="#d2991d" stroke-width="1" rx="4"/>
+  <text x="247" y="613" text-anchor="middle" font-size="11" font-weight="600" fill="#d2991d">vertex_timediff</text>
+  <text x="247" y="630" text-anchor="middle" font-size="10" fill="#8b949e">ΔT顶点 155行</text>
+
+  <!-- ROS 外壳 -->
+  <rect x="370" y="20" width="250" height="120" fill="#58a6ff10" stroke="#58a6ff" stroke-width="2" rx="10" filter="url(#shadow)"/>
+  <text x="495" y="50" text-anchor="middle" font-weight="700" font-size="14" fill="#58a6ff">🔌 ROS 胶水层</text>
+
+  <rect x="385" y="65" width="220" height="42" fill="#58a6ff20" stroke="#58a6ff" stroke-width="1" rx="4"/>
+  <text x="495" y="82" text-anchor="middle" font-size="12" font-weight="600" fill="#58a6ff">teb_local_planner_ros.h</text>
+  <text x="495" y="99" text-anchor="middle" font-size="11" fill="#8b949e">454 行 · init/plan/computeVelocity</text>
+
+  <!-- 工具外壳 -->
+  <rect x="370" y="160" width="250" height="300" fill="#a371f710" stroke="#a371f7" stroke-width="2" rx="10" filter="url(#shadow)"/>
+  <text x="495" y="190" text-anchor="middle" font-weight="700" font-size="14" fill="#a371f7">🛠 支撑工具</text>
+
+  <rect x="385" y="208" width="220" height="42" fill="#a371f720" stroke="#a371f7" stroke-width="1" rx="4"/>
+  <text x="495" y="222" text-anchor="middle" font-size="12" font-weight="600" fill="#a371f7">penalties.h</text>
+  <text x="495" y="239" text-anchor="middle" font-size="11" fill="#8b949e">193 行 · 惩罚函数</text>
+
+  <rect x="385" y="258" width="220" height="42" fill="#a371f720" stroke="#a371f7" stroke-width="1" rx="4"/>
+  <text x="495" y="272" text-anchor="middle" font-size="12" font-weight="600" fill="#a371f7">robot_footprint_model.h</text>
+  <text x="495" y="289" text-anchor="middle" font-size="11" fill="#8b949e">684 行 · 点/圆/多边形</text>
+
+  <rect x="385" y="308" width="220" height="42" fill="#a371f720" stroke="#a371f7" stroke-width="1" rx="4"/>
+  <text x="495" y="322" text-anchor="middle" font-size="12" font-weight="600" fill="#a371f7">obstacles.h</text>
+  <text x="495" y="339" text-anchor="middle" font-size="11" fill="#8b949e">966 行 · 障碍管理</text>
+
+  <rect x="385" y="358" width="220" height="42" fill="#a371f720" stroke="#a371f7" stroke-width="1" rx="4"/>
+  <text x="495" y="372" text-anchor="middle" font-size="12" font-weight="600" fill="#a371f7">pose_se2.h</text>
+  <text x="495" y="389" text-anchor="middle" font-size="11" fill="#8b949e">406 行 · SE(2) 位姿</text>
+
+  <rect x="385" y="408" width="220" height="42" fill="#a371f720" stroke="#a371f7" stroke-width="1" rx="4"/>
+  <text x="495" y="422" text-anchor="middle" font-size="12" font-weight="600" fill="#a371f7">distance_calculations.h</text>
+  <text x="495" y="439" text-anchor="middle" font-size="11" fill="#8b949e">464 行 · 距离计算</text>
+
+  <!-- 箭头：ROS→Core -->
+  <path d="M370,70 L320,85" stroke="#58a6ff" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+
+  <!-- 图例 -->
+  <rect x="640" y="30" width="12" height="12" fill="#f85149" opacity="0.5" rx="2"/>
+  <text x="660" y="41" font-size="11" fill="#8b949e">核心引擎</text>
+  <rect x="640" y="52" width="12" height="12" fill="#3fb950" opacity="0.5" rx="2"/>
+  <text x="660" y="63" font-size="11" fill="#8b949e">约束边</text>
+  <rect x="640" y="74" width="12" height="12" fill="#d2991d" opacity="0.5" rx="2"/>
+  <text x="660" y="85" font-size="11" fill="#8b949e">顶点</text>
+  <rect x="640" y="96" width="12" height="12" fill="#58a6ff" opacity="0.5" rx="2"/>
+  <text x="660" y="107" font-size="11" fill="#8b949e">ROS 接口</text>
+  <rect x="640" y="118" width="12" height="12" fill="#a371f7" opacity="0.5" rx="2"/>
+  <text x="660" y="129" font-size="11" fill="#8b949e">支撑工具</text>
+
+  <!-- 关键数字卡片 -->
+  <rect x="640" y="170" width="420" height="90" fill="#161b22" stroke="#30363d" stroke-width="1.5" rx="8"/>
+  <text x="660" y="198" font-weight="700" font-size="14" fill="#58a6ff">📊 规模统计</text>
+  <text x="670" y="222" font-size="13" fill="#c9d1d9">9 种约束边类型 · 2 种顶点 · 1 个 LM 求解器</text>
+  <text x="670" y="244" font-size="13" fill="#c9d1d9">典型弹性带: 30 位姿 → ~300 条边 · ~120 个变量 · 单次优化 ~2ms</text>
+</svg>
+
+<!-- ==================== 数据管道 ==================== -->
+<h2 id="pipeline">⚙️ 二、数据管道：YAML → 轨迹 → 速度指令</h2>
+
+<div class="pipe">
+  <div class="pipe-step">
+    <div class="label">输入</div>
+    <div class="main">🌍 全局路径</div>
+    <div style="font-size:11px;color:var(--muted)">A* / Dijkstra</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step">
+    <div class="label">初始化</div>
+    <div class="main">📐 Timed Elastic Band</div>
+    <div style="font-size:11px;color:var(--muted)">采样 n 个位姿 + ΔT₀</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step">
+    <div class="label">建图</div>
+    <div class="main">🔗 BuildGraph()</div>
+    <div style="font-size:11px;color:var(--muted)">添加顶点 + 9类约束边</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step">
+    <div class="label">求解</div>
+    <div class="main">🔢 LM Optimizer</div>
+    <div style="font-size:11px;color:var(--muted)">5×6=30次迭代</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step">
+    <div class="label">提取</div>
+    <div class="main">🏃 cmd_vel</div>
+    <div style="font-size:11px;color:var(--muted)">(vx, vy, ω)</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-step">
+    <div class="label">下发</div>
+    <div class="main">🤖 底盘执行</div>
+    <div style="font-size:11px;color:var(--muted)">20ms 循环</div>
+  </div>
+</div>
+
+<!-- ==================== 惩罚函数 ==================== -->
+<h2 id="penalties">🧮 三、惩罚函数 — TEB 的"语言"</h2>
+<p>所有约束都通过 <strong>penalties.h</strong> 里的函数转化为优化代价。这是 YAML 参数的第一落地点：</p>
+
+<svg viewBox="0 0 1100 300" xmlns="http://www.w3.org/2000/svg" font-size="13">
+  <!-- 左侧：代码 -->
+  <rect x="10" y="10" width="530" height="280" fill="#1c2128" stroke="#30363d" stroke-width="1.5" rx="8"/>
+  <text x="30" y="35" font-weight="700" fill="#3fb950" font-size="14">penalties.h — 源码 (193 行)</text>
+
+  <!-- 代码行 -->
+  <text x="25" y="62" font-family="monospace" font-size="12" fill="#f85149">inline double</text>
+  <text x="125" y="62" font-family="monospace" font-size="12" fill="#a371f7">penaltyBoundToInterval</text>
+  <text x="275" y="62" font-family="monospace" font-size="12" fill="#c9d1d9">(</text>
+
+  <text x="25" y="84" font-family="monospace" font-size="12" fill="#c9d1d9">    const double&amp; var,    </text>
+  <text x="220" y="84" font-family="monospace" font-size="12" fill="#8b949e">// 待检查的量: vx/vy/ω</text>
+
+  <text x="25" y="104" font-family="monospace" font-size="12" fill="#c9d1d9">    const double&amp; a,      </text>
+  <text x="220" y="104" font-family="monospace" font-size="12" fill="#8b949e">// 下限 max_vel_x_backwards</text>
+
+  <text x="25" y="124" font-family="monospace" font-size="12" fill="#c9d1d9">    const double&amp; b,      </text>
+  <text x="220" y="124" font-family="monospace" font-size="12" fill="#8b949e">// 上限 max_vel_x / max_vel_theta</text>
+
+  <text x="25" y="144" font-family="monospace" font-size="12" fill="#c9d1d9">    const double&amp; epsilon  </text>
+  <text x="220" y="144" font-family="monospace" font-size="12" fill="#8b949e">// = penalty_epsilon = 0.1</text>
+
+  <text x="25" y="164" font-family="monospace" font-size="12" fill="#c9d1d9">)</text>
+
+  <!-- 三路分支 -->
+  <text x="25" y="192" font-family="monospace" font-size="12" fill="#f85149">if</text>
+  <text x="45" y="192" font-family="monospace" font-size="12" fill="#c9d1d9">(var &lt; a+epsilon)</text>
+  <text x="200" y="192" font-family="monospace" font-size="12" fill="#f0883e">return</text>
+  <text x="250" y="192" font-family="monospace" font-size="12" fill="#c9d1d9">(-var + (a+epsilon));</text>
+  <text x="420" y="192" font-family="monospace" font-size="11" fill="#8b949e">// 低于下限 → 惩罚</text>
+
+  <text x="25" y="214" font-family="monospace" font-size="12" fill="#f85149">if</text>
+  <text x="45" y="214" font-family="monospace" font-size="12" fill="#c9d1d9">(var &lt;= b-epsilon)</text>
+  <text x="200" y="214" font-family="monospace" font-size="12" fill="#f0883e">return</text>
+  <text x="250" y="214" font-family="monospace" font-size="12" fill="#c9d1d9">0.;</text>
+  <text x="420" y="214" font-family="monospace" font-size="11" fill="#8b949e">// 安全区内 → 不管</text>
+
+  <text x="25" y="236" font-family="monospace" font-size="12" fill="#f85149">else</text>
+  <text x="55" y="236" font-family="monospace" font-size="12" fill="#f0883e">return</text>
+  <text x="250" y="236" font-family="monospace" font-size="12" fill="#c9d1d9">(var - (b-epsilon));</text>
+  <text x="420" y="236" font-family="monospace" font-size="11" fill="#8b949e">// 超过上限 → 惩罚</text>
+
+  <!-- 右侧：图示 -->
+  <rect x="560" y="10" width="530" height="280" fill="#161b22" stroke="#30363d" stroke-width="1.5" rx="8"/>
+  <text x="580" y="35" font-weight="700" fill="#58a6ff" font-size="14">惩罚函数图像</text>
+
+  <!-- 坐标轴 -->
+  <line x1="620" y1="220" x2="1070" y2="220" stroke="#8b949e" stroke-width="1"/>
+  <line x1="770" y1="60" x2="770" y2="240" stroke="#8b949e" stroke-width="1"/>
+  <text x="1060" y="225" font-size="11" fill="#8b949e">v</text>
+  <text x="775" y="55" font-size="11" fill="#8b949e">e(v)</text>
+
+  <!-- 竖虚线 -->
+  <line x1="690" y1="60" x2="690" y2="220" stroke="#d2991d" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="655" y="240" font-size="10" fill="#d2991d">-a</text>
+  <line x1="710" y1="60" x2="710" y2="220" stroke="#d2991d" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="700" y="240" font-size="10" fill="#d2991d">-a+ε</text>
+  <line x1="830" y1="60" x2="830" y2="220" stroke="#d2991d" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="820" y="240" font-size="10" fill="#d2991d">b-ε</text>
+  <line x1="850" y1="60" x2="850" y2="220" stroke="#d2991d" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="845" y="240" font-size="10" fill="#d2991d">b</text>
+
+  <!-- 函数曲线 -->
+  <polyline points="620,220 690,220 710,200 770,200 830,200 850,220 1070,350" fill="none" stroke="#3fb950" stroke-width="2.5"/>
+  <polygon points="622,221 618,223 622,217" fill="#3fb950"/>
+  <text x="1050" y="340" font-size="11" fill="#3fb950">惩罚 = var-b+ε</text>
+
+  <!-- 标注 -->
+  <rect x="770" y="210" width="60" height="14" fill="#3fb95022" rx="3"/>
+  <text x="800" y="221" text-anchor="middle" font-size="10" fill="#3fb950">安全区=0</text>
+  <rect x="870" y="240" width="60" height="14" fill="#f8514922" rx="3"/>
+  <text x="900" y="251" text-anchor="middle" font-size="10" fill="#f85149">惩罚区</text>
+
+  <text x="600" y="275" font-size="11" fill="#8b949e">ε = penalty_epsilon = 0.1 是"软缓冲"：到边界前就开始有惩罚</text>
+</svg>
+
+<div class="callout">
+  <strong>大白话</strong>：想象一堵软墙。b=0.8，ε=0.1。速度到 0.69 以下完全没事（误差=0）；到了 0.71 开始微微有惩罚（误差=0.01）；到了 0.9 惩罚=0.2。g2o 把这个误差平方后乘上 <code>weight_max_vel_x=2</code>，加到总代价里。优化器就拼命把速度拉回 0.71 以下。
+</div>
+
+<!-- ==================== 约束边族谱 ==================== -->
+<h2 id="edges">🔗 四、约束边族谱 — 每条 YAML weight 的 C++ 真身</h2>
+
+<div class="cards">
+  <!-- 速度边 -->
+  <div class="card">
+    <h3>⚡ EdgeVelocityHolonomic</h3>
+    <div class="path">g2o_types/edge_velocity.h : 273 行</div>
+    <span class="tag edge">全向专用</span>
+    <span class="tag edge">3维残差</span>
+    <pre><code><span class="cm">// 连接: (pose_i, pose_{i+1}, ΔT_i)</span>
+<span class="kw">void</span> <span class="fn">computeError</span>() {
+  <span class="cm">// 位移转到机器人坐标系</span>
+  r_dx =  cosθ·Δx + sinθ·Δy;  <span class="cm">// 前进分量</span>
+  r_dy = -sinθ·Δx + cosθ·Δy;  <span class="cm">// 侧移分量</span>
+
+  vx = r_dx / ΔT;
+  vy = r_dy / ΔT;
+  ω  = Δθ / ΔT;
+
+  <span class="cm">// 三个惩罚通道:</span>
+  _error[0] = <span class="fn">penalty</span>(vx, -<span class="num">0.2</span>, <span class="num">0.8</span>, <span class="num">0.1</span>);
+  _error[1] = <span class="fn">penalty</span>(vy,  <span class="num">0.8</span>, <span class="num">0.0</span>);
+  _error[2] = <span class="fn">penalty</span>(ω,  <span class="num">1.2</span>, <span class="num">0.1</span>);
+}</code></pre>
+    <p style="font-size:13px;color:var(--muted)">
+      ← 对应 YAML: max_vel_x=0.8, max_vel_x_backwards=0.2, max_vel_y=0.8,
+      max_vel_theta=1.2, weight_max_vel_x=2, weight_max_vel_y=1, penalty_epsilon=0.1
+    </p>
+  </div>
+
+  <!-- 时间最优边 -->
+  <div class="card">
+    <h3>⏱️ EdgeTimeOptimal</h3>
+    <div class="path">g2o_types/edge_time_optimal.h : 116 行</div>
+    <span class="tag edge">1维残差</span>
+    <span class="tag edge">核心驱动</span>
+    <pre><code><span class="cm">// 连接: (ΔT_i) — 一元边!</span>
+<span class="kw">void</span> <span class="fn">computeError</span>() {
+  <span class="kw">const</span> VertexTimeDiff* dt = ...;
+  _error[0] = dt-><span class="fn">dt</span>();  <span class="cm">// 就这么简单！</span>
+}
+
+<span class="cm">// 代价 = weight_optimaltime × Σ ΔTᵢ²</span>
+<span class="cm">// 优化器为了降低代价 → 缩短 ΔT → 加速</span>
+<span class="cm">// 但 ΔT↓ → v=d/ΔT↑ → 触发速度惩罚 ↑</span>
+<span class="cm">// → 平衡点 = 时间最优轨迹</span></code></pre>
+    <p style="font-size:13px;color:var(--muted)">
+      ← YAML: weight_optimaltime=5
+    </p>
+  </div>
+
+  <!-- 最短路径边 -->
+  <div class="card">
+    <h3>📏 EdgeShortestPath</h3>
+    <div class="path">g2o_types/edge_shortest_path.h : 89 行</div>
+    <span class="tag edge">1维残差</span>
+    <span class="tag edge">路径直化</span>
+    <pre><code><span class="cm">// 连接: (pose_i, pose_{i+1})</span>
+<span class="kw">void</span> <span class="fn">computeError</span>() {
+  pose1 = vertices[0];
+  pose2 = vertices[1];
+  _error[0] = (pose2->pos - pose1->pos).<span class="fn">norm</span>();
+  <span class="cm">// = √[(x₂-x₁)² + (y₂-y₁)²]</span>
+}
+
+<span class="cm">// 代价 = weight_shortest_path × Σ ||dᵢ||²</span>
+<span class="cm">// 推动弹性带走直线而非绕弯</span></code></pre>
+    <p style="font-size:13px;color:var(--muted)">
+      ← YAML: weight_shortest_path=5
+    </p>
+  </div>
+
+  <!-- 运动学边 -->
+  <div class="card">
+    <h3>🚗 EdgeKinematicsDiffDrive</h3>
+    <div class="path">g2o_types/edge_kinematics.h : 230 行</div>
+    <span class="tag edge">2维残差</span>
+    <span class="tag edge">差速/阿克曼用</span>
+    <pre><code><span class="cm">// 非完整约束: 侧向速度必须=0</span>
+_error[0] = fabs(
+  (cosθ₁+cosθ₂)·Δy - (sinθ₁+sinθ₂)·Δx
+);
+
+<span class="cm">// 前进偏好: 不允许后退</span>
+angle_vec = (cosθ₁, sinθ₁);
+_error[1] = <span class="fn">penaltyFromBelow</span>(
+  ΔS·angle_vec, <span class="num">0</span>, <span class="num">0</span>
+);</code></pre>
+    <p style="font-size:13px;color:var(--muted)">
+      ← YAML: weight_kinematics_nh=0 (全向底盘跳过此边),
+      weight_kinematics_forward_drive=0
+    </p>
+  </div>
+
+  <!-- 障碍物边 -->
+  <div class="card">
+    <h3>🧱 EdgeObstacle</h3>
+    <div class="path">g2o_types/edge_obstacle.h : 295 行</div>
+    <span class="tag edge">1维残差</span>
+    <span class="tag edge">1/d 型惩罚</span>
+    <pre><code><span class="cm">// 连接: (pose_i) — 一元边</span>
+dist = robot-to-obstacle 最近距离;
+
+<span class="kw">if</span> (dist >= min_obstacle_dist + epsilon)
+  _error[0] = <span class="num">0</span>;  <span class="cm">// 安全 → 不管</span>
+<span class="kw">else</span>
+  _error[0] = (
+    (min_dist+epsilon) / dist
+  )^(p/<span class="num">2</span>) - <span class="num">1</span>;
+  <span class="cm">// 1/d 型: 距离→0 惩罚→∞ (硬壁!)</span></code></pre>
+    <p style="font-size:13px;color:var(--muted)">
+      ← YAML: min_obstacle_dist=0.25, obstacle_cost_exponent=4, weight_obstacle=100
+    </p>
+  </div>
+
+  <!-- 途经点边 -->
+  <div class="card">
+    <h3>📍 EdgeViaPoint</h3>
+    <div class="path">g2o_types/edge_via_point.h : 120 行</div>
+    <span class="tag edge">1维残差</span>
+    <span class="tag edge">弹簧效应</span>
+    <pre><code><span class="cm">// 连接: (pose_i*) — 一元边</span>
+<span class="cm">// i* = elastic_band 上离 via-point 最近的节点</span>
+_error[0] = (
+  pose_i*->pos - via_point_pos
+).<span class="fn">norm</span>();
+<span class="cm">// = 弹性带偏离途经点的距离</span>
+
+<span class="cm">// 像弹簧一样把弹性带拉向全局路径</span>
+<span class="cm">// weight_viapoint 越大，拉力越强</span></code></pre>
+    <p style="font-size:13px;color:var(--muted)">
+      ← YAML: weight_viapoint=5, global_plan_viapoint_sep=0.5
+    </p>
+  </div>
+</div>
+
+<!-- ==================== YAML→C++ 映射 ==================== -->
+<h2 id="yaml2cpp">🔄 五、YAML 参数 → C++ 变量 → 约束边 完整映射链</h2>
+
+<!-- 大SVG映射图 -->
+<svg viewBox="0 0 1100 580" xmlns="http://www.w3.org/2000/svg" font-size="11">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/>
+    </marker>
+    <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/>
+    </marker>
+  </defs>
+
+  <!-- 列标题 -->
+  <rect x="10" y="10" width="200" height="32" fill="#d2991d22" stroke="#d2991d" stroke-width="1.5" rx="6"/>
+  <text x="110" y="31" text-anchor="middle" font-weight="700" fill="#d2991d">YAML 参数</text>
+
+  <rect x="240" y="10" width="200" height="32" fill="#58a6ff22" stroke="#58a6ff" stroke-width="1.5" rx="6"/>
+  <text x="340" y="31" text-anchor="middle" font-weight="700" fill="#58a6ff">teb_config.h</text>
+
+  <rect x="470" y="10" width="200" height="32" fill="#a371f722" stroke="#a371f7" stroke-width="1.5" rx="6"/>
+  <text x="570" y="31" text-anchor="middle" font-weight="700" fill="#a371f7">AddEdges*() 函数</text>
+
+  <rect x="700" y="10" width="200" height="32" fill="#3fb95022" stroke="#3fb950" stroke-width="1.5" rx="6"/>
+  <text x="800" y="31" text-anchor="middle" font-weight="700" fill="#3fb950">C++ 约束边类</text>
+
+  <rect x="930" y="10" width="160" height="32" fill="#f8514922" stroke="#f85149" stroke-width="1.5" rx="6"/>
+  <text x="1010" y="31" text-anchor="middle" font-weight="700" fill="#f85149">代价贡献</text>
+
+  <!-- 行1: 速度 -->
+  <rect x="10" y="55" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="20" y="72" font-family="monospace" font-size="12" fill="#3fb950">max_vel_x: 0.8</text>
+  <text x="20" y="89" font-family="monospace" font-size="11" fill="#8b949e">weight_max_vel_x: 2</text>
+
+  <rect x="240" y="55" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="250" y="72" font-family="monospace" font-size="11" fill="#58a6ff">robot.max_vel_x</text>
+  <text x="250" y="89" font-family="monospace" font-size="11" fill="#8b949e">optim.weight_max_vel_x</text>
+
+  <rect x="470" y="55" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="480" y="78" font-family="monospace" font-size="11" fill="#a371f7">AddEdgesVelocity()</text>
+
+  <rect x="700" y="55" width="200" height="42" fill="#161b22" stroke="#3fb950" rx="4"/>
+  <text x="710" y="78" font-family="monospace" font-size="11" fill="#3fb950">EdgeVelocityHolonomic</text>
+
+  <rect x="930" y="55" width="160" height="42" fill="#161b22" stroke="#f85149" rx="4"/>
+  <text x="940" y="78" font-family="monospace" font-size="10" fill="#f85149">2 × Σ e_vx²</text>
+
+  <!-- 箭头 -->
+  <line x1="210" y1="76" x2="238" y2="76" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="440" y1="76" x2="468" y2="76" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="670" y1="76" x2="698" y2="76" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="900" y1="76" x2="928" y2="76" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- 行2: 时间最优 -->
+  <rect x="10" y="110" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="20" y="127" font-family="monospace" font-size="12" fill="#3fb950">weight_optimaltime: 5</text>
+
+  <rect x="240" y="110" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="250" y="134" font-family="monospace" font-size="11" fill="#58a6ff">optim.weight_optimaltime</text>
+
+  <rect x="470" y="110" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="480" y="134" font-family="monospace" font-size="11" fill="#a371f7">AddEdgesTimeOptimal()</text>
+
+  <rect x="700" y="110" width="200" height="42" fill="#161b22" stroke="#3fb950" rx="4"/>
+  <text x="710" y="134" font-family="monospace" font-size="11" fill="#3fb950">EdgeTimeOptimal</text>
+
+  <rect x="930" y="110" width="160" height="42" fill="#161b22" stroke="#f85149" rx="4"/>
+  <text x="940" y="134" font-family="monospace" font-size="10" fill="#f85149">5 × Σ ΔTᵢ²</text>
+
+  <line x1="210" y1="131" x2="238" y2="131" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="440" y1="131" x2="468" y2="131" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="670" y1="131" x2="698" y2="131" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="900" y1="131" x2="928" y2="131" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- 行3: 障碍物 -->
+  <rect x="10" y="165" width="200" height="57" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="20" y="182" font-family="monospace" font-size="12" fill="#3fb950">min_obstacle_dist: 0.25</text>
+  <text x="20" y="197" font-family="monospace" font-size="11" fill="#8b949e">weight_obstacle: 100</text>
+  <text x="20" y="212" font-family="monospace" font-size="11" fill="#8b949e">obstacle_cost_exponent: 4</text>
+
+  <rect x="240" y="165" width="200" height="57" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="250" y="182" font-family="monospace" font-size="11" fill="#58a6ff">obstacles.min_obstacle_dist</text>
+  <text x="250" y="197" font-family="monospace" font-size="11" fill="#8b949e">optim.weight_obstacle</text>
+  <text x="250" y="212" font-family="monospace" font-size="11" fill="#8b949e">optim.obstacle_cost_exponent</text>
+
+  <rect x="470" y="165" width="200" height="57" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="480" y="195" font-family="monospace" font-size="11" fill="#a371f7">AddEdgesObstacles()</text>
+
+  <rect x="700" y="165" width="200" height="57" fill="#161b22" stroke="#3fb950" rx="4"/>
+  <text x="710" y="195" font-family="monospace" font-size="11" fill="#3fb950">EdgeObstacle</text>
+
+  <rect x="930" y="165" width="160" height="57" fill="#161b22" stroke="#f85149" rx="4"/>
+  <text x="940" y="189" font-family="monospace" font-size="10" fill="#f85149">100 × Σ e_obs²</text>
+  <text x="940" y="204" font-family="monospace" font-size="10" fill="#8b949e">e_obs = ((dmin+ε)/d)^(p/2)-1</text>
+
+  <line x1="210" y1="193" x2="238" y2="193" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="440" y1="193" x2="468" y2="193" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="670" y1="193" x2="698" y2="193" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="900" y1="193" x2="928" y2="193" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- 行4: 运动学 -->
+  <rect x="10" y="235" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="20" y="252" font-family="monospace" font-size="12" fill="#3fb950">weight_kinematics_nh: 0</text>
+  <text x="20" y="269" font-family="monospace" font-size="11" fill="#8b949e">(全向底盘→跳过)</text>
+
+  <rect x="240" y="235" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="250" y="259" font-family="monospace" font-size="11" fill="#58a6ff">optim.weight_kinematics_nh</text>
+
+  <rect x="470" y="235" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="480" y="253" font-family="monospace" font-size="11" fill="#a371f7">跳过 (全向底盘)</text>
+  <text x="480" y="268" font-family="monospace" font-size="11" fill="#8b949e">AddEdgesKinematicsDiffDrive</text>
+
+  <rect x="700" y="235" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="710" y="253" font-family="monospace" font-size="11" fill="#8b949e">(不创建)</text>
+  <text x="710" y="268" font-family="monospace" font-size="11" fill="#8b949e">EdgeKinematicsDiffDrive</text>
+
+  <rect x="930" y="235" width="160" height="42" fill="#161b22" stroke="#f85149" rx="4"/>
+  <text x="940" y="259" font-family="monospace" font-size="10" fill="#8b949e">0 (无贡献)</text>
+
+  <line x1="210" y1="256" x2="238" y2="256" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="440" y1="256" x2="468" y2="256" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="670" y1="256" x2="698" y2="256" stroke="#8b949e" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- 行5: 途经点 -->
+  <rect x="10" y="290" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="20" y="307" font-family="monospace" font-size="12" fill="#3fb950">weight_viapoint: 5</text>
+  <text x="20" y="324" font-family="monospace" font-size="11" fill="#8b949e">global_plan_viapoint_sep: 0.5</text>
+
+  <rect x="240" y="290" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="250" y="314" font-family="monospace" font-size="11" fill="#58a6ff">optim.weight_viapoint</text>
+
+  <rect x="470" y="290" width="200" height="42" fill="#161b22" stroke="#30363d" rx="4"/>
+  <text x="480" y="314" font-family="monospace" font-size="11" fill="#a371f7">AddEdgesViaPoints()</text>
+
+  <rect x="700" y="290" width="200" height="42" fill="#161b22" stroke="#3fb950" rx="4"/>
+  <text x="710" y="314" font-family="monospace" font-size="11" fill="#3fb950">EdgeViaPoint</text>
+
+  <rect x="930" y="290" width="160" height="42" fill="#161b22" stroke="#f85149" rx="4"/>
+  <text x="940" y="314" font-family="monospace" font-size="10" fill="#f85149">5 × Σ ||p_i-pp_j||²</text>
+
+  <line x1="210" y1="311" x2="238" y2="311" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="440" y1="311" x2="468" y2="311" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="670" y1="311" x2="698" y2="311" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="900" y1="311" x2="928" y2="311" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- 行6: 惩罚缓冲区跨越所有 -->
+  <rect x="10" y="345" width="200" height="42" fill="#da363310" stroke="#f85149" stroke-width="1.5" rx="4"/>
+  <text x="20" y="369" font-family="monospace" font-size="12" fill="#f85149">penalty_epsilon: 0.1</text>
+
+  <rect x="240" y="345" width="200" height="42" fill="#da363310" stroke="#f85149" stroke-width="1.5" rx="4"/>
+  <text x="250" y="369" font-family="monospace" font-size="11" fill="#58a6ff">optim.penalty_epsilon</text>
+
+  <rect x="470" y="345" width="430" height="42" fill="#da363310" stroke="#f85149" stroke-width="1.5" rx="4"/>
+  <text x="480" y="369" font-family="monospace" font-size="11" fill="#f85149">贯穿 velocity / acceleration / obstacle 所有惩罚调用</text>
+  <text x="480" y="384" font-family="monospace" font-size="11" fill="#8b949e">penaltyBoundToInterval(var, a, b, cfg_->optim.penalty_epsilon)</text>
+
+  <rect x="930" y="345" width="160" height="42" fill="#da363310" stroke="#f85149" stroke-width="1.5" rx="4"/>
+  <text x="940" y="369" font-family="monospace" font-size="10" fill="#f85149">所有边界统一偏移 0.1</text>
+
+  <line x1="210" y1="366" x2="238" y2="366" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="440" y1="366" x2="468" y2="366" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- 底部说明 -->
+  <rect x="10" y="410" width="1080" height="50" fill="#161b22" stroke="#30363d" stroke-width="1" rx="6"/>
+  <text x="30" y="440" font-size="13" fill="#8b949e">
+    权重通过 g2o 的 <tspan fill="#58a6ff" font-family="monospace">setInformation()</tspan> 注入：<tspan fill="#3fb950">信息矩阵 = weight × I</tspan>。
+    g2o 内部计算每条边的贡献 = <tspan fill="#f85149">e(x)ᵀ · Ω · e(x) = weight × e(x)²</tspan>。
+    所有权重乘在残差平方之前 — 这就是为什么 weight 越大，优化器越"在意"这条边。
+  </text>
+</svg>
+
+<!-- ==================== 图构建流程 ==================== -->
+<h2 id="builder">🏗️ 六、buildGraph() — 图构建的完整调用链</h2>
+
+<div class="flow">
+  <div class="flow-row">
+    <div class="flow-num">1</div>
+    <div class="flow-box">
+      <div class="title">AddTEBVertices()</div>
+      <div class="detail">
+        把 TimedElasticBand 上的每个位姿 PoseSE2 创建一个 <code>VertexPose</code>（3DOF: x,y,θ），
+        每个 ΔT 创建一个 <code>VertexTimeDiff</code>（1DOF: dt）。全部加入 g2o 优化图。
+        <br>→ 固定起点和终点（如果配置了初始/终止速度）
+      </div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-num">2</div>
+    <div class="flow-box">
+      <div class="title">AddEdgesVelocity()</div>
+      <div class="detail">
+        全向底盘 → 创建 <code>EdgeVelocityHolonomic</code>（3维残差：vx,vy,ω）<br>
+        差速底盘 → 创建 <code>EdgeVelocity</code>（2维残差：v,ω）<br>
+        每条边连接 (pose_i, pose_{i+1}, ΔT_i)，共 n 条
+      </div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-num">3</div>
+    <div class="flow-box">
+      <div class="title">AddEdgesAcceleration()</div>
+      <div class="detail">
+        创建 <code>EdgeAcceleration</code>（3维残差：ax,ay,α）<br>
+        <strong>超边</strong>：每条边连接 5 个顶点 (pose_{i-1}, pose_i, pose_{i+1}, ΔT_{i-1}, ΔT_i)<br>
+        共 n-1 条。再加上起点/终点的 <code>EdgeAccelerationStart/Goal</code>
+      </div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-num">4</div>
+    <div class="flow-box">
+      <div class="title">AddEdgesTimeOptimal()</div>
+      <div class="detail">
+        创建 <code>EdgeTimeOptimal</code>（1维残差：Δt）<br>
+        一元边，每条只连接一个 ΔT_i，共 n 条<br>
+        残差直接 = ΔT_i，代价 = weight × ΔT_i²
+      </div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-num">5</div>
+    <div class="flow-box">
+      <div class="title">AddEdgesShortestPath()</div>
+      <div class="detail">
+        创建 <code>EdgeShortestPath</code>（1维残差：||d||）<br>
+        每条边连接 (pose_i, pose_{i+1})，共 n 条<br>
+        残差 = 两点欧氏距离
+      </div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-num">6</div>
+    <div class="flow-box">
+      <div class="title">AddEdgesObstacles(weight_multiplier)</div>
+      <div class="detail">
+        对每个障碍物，找到最近的 obstacle_poses_affected (=15) 个弹性带节点<br>
+        每个节点创建一条 <code>EdgeObstacle</code>（1维残差：距离惩罚）<br>
+        ≤ n × 15 条边。<strong>weight_multiplier 用于自适应权重调整</strong>
+      </div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-num">7</div>
+    <div class="flow-box">
+      <div class="title">AddEdgesViaPoints()</div>
+      <div class="detail">
+        对每个途经点，找到弹性带上最近的节点<br>
+        创建 <code>EdgeViaPoint</code>（1维残差：距离）<br>
+        像弹簧把弹性带"拉"向全局路径
+      </div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-num">8</div>
+    <div class="flow-box">
+      <div class="title">AddEdgesKinematics*() — 底盘相关</div>
+      <div class="detail">
+        <strong>差速</strong>：AddEdgesKinematicsDiffDrive() → EdgeKinematicsDiffDrive（非完整约束+前进偏好）<br>
+        <strong>阿克曼</strong>：AddEdgesKinematicsCarlike() → EdgeKinematicsCarlike（非完整+最小转弯半径）<br>
+        <strong>全向</strong>：<span style="color:var(--yellow)">跳过！不添加运动学边</span>（weight_kinematics_nh=0 时）
+      </div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-num">9</div>
+    <div class="flow-box">
+      <div class="title">AddEdgesDynamicObstacles() + AddEdgesPreferRotDir()</div>
+      <div class="detail">
+        动态障碍物边（实验性）+ 旋转方向偏好边（防振荡）
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LM求解 ==================== -->
+<h2 id="solver">🔢 七、optimizeGraph() — Levenberg-Marquardt 求解</h2>
+
+<svg viewBox="0 0 1100 340" xmlns="http://www.w3.org/2000/svg" font-size="13">
+  <!-- 循环框 -->
+  <rect x="10" y="10" width="1080" height="320" fill="#161b22" stroke="#30363d" stroke-width="1.5" rx="8"/>
+
+  <!-- outer loop -->
+  <rect x="30" y="30" width="500" height="280" fill="#d2991d08" stroke="#d2991d" stroke-width="1.5" rx="6"/>
+  <text x="60" y="55" font-weight="700" fill="#d2991d">外迭代 (outer_iterations = 5)</text>
+
+  <!-- inner loop -->
+  <rect x="60" y="75" width="440" height="200" fill="#3fb95008" stroke="#3fb950" stroke-width="1.5" rx="6"/>
+  <text x="80" y="100" font-weight="700" fill="#3fb950">内迭代 (inner_iterations = 6)</text>
+
+  <!-- steps -->
+  <rect x="80" y="115" width="200" height="35" fill="#1c2128" stroke="#30363d" rx="4"/>
+  <text x="180" y="137" text-anchor="middle" font-size="11" fill="#c9d1d9">① 计算所有边的 e(x) 和 J</text>
+
+  <rect x="290" y="115" width="200" height="35" fill="#1c2128" stroke="#30363d" rx="4"/>
+  <text x="390" y="137" text-anchor="middle" font-size="11" fill="#c9d1d9">② 组装 JᵀJ 和 Jᵀe</text>
+
+  <rect x="80" y="160" width="200" height="35" fill="#1c2128" stroke="#30363d" rx="4"/>
+  <text x="180" y="182" text-anchor="middle" font-size="11" fill="#c9d1d9">③ 解 (JᵀJ+λI)Δx = -Jᵀe</text>
+
+  <rect x="290" y="160" width="200" height="35" fill="#1c2128" stroke="#30363d" rx="4"/>
+  <text x="390" y="182" text-anchor="middle" font-size="11" fill="#c9d1d9">④ x ← x + Δx</text>
+
+  <rect x="80" y="205" width="410" height="35" fill="#1c2128" stroke="#30363d" rx="4"/>
+  <text x="285" y="227" text-anchor="middle" font-size="11" fill="#c9d1d9">⑤ 调整阻尼 λ：代价下降 → λ↘；代价上升 → λ↗</text>
+
+  <!-- 外迭代步骤 -->
+  <rect x="80" y="255" width="410" height="35" fill="#1c2128" stroke="#d2991d" stroke-width="1" rx="4"/>
+  <text x="285" y="277" text-anchor="middle" font-size="11" fill="#d2991d">每轮外迭代结束：更新障碍物关联 + 弹性带自适应(插/删节点)</text>
+
+  <!-- 右侧：公式面板 -->
+  <rect x="560" y="30" width="510" height="136" fill="#1c2128" stroke="#30363d" stroke-width="1" rx="6"/>
+  <text x="580" y="55" font-weight="700" fill="#58a6ff" font-size="14">核心求解方程</text>
+
+  <text x="580" y="85" font-family="monospace" font-size="16" fill="#c9d1d9">(</text>
+  <text x="595" y="85" font-family="monospace" font-size="16" fill="#f85149">JᵀJ</text>
+  <text x="625" y="85" font-family="monospace" font-size="16" fill="#c9d1d9"> + </text>
+  <text x="650" y="85" font-family="monospace" font-size="16" fill="#d2991d">λI</text>
+  <text x="680" y="85" font-family="monospace" font-size="16" fill="#c9d1d9">) </text>
+  <text x="700" y="85" font-family="monospace" font-size="16" fill="#3fb950">Δx</text>
+  <text x="730" y="85" font-family="monospace" font-size="16" fill="#c9d1d9"> = </text>
+  <text x="755" y="85" font-family="monospace" font-size="16" fill="#c9d1d9">-</text>
+  <text x="770" y="85" font-family="monospace" font-size="16" fill="#f85149">Jᵀe</text>
+
+  <text x="590" y="115" font-size="12" fill="#8b949e">J: 雅可比 (M × N) · M=边数(~300) · N=变量数(~120)</text>
+  <text x="590" y="135" font-size="12" fill="#8b949e">JᵀJ: 近似 Hessian · 高度稀疏 · 带状结构 · 稀疏Cholesky O(N)</text>
+  <text x="590" y="155" font-size="12" fill="#8b949e">λ: 阻尼系数 · λ大→保守(梯度下降) · λ小→激进(Gauss-Newton)</text>
+
+  <!-- 性能指标 -->
+  <rect x="560" y="180" width="510" height="130" fill="#1c2128" stroke="#30363d" stroke-width="1" rx="6"/>
+  <text x="580" y="208" font-weight="700" fill="#3fb950" font-size="14">性能指标</text>
+
+  <text x="590" y="235" font-size="13" fill="#c9d1d9">总迭代: <tspan fill="#3fb950" font-weight="700">5 × 6 = 30 次</tspan></text>
+  <text x="590" y="258" font-size="13" fill="#c9d1d9">单次耗时: <tspan fill="#3fb950" font-weight="700">~1-5 ms</tspan> (现代CPU, Jetson Nano 上 ~10-30ms)</text>
+  <text x="590" y="281" font-size="13" fill="#c9d1d9">控制频率: <tspan fill="#3fb950" font-weight="700">20ms/周期 = 50Hz</tspan></text>
+  <text x="590" y="304" font-size="13" fill="#8b949e">稀疏求解复杂度 ≈ O(N) 而非 O(N³) — 得益于带状 Hessian 结构</text>
+</svg>
+
+<!-- ==================== 完整图结构 ==================== -->
+<h2 id="fullgraph">🌐 八、完整图结构 — 所有顶点和边的拓扑</h2>
+
+<svg viewBox="0 0 1100 520" xmlns="http://www.w3.org/2000/svg" font-size="12">
+  <defs>
+    <marker id="arr4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <!-- 顶点行 -->
+  <text x="30" y="35" font-weight="700" fill="#8b949e">顶点 (Variables)</text>
+
+  <!-- Pose vertices -->
+  <rect x="30" y="50" width="120" height="44" fill="#eff6ff22" stroke="#58a6ff" stroke-width="2" rx="6"/>
+  <text x="90" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#58a6ff">Pose₀ (x,y,θ)</text>
+  <text x="90" y="85" text-anchor="middle" font-size="10" fill="#8b949e">VertexPose</text>
+
+  <rect x="190" y="50" width="120" height="44" fill="#eff6ff22" stroke="#58a6ff" stroke-width="2" rx="6"/>
+  <text x="250" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#58a6ff">Pose₁ (x,y,θ)</text>
+  <text x="250" y="85" text-anchor="middle" font-size="10" fill="#8b949e">VertexPose</text>
+
+  <rect x="350" y="50" width="120" height="44" fill="#eff6ff22" stroke="#58a6ff" stroke-width="2" rx="6"/>
+  <text x="410" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#58a6ff">Pose₂ (x,y,θ)</text>
+  <text x="410" y="85" text-anchor="middle" font-size="10" fill="#8b949e">VertexPose</text>
+
+  <rect x="510" y="50" width="120" height="44" fill="#eff6ff22" stroke="#58a6ff" stroke-width="2" rx="6"/>
+  <text x="570" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#58a6ff">Pose₃ (x,y,θ)</text>
+  <text x="570" y="85" text-anchor="middle" font-size="10" fill="#8b949e">VertexPose</text>
+
+  <text x="650" y="78" font-size="14" fill="#8b949e">···</text>
+
+  <rect x="700" y="50" width="120" height="44" fill="#eff6ff22" stroke="#58a6ff" stroke-width="2" rx="6"/>
+  <text x="760" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#58a6ff">Poseₙ (x,y,θ)</text>
+  <text x="760" y="85" text-anchor="middle" font-size="10" fill="#8b949e">VertexPose</text>
+
+  <!-- Time vertices -->
+  <rect x="140" y="115" width="80" height="36" fill="#fef3c722" stroke="#d2991d" stroke-width="1.5" rx="4"/>
+  <text x="180" y="131" text-anchor="middle" font-size="12" font-weight="600" fill="#d2991d">ΔT₀</text>
+  <text x="180" y="146" text-anchor="middle" font-size="10" fill="#8b949e">VertexTimeDiff</text>
+
+  <rect x="300" y="115" width="80" height="36" fill="#fef3c722" stroke="#d2991d" stroke-width="1.5" rx="4"/>
+  <text x="340" y="131" text-anchor="middle" font-size="12" font-weight="600" fill="#d2991d">ΔT₁</text>
+  <text x="340" y="146" text-anchor="middle" font-size="10" fill="#8b949e">VertexTimeDiff</text>
+
+  <rect x="460" y="115" width="80" height="36" fill="#fef3c722" stroke="#d2991d" stroke-width="1.5" rx="4"/>
+  <text x="500" y="131" text-anchor="middle" font-size="12" font-weight="600" fill="#d2991d">ΔT₂</text>
+  <text x="500" y="146" text-anchor="middle" font-size="10" fill="#8b949e">VertexTimeDiff</text>
+
+  <text x="570" y="138" font-size="14" fill="#8b949e">···</text>
+
+  <rect x="630" y="115" width="80" height="36" fill="#fef3c722" stroke="#d2991d" stroke-width="1.5" rx="4"/>
+  <text x="670" y="131" text-anchor="middle" font-size="12" font-weight="600" fill="#d2991d">ΔTₙ₋₁</text>
+  <text x="670" y="146" text-anchor="middle" font-size="10" fill="#8b949e">VertexTimeDiff</text>
+
+  <!-- 边区域 -->
+  <text x="30" y="190" font-weight="700" fill="#8b949e">约束边 (Edges = Constraints)</text>
+
+  <!-- 速度边 -->
+  <rect x="30" y="205" width="890" height="36" fill="#3fb95010" stroke="#3fb950" stroke-width="1" rx="4"/>
+  <text x="45" y="228" font-size="12" font-weight="600" fill="#3fb950">⚡ 速度上界</text>
+  <text x="160" y="228" font-size="11" fill="#8b949e">EdgeVelocityHolonomic(n) · 3维残差(vx,vy,ω) · weight_max_vel_{x,y,theta}</text>
+
+  <line x1="90" y1="94" x2="170" y2="205" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="250" y1="94" x2="250" y2="205" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="90" y1="104" x2="410" y2="205" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- 加速度边 -->
+  <rect x="30" y="250" width="890" height="36" fill="#db61a310" stroke="#db61a3" stroke-width="1" rx="4"/>
+  <text x="45" y="273" font-size="12" font-weight="600" fill="#db61a3">📐 加速度上界</text>
+  <text x="160" y="273" font-size="11" fill="#8b949e">EdgeAcceleration(n-1) · 3维残差(ax,ay,α) · 超边! 连接5个顶点 · weight_acc_lim_{x,y,theta}</text>
+
+  <!-- 时间最优边 -->
+  <rect x="30" y="295" width="890" height="36" fill="#d2991d10" stroke="#d2991d" stroke-width="1" rx="4"/>
+  <text x="45" y="318" font-size="12" font-weight="600" fill="#d2991d">⏱️ 时间最优</text>
+  <text x="160" y="318" font-size="11" fill="#8b949e">EdgeTimeOptimal(n) · 1维残差(ΔT) · 一元边! · weight_optimaltime</text>
+
+  <line x1="180" y1="151" x2="180" y2="295" stroke="#d2991d" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- 最短路径边 -->
+  <rect x="30" y="340" width="890" height="36" fill="#a371f710" stroke="#a371f7" stroke-width="1" rx="4"/>
+  <text x="45" y="363" font-size="12" font-weight="600" fill="#a371f7">📏 最短路径</text>
+  <text x="160" y="363" font-size="11" fill="#8b949e">EdgeShortestPath(n) · 1维残差(||d||) · 连接(Poseᵢ, Poseᵢ₊₁) · weight_shortest_path</text>
+
+  <!-- 障碍物边 -->
+  <rect x="30" y="385" width="890" height="36" fill="#f8514910" stroke="#f85149" stroke-width="1" rx="4"/>
+  <text x="45" y="408" font-size="12" font-weight="600" fill="#f85149">🧱 障碍物距离</text>
+  <text x="160" y="408" font-size="11" fill="#8b949e">EdgeObstacle(≤ n×15) · 1维残差 · 一元边(Poseᵢ) · 1/d型惩罚 · weight_obstacle</text>
+
+  <!-- 途经点边 -->
+  <rect x="30" y="430" width="890" height="36" fill="#58a6ff10" stroke="#58a6ff" stroke-width="1" rx="4"/>
+  <text x="45" y="453" font-size="12" font-weight="600" fill="#58a6ff">📍 途经点跟踪</text>
+  <text x="160" y="453" font-size="11" fill="#8b949e">EdgeViaPoint(m) · 1维残差 · 一元边(Poseᵢ*) · 弹簧效应 · weight_viapoint</text>
+
+  <!-- 运动学边（灰掉-全向跳过） -->
+  <rect x="30" y="475" width="890" height="36" fill="#8b949e10" stroke="#8b949e" stroke-width="1" stroke-dasharray="6,3" rx="4"/>
+  <text x="45" y="498" font-size="12" font-weight="600" fill="#8b949e">🚗 非完整约束 (全向底盘=跳过)</text>
+  <text x="160" y="498" font-size="11" fill="#8b949e">EdgeKinematicsDiffDrive · 差速/阿克曼专用 · weight_kinematics_nh (当前=0→不添加此边)</text>
+</svg>
+
+<div class="callout good">
+  <strong>总结</strong>：TEB 源码 = <strong>penalties.h 提供惩罚语言 + 10 个 Edge* 类定义约束语意 + optimal_planner.h 组装超图 + g2o 稀疏 LM 求解</strong>。你改的每个 YAML 参数，最终都变成了图中某条边的信息矩阵系数。
+</div>
+
+<p style="margin-top: 3em; text-align: center; color: var(--muted); font-size: 13px;">
+  📐 TEB 源码可视化 · ABOT 全向底盘 · 基于 ros-melodic-teb-local-planner · 2026-06-01
+</p>
+
+</body>
+</html>
