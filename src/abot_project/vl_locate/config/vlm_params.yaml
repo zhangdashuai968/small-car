@@ -11,7 +11,7 @@ font_path: "/home/abot/catkin_ws/src/abot_project/vl_locate/config/SimHei.ttf"  
 font_size: 32                                          # 字体大小
 
 # API配置
-api_key: ""         # API密钥
+api_key: "sk-4f51e302d219401eb0e21dc9aa7f9bbd"         # API密钥
 base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # API基础URL
 model_name: "qwen-vl-max-latest"                       # 模型名称
 mode: "openai"                                         # 模式选择:openai 或 dashscope
@@ -21,4 +21,3 @@ bbox_color: [0, 0, 255]           # 边界框颜色 (BGR格式)
 bbox_thickness: 3                 # 边界框线条粗细
 center_radius: 6                  # 中心点半径
 text_color: [255, 0, 0]          # 文本颜色 (RGB格式)
-

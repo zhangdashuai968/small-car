@@ -31,7 +31,7 @@ class VLM:
         self.image_save_path = rospy.get_param('~image_save_path', '/home/abot/catkin_ws/src/abot_project/vl_locate/image/vlm_now.jpg')
         self.font_path = rospy.get_param('~font_path', '/home/abot/catkin_ws/src/abot_project/vl_locate/config/SimHei.ttf')
         self.font_size = rospy.get_param('~font_size', 32)
-        self.api_key = rospy.get_param('~api_key', 'sk-07754b4263014767a5e83bf57b2f5868')
+        self.api_key = rospy.get_param('~api_key', 'sk-4f51e302d219401eb0e21dc9aa7f9bbd')
         self.base_url = rospy.get_param('~base_url', 'https://dashscope.aliyuncs.com/compatible-mode/v1')
         self.model_name = rospy.get_param('~model_name', 'qwen-vl-max-latest')
         self.mode = rospy.get_param('~mode', 'dashscope')
