@@ -33,7 +33,7 @@ class VLM:
         self.font_size = rospy.get_param('~font_size', 32)
         self.api_key = rospy.get_param('~api_key', 'sk-4f51e302d219401eb0e21dc9aa7f9bbd')
         self.base_url = rospy.get_param('~base_url', 'https://dashscope.aliyuncs.com/compatible-mode/v1')
-        self.model_name = rospy.get_param('~model_name', 'qwen-vl-max-latest')
+        self.model_name = rospy.get_param('~model_name', 'qwen-vl-max')
         self.mode = rospy.get_param('~mode', 'dashscope')
         self.bbox_color = rospy.get_param('~bbox_color', [0, 0, 255])  # BGR格式
         self.bbox_thickness = rospy.get_param('~bbox_thickness', 3)
