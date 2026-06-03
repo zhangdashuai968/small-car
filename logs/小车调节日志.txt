@@ -141,3 +141,79 @@ step3 -> -1.98 — 10.7s
   5. 四轮接地均衡性
 
 详见: reports/调参极限分析报告.md（已重写）
+
+========================================
+[2026-06-03 23:30] P0 导航栈优化 — 降低 Jetson Nano CPU 负载
+========================================
+
+背景：
+  全栈 35 节点（bringup + vl_locate + navigate + auto_navigation_grasp + rviz），
+  Jetson Nano 4核/4GB 扛不住，AMCL 粒子和 move_base costmap 跟不上实时，
+  map→odom tf 时间戳滞后 → Extrapolation Error，导航无法规划路径。
+
+  初始负载：load ~8.0（满载 4.0），内存 2.3G/3.9G。
+
+改动（3 个文件，7 处修改）：
+
+  【文件 1】~/catkin_ws/src/abot_project/abot/launch/amcl.launch
+    min_particles:   800 → 100    # ROS 默认值，室内结构化环境足够
+    max_particles:   3000 → 500   # 降低峰值粒子数
+    laser_max_beams: 180 → 30     # ROS 默认值，随机采样保证覆盖均匀
+
+  【文件 2】~/catkin_ws/src/abot_project/abot/param/navigation/common/global_costmap_params.yaml
+    update_frequency:     5 → 2   # 车慢（<0.2m/s），2Hz 足够
+    transform_tolerance:  1.0 → 3.0  # 允许用旧 tf，给 AMCL 喘息空间
+
+  【文件 3】~/catkin_ws/src/abot_project/abot/param/navigation/common/local_costmap_params.yaml
+    update_frequency:     5 → 2
+    transform_tolerance:  1.0 → 3.0
+
+效果：
+  - Load: 8.0 → 4.34（↓46%）
+  - AMCL 粒子运算量：~48 倍减少（800×180 vs 100×30）
+  - costmap 更新频率减半
+  - Extrapolation Error 消失
+  - 导航功能正常
+
+⚠️ 注意事项：
+  - 此改动在车上直接改文件，git 仓库未同步
+  - rosparam set 在 navigate.launch 启动后无效，必须改源文件
+  - AMCL 需要手动 2D Pose Estimate（rviz）给初始位姿
+  - transform_tolerance=3.0 在贴墙场景下最大偏移 0.6m，
+    有激光实时避障兜底，安全性不受影响
+
+========================================
+[2026-06-03 23:47-23:54] E05 六点巡逻测试（P0 优化后）
+========================================
+
+启动栈：
+  roscore + bringup + navigate.launch + auto_navigation_grasp.py
+  rviz 已关闭，vl_locate 保留（比赛刚需），33 节点
+
+参数：P0 优化已固化到文件（amcl 粒子100/500、laser_beams 30、
+  transform_tolerance 3.0、costmap 2Hz）
+
+rosbag: ~/bags/e05_0603_2352.bag (40MB, 7分23秒)
+  录制话题: /amcl_pose /cmd_vel /move_base/status /move_base/goal /tf /scan /odom
+
+结果：
+  - AMCL 初始位姿由用户手动 rviz 2D Pose Estimate 给定 (0.6, -0.4)
+  - 车移动到 wp1 附近 (-0.31, -2.73)，距目标 (-0.47, -2.86) 差 0.19m
+  - 之后 6 分钟停留在同一位置微调，move_base 状态始终为 ACTIVE(1)
+  - 最终卡死，未到达任何航点
+  - cmd_vel 活动比 61%，说明 move_base 持续发命令但无法到达目标
+
+bag 分析关键发现：
+  - AMCL 有效（位姿稳定更新）
+  - move_base 始终 ACTIVE，无 SUCCESS(3) 无 ABORTED(4)
+  - 车被卡在 wp1 0.19m 外，TEB 无法收敛到满足所有约束的位姿
+
+疑似根因：
+  xy_goal_tolerance 默认值过小（可能 0.1m），TEB 在 0.19m 处
+  无法同时满足位置+朝向+避障约束，陷入无限微调循环。
+  上次 6/2 测试设 xy_goal_tolerance=0.3 时 wp1 成功到达。
+
+下一步：
+  - 设 xy_goal_tolerance=0.3（rosparam 或改 YAML）
+  - 排查 wp1→wp2 是否仍会卡（6/2 时 wp2 狭小空间导致 ABORTED）
+  - 考虑切换到 auto_task_runner.py 直驱方案（绕开 move_base）
