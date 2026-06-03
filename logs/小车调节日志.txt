@@ -141,3 +141,114 @@ step3 -> -1.98 — 10.7s
   5. 四轮接地均衡性
 
 详见: reports/调参极限分析报告.md（已重写）
+
+========================================
+[2026-06-03 22:00-23:50] P0 导航栈优化 + E05 六点巡逻测试
+========================================
+
+## 背景
+
+全栈 33-35 节点（bringup + vl_locate + navigate + auto_navigation_grasp），
+Jetson Nano 4核/4GB 扛不住。AMCL 粒子滤波和 move_base costmap 跟不上实时，
+map→odom tf 时间戳滞后 → Extrapolation Error，move_base 无法规划路径。
+
+初始负载：load ~8.0（满载 4.0，超载 2x），内存 2.3G/3.9G。
+
+## P0 参数优化（3 个文件，7 处修改）
+
+### 文件 1：amcl.launch
+```
+min_particles:   800 → 100    # ROS 默认值，室内结构化环境足够
+max_particles:   3000 → 500   # 降低峰值计算量
+laser_max_beams: 180 → 30     # ROS 默认值，随机采样保证覆盖均匀
+```
+
+### 文件 2：global_costmap_params.yaml
+```
+update_frequency:     5 → 2   # 车慢（<0.2m/s），2Hz 足够
+transform_tolerance:  1.0 → 3.0  # 允许用旧 tf，给 AMCL 喘息空间
+```
+
+### 文件 3：local_costmap_params.yaml
+```
+update_frequency:     5 → 2
+transform_tolerance:  1.0 → 3.0
+```
+
+## 效果
+
+| 指标 | 优化前 | 优化后 |
+|------|--------|--------|
+| CPU Load (1min) | 8.0 | 4.34 |
+| 节点数 | 36 | 33（关 rviz） |
+| AMCL 粒子运算量 | 800×180=144k | 100×30=3k（↓98%） |
+| 内存 | 2.3G | 2.3G |
+| Extrapolation Error | 频繁出现 | 消失 |
+| 导航 | 无法规划 | 可规划但卡 wp1 |
+
+## 踩坑记录
+
+1. **rosparam set 在 launch 重启后无效**
+   launch 文件的 <param>/<rosparam> 会覆盖参数服务器。先 set 再启动=被覆盖。
+   解决方案：直接编辑源文件。
+
+2. **costmap transform_tolerance 不是动态参数**
+   rosparam get 显示 3.0，但 costmap C++ 代码只在初始化时读取。
+   解决方案：重启 navigate.launch。
+
+3. **SSH 会话被 pkill 杀掉**
+   pkill -f ros 有时误杀 SSH 进程。
+   解决方案：重新连接即可。
+
+## E05 六点巡逻测试
+
+### 条件
+- 33 节点（rviz 关闭，vl_locate 保留——比赛刚需）
+- P0 参数已固化
+- AMCL 手动 rviz 2D Pose Estimate 给初始位姿 (0.6, -0.4)
+- rosbag: ~/bags/e05_0603_2352.bag (40MB, 7分23秒, 33,397 条消息)
+
+### 结果：❌ 卡死在 wp1
+
+| 时间 | AMCL 位姿 | 状态 |
+|------|-----------|------|
+| 0s | (0.607, -0.381) | 起始 |
+| 28s | (0.181, -1.598) | 向 wp2 方向移动 |
+| 46s | (-0.157, -2.699) | 转向 wp1 |
+| 62s | (-0.275, -2.639) | 接近 wp1 |
+| 218s | (-0.315, -2.730) | 停留微调 |
+| 424s | (-0.302, -2.708) | 卡死，手动停止 |
+
+- 最终距 wp1：0.19m
+- move_base 状态：全程 ACTIVE(1)，无 SUCCESS(3) 无 ABORTED(4)
+- cmd_vel 活动比：61%（持续发命令但无法收敛）
+
+### 根因
+
+xy_goal_tolerance 默认值过小（~0.1m），TEB 在 0.19m 处无法同时满足
+位置+朝向+避障约束，陷入无限微调循环。
+
+对比：6/2 设 xy_goal_tolerance=0.3 时 wp1 67s 成功到达。
+
+### 下一步
+
+- [ ] 设 xy_goal_tolerance=0.3（rosparam 或改 YAML）
+- [ ] 切换到 auto_task_runner.py + localize.launch（绕开 move_base）
+- [ ] load 4.34 仍超 Nano 满载（4.0），需进一步减负
+
+========================================
+[2026-06-03 23:55] VLM server.py 修复（车上有，git 未同步）
+========================================
+
+车上 server.py 包含 3 处 VLM 修复：
+
+  1. 颜色映射（英文→中文）：Qwen VL 在中文上下文下识别英文颜色名
+     效果差（返回空列表），中文颜色名可正常检测
+  2. 异常处理扩展：原只捕获 JSONDecodeError，API 返回空列表[]
+     时触发 IndexError 未被捕获 → 服务崩溃。扩展为
+     (JSONDecodeError, IndexError, KeyError, TypeError)
+  3. vlm_detection 使用中文颜色名：英文颜色名自动映射到中文
+
+model_name 默认值已修正：qwen-vl-max-latest → qwen-vl-max
+
+详见：C:\Users\zhang666\Desktop\ABOT_VLM修复记录_20260603.md

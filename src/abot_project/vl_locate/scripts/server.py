@@ -39,7 +39,14 @@ class VLM:
         self.bbox_thickness = rospy.get_param('~bbox_thickness', 3)
         self.center_radius = rospy.get_param('~center_radius', 6)
         self.text_color = rospy.get_param('~text_color', [255, 0, 0])  # RGB格式
-        
+
+        # 颜色映射：英文→中文（Qwen VL 在中文上下文下识别英文颜色名效果差）
+        self.color_map = {
+            'red': '红色', 'blue': '蓝色', 'green': '绿色', 'yellow': '黄色',
+            'orange': '橙色', 'purple': '紫色', 'black': '黑色', 'white': '白色',
+            'pink': '粉色', 'brown': '棕色', 'gray': '灰色', 'grey': '灰色',
+        }
+
         # 系统提示词
         self.system_prompt = """
         检测图像中的目标，并以坐标的形式返回其位置。
@@ -135,12 +142,18 @@ class VLM:
             result = json.loads(content)
             # 如果返回的是列表，取第一个元素
             if isinstance(result, list):
+                if len(result) == 0:
+                    rospy.logwarn('大模型未检测到目标（返回空列表），请确认物体在视野内')
+                    return None
                 result = result[0]
+            if not isinstance(result, dict):
+                rospy.logerr(f'返回数据格式异常（非dict）: {type(result)}')
+                return None
             rospy.loginfo('大模型调用成功！')
             return result
-        except json.JSONDecodeError as e:
-            rospy.logerr(f"JSON解析失败: {e}")
-            rospy.logerr(f"返回内容: {content}")
+        except (json.JSONDecodeError, IndexError, KeyError, TypeError) as e:
+            rospy.logerr(f"返回数据解析失败: {e}")
+            rospy.logerr(f"返回内容: {content[:200]}")
             return None
 
     def post_processing_viz(self, result, img_path):
@@ -173,7 +186,9 @@ class VLM:
         return center_x, center_y
 
     def vlm_detection(self):
-        result = self.yi_vision_api('检测图中的{}'.format(self.object_name))
+        # 颜色名转中文（Qwen VL 在中文上下文下识别英文颜色名效果差）
+        obj_name_cn = self.color_map.get(self.object_name, self.object_name)
+        result = self.yi_vision_api('检测图中的{}'.format(obj_name_cn))
         if not isinstance(result, dict):
             rospy.logerr("返回结果格式错误！")
             return None
