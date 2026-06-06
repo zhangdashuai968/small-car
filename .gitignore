@@ -38,7 +38,12 @@ venv/
 *.code-workspace
 
 # 备份文件
+src_backup*/
+car_sync_*/
 *.bak
+
+# Qoder
+.qoder/
 
 # 系统文件
 Thumbs.db
