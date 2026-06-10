@@ -1,36 +1,31 @@
 DWAPlannerROS:
   holonomic_robot: true
   
-  # 平移为主
-  max_vel_x: 0.5
-  min_vel_x: -0.26
-  max_vel_y: 0.5
-  min_vel_y: -0.5
-  max_vel_trans: 0.5
-  min_vel_trans: 0.1
+  max_vel_x: 0.25
+  min_vel_x: -0.13
+  max_vel_y: 0.25
+  min_vel_y: -0.25
+  max_vel_trans: 0.25
+  min_vel_trans: 0.05
 
-  # 旋转：留极小空间给避障/调头，不锁死
-  max_vel_theta: 0.4
-  min_vel_theta: -0.4
+  max_vel_theta: 0.2
+  min_vel_theta: 0.0
   acc_lim_theta: 1.0
 
-  # 目标容忍度
-  xy_goal_tolerance: 0.15
+  xy_goal_tolerance: 0.25
   yaw_goal_tolerance: 6.28
   latch_xy_goal_tolerance: false
 
-  # 采样
-  vx_samples: 20
-  vy_samples: 20
-  vth_samples: 5            # 恢复少量旋转采样
-  sim_time: 1.5             # 缩短预测时间，减少“发飘”
+  vx_samples: 30
+  vy_samples: 30
+  vth_samples: 3
+  sim_time: 2.0
   controller_frequency: 10.0
 
-  # 权重压制（核心）
-  weight_max_vel_x: 2.0
-  weight_max_vel_y: 2.0
-  weight_max_vel_theta: 20.0 # 大幅惩罚旋转，迫使规划器优先选X/Y平移
-  weight_kinematics_nh: 0.1  # 全向车放开非完整约束惩罚
-  weight_obstacle: 100
-  weight_path: 32.0
-  weight_goal: 24.0
+  weight_max_vel_x: 60.0
+  weight_max_vel_y: 60.0
+  weight_max_vel_theta: 80.0
+  weight_kinematics_nh: 0.1
+  weight_obstacle: 250.0
+  weight_path: 15.0
+  weight_goal: 80.0

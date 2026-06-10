@@ -383,6 +383,10 @@ class TaskRunner(object):
         """执行点位动作: grab=抓取, place=放置, pass=跳过"""
         if action == 'pass':
             return True
+        if action == 'finish':
+            rospy.set_param('/grab', False)
+            self._servo_home()
+            return True
 
         # 1. 舵机归位（每次动作前确保机械臂在 home 位）
         rospy.loginfo('  servo home → %s', SERVO_HOME)
