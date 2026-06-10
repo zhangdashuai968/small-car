@@ -19,13 +19,11 @@ DWAPlannerROS:
   vx_samples: 30
   vy_samples: 30
   vth_samples: 3
-  sim_time: 2.0
+  sim_time: 1.2
   controller_frequency: 10.0
+  prune_plan: true
 
-  weight_max_vel_x: 60.0
-  weight_max_vel_y: 60.0
-  weight_max_vel_theta: 80.0
-  weight_kinematics_nh: 0.1
-  weight_obstacle: 250.0
-  weight_path: 15.0
-  weight_goal: 80.0
+  path_distance_bias: 32.0
+  goal_distance_bias: 12.0
+  occdist_scale: 0.08
+  twirling_scale: 8.0
