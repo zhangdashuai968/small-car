@@ -1,0 +1,295 @@
+# 角色与目标
+你现在是项目交接与上下文压缩专家。请基于当前工作区代码、配置文件以及我们的历史对话，生成一份极高信息密度的《ROS1多点导航项目与协作上下文备忘录》。这份文档将直接作为System Prompt或Context喂给未来的AI，让它能无缝接手工作。
+
+# 输出结构要求（严格按此输出，不要废话）
+
+## 1. 项目硬环境与技术栈基线
+- 运行环境：ROS1具体版本（如Noetic）、Ubuntu版本、Python/C++标准。
+- 核心依赖与自定义节点：列出关键第三方包（如move_base, teb_local_planner等）和我们自己写的核心节点名称及作用。
+- 硬件与传感器抽象：雷达型号/话题、底盘控制接口、TF树核心链路。
+
+## 2. 多点导航核心架构与业务逻辑
+- 任务调度层：多点目标是如何派发和管理的？（是简单的Python列表循环、SMACH状态机、还是BehaviorTree？）
+- 运动控制层：move_base的核心调优思路，全局/局部代价地图（costmap）的关键配置策略。
+- 异常与恢复逻辑：当某个点导航失败（如超时、路径被堵死、TF丢失）时，当前的重试、跳过或降级策略是什么？
+
+## 3. 代码演进与AI协作复盘（核心防坑区）
+- 关键变更：列出最近修改的核心文件及修改的根本原因。
+- AI协作高光：AI提供的哪些架构思路或代码片段直接解决了痛点？
+- AI协作踩坑（重点）：AI在辅助过程中犯过哪些典型错误？（例如：混淆ROS1和ROS2的API、幻觉出不存在的launch参数、忽略TF时间戳同步问题、给出的C++代码未处理ROS回调阻塞等）。明确列出“未来AI绝对不要做的事”。
+
+## 4. 当前状态与未决卡点
+- 现状：目前系统能跑通到什么程度？
+- 遗留Bug/瓶颈：尚未解决的问题，附带具体的现象描述或报错特征。
+- 下一步TODO：按优先级列出接下来的3个核心任务。
+
+## 5. 与cheng的交互协议
+- 总结我的提问习惯、决策偏好和沟通雷区。
+- 规定未来AI在回答我的问题时，必须遵守的思维路径（如：先给结论、再给代码、必须考虑ROS1的老旧特性等）。
+
+
+
+日志：
+5.24今天上午工作总结（2026-05-24）
+
+    核心成果：导航链路完全打通 ✅
+
+    1. TEB 目标点震荡问题诊断与修复
+     - 症状：1m goal 车到达目标区域后卡住 155s，反复 recovery
+     - 根因：weight_shortest_path=0，TEB 没有"直奔目标"的动力
+     - 热改三个参数后解决：
+       - weight_shortest_path: 0 → 1.0
+       - weight_kinematics_forward_drive: 1 → 2.0（热改时试过 5.0）
+       - max_vel_theta: 0.3 → 0.6
+       - inflation_radius: 0.25 → 0.15
+
+    2. 1m 导航测试通过
+     - 结果：SUCCEEDED，误差 1.3cm
+
+    3. TEB 参数固化到 yaml
+     - 热改验证通过后写入 teb_omni_planner_params.yaml 和 costmap_x4_params.yaml，不再依赖运行时 rosparam set
+
+    4. 建立导航调试标准流程
+     - 整理了从启动→AMCL 收敛→发 goal→诊断的完整 SOP，含常见坑
+
+    5. 多点任务编排脚本就绪
+     - auto_task_runner.py + waypoints.yaml 本地已写好
+
+    下一步
+    scp auto_task_runner.py + waypoints.yaml 上车 → 启动 vl_locate + grasp → 跑多点导航抓取任务
+我做了三件事：诊断漂移根源 → 给出极简参数 → 把问题边界推到物理层。
+具体改动清单
+参数
+原值/默认
+我改的值
+目的
+sim_time
+2.0+
+1.0
+砍掉长距离预测，防止算法“脑补”曲线导致车身摇摆
+path/goal_distance_bias
+32 / 20
+0.5
+解除路线强迫症，不纠结中间点，只往终点硬推
+max_vel_theta / acc_lim_theta
+0.0
+0.0
+彻底锁死旋转维度，杜绝试探性微调
+occdist_scale
+0.05
+0.01
+降避障敏感度，防提前侧滑漂移
+为什么之前会漂？
+你问的是“为什么严重漂移”。本质是 DWA 的内部矛盾：你把旋转锁死了，但高权重参数逼着它必须贴合全局路径的每一个点。算法没法转，只能把 vx 和 vy 交替输出硬凑“转向”效果，宏观表现就是左右发飘、轨迹扭动。
+现在卡在哪？
+参数已经压到极限。如果跑完还漂，问题就不在 move_base，而在底盘运动学模型不匹配。
+回我一个字： 你的轮子是 麦克纳姆/全向 还是 差速？
+差速轮：物理上不支持纯Y轴平移，收Y指令必漂。得切回差速专用逻辑。
+全向轮：这套参数跑完告诉我现象，我们直接定稿。
+
+
+
+
+
+5.24（2）① 改 NAV_PATH（车上终端跑）：
+
+sed -i 's/^export NAV_PATH=dwa$/export NAV_PATH=teb/' ~/.bashrc && grep -n NAV_PATH ~/.bashrc
+预期输出 150:export NAV_PATH=teb。
+
+② 让 move_base 真正加载 TEB（关键）：
+.bashrc 只影响新开的 shell，当前在跑的 move_base 还是 DWA。所以：
+
+Ctrl-C 掉那个 navigate.launch 的终端
+新开一个终端（自动 source 到 NAV_PATH=teb），重跑：
+roslaunch abot navigate.launch
+bringup 那个不用动，只重启 navigate。
+
+③ 验证确实是 TEB：
+
+rosparam get /move_base/base_local_planner
+预期 teb_local_planner/TebLocalPlannerROS（之前是 dwa_local_planner/...）。
+
+跑完把 ②③ 的输出贴给我。确认是 TEB 后，下一步我给你阶段1的两个 goal_tolerance 收紧命令（同样你来跑）。
+
+—— 这就是 NAV_PATH=dwa→teb 这一改回到今早能跑的状态；曼哈顿轨迹由本地已改好的 goto() 负责。
+阶段0 完成。下一步搬脚本上车做单段验证——但先改一处本地代码：现在 `__init__` 会**无条件阻塞等 `/vlm_detection`**，导致纯导航测试也得先起 vl_locate。我把它改成**懒加载**（只有真要 grab/place 时才连），这样阶段2/3 纯导航不用起抓取栈。
+
+创建单段测试用的 `waypoints_test.yaml`（只一个点、action=pass、带 yaw 变化测原地转）。坐标先给个从初始位姿出发的小偏移示例，你按你地图里**确定清空可达**的点改。
+
+本地都就绪了：
+- `goto()` 曼哈顿分解 ✓
+- `/vlm_detection` 懒加载（纯导航不用起抓取栈）✓
+- `waypoints_test.yaml` 单点测试文件 ✓
+
+**轮到你执行（真机写入/运动按规矩你来跑）：**
+
+**① 上传脚本**（Windows PowerShell，工作目录 `abot_arm_learning`，密码 `123456`）：
+```powershell
+scp scripts\auto_task_runner.py scripts\waypoints.yaml scripts\waypoints_test.yaml abot@192.168.43.211:~/bags/
+```
+
+**② 摆位**：车物理摆到 amcl 初始位姿 `(0.6, -0.4)`、朝向 `a=0`；rviz 看粒子云收敛（没收敛就用 2D Pose Estimate 点一下）。
+
+**③ 跑单段**（车上新终端，已 source 工作空间；bringup+navigate 在跑，**vl_locate 不用起**）：
+```bash
+cd ~/bags && python2 auto_task_runner.py waypoints_test.yaml
+```
+
+**④ 盯这几行 rosout + 实际动作：**
+```
+leg 1/3 -> (1.100, -0.400, 0.00)   # 纯 X 直行
+leg 2/3 -> (1.100,  0.100, 0.00)   # 纯 Y 横移
+leg 3/3 -> (1.100,  0.100, 1.57)   # 到位后原地转 ~90°
+```
+物理上应是：**先直走 X → 再横走 Y（不走斜线）→ 最后原地转**，平移途中不转头、不发飘。
+
+**预先说明，别被吓到**：
+- 启动时 `refresh()` 会发一次舵机 home `(88,20)` 到 `/servo`，底盘 MCU 订了这个话题 → 那个舵机会回 home 位，正常。
+- 把 `waypoints_test.yaml` 里的坐标改成**你地图里确定清空可达**的点（我给的 1.1/0.1 只是示例）。
+
+跑完贴我：那三行 leg 日志 + 实际轨迹（有没有斜走/漂移、终点朝向对不对）。
+定位和 move_base/TEB 都健康（手动 goal 能到位）。所以脚本 leg1 失败的原因基本锁定：**我编的 `(1.1, 0.1)` 不在空闲区**（或它的 L 形拐点撞墙了）。
+
+**一个必须知道的曼哈顿坑**：goto 把路径拆成 L 形——先沿 X 走到**拐点 `(目标x, 当前y)`**，再沿 Y 走到终点。**就算终点是空的，只要那个拐点落在墙里，leg1 照样失败。** 所以选测试点要让**横段和竖段都在空地上**。
+
+**下一步：**
+
+**1. 重传带失败日志的脚本：**
+```powershell
+scp scripts\auto_task_runner.py abot@192.168.43.211:~/bags/
+```
+
+**2. 在 rviz 里挑测试点**：看你车现在的位置，往**明显空旷**的方向选一个 0.5～1m 的目标，**确保 L 形的横段+竖段都压在空地上**，yaw 给个 `1.57` 测原地转。把 `~/bags/waypoints_test.yaml` 改成这个点（车上直接 `nano` 改，或本地改完重传）。
+
+**3. 重跑：**
+```bash
+cd ~/bags && python2 auto_task_runner.py waypoints_test.yaml
+```
+
+**4. 这次盯新日志**——如果还失败会多打一行：
+- `TIMEOUT 60s...` → 拐点/路径有问题走不到
+- `move_base state=4 text="..."` → ABORTED，括号里有原因（多半 goal/拐点在障碍里）
+- 正常的话你会看到 `leg 1/3 → 2/3 → 3/3` 依次过，车走 L 形再原地转
+
+把 leg 日志 + 实际轨迹贴我。如果你愿意，把**车当前的 amcl 坐标 (x, y)** 告诉我，我直接帮你算一个拐点和终点都安全的测试点，省得猜。
+
+
+5.24（3）明白，改成**两段任务**：原点 → 点1 → 点2 → 最后在点2 原地转。点1 不转、点2 走完再转（默认 90°，要别的角度改 `yaw`）。
+
+**1. 传两个文件**（PowerShell）：
+```powershell
+scp scripts\auto_task_runner.py scripts\waypoints_test.yaml abot@192.168.43.211:~/bags/
+```
+
+**2. 把车摆到原点 `(0, 0)` 附近**，rviz 确认 amcl 粒子云收紧（你之前 amcl 在 0.13,0.03，基本就是原点附近）。
+
+**3. 跑：**
+```bash
+cd ~/bags && python2 auto_task_runner.py waypoints_test.yaml
+```
+
+**4. 应看到（共两段、每段三 leg）：**
+```
+[1/2] p1 -> (1.685, 0.035, 0.00)
+  leg 1/3 -> (1.685, 0.00x, 0.00)   # 从原点 X 直行 +1.7m
+  leg 2/3 -> (1.685, 0.035, 0.00)   # 小段 Y
+  leg 3/3 -> (1.685, 0.035, 0.00)   # 不转(no-op)
+[2/2] p2 -> (1.582, 2.260, 1.57)
+  leg 1/3 -> (1.582, 0.035, 0.00)   # 小段 X
+  leg 2/3 -> (1.582, 2.260, 0.00)   # 2.2m 纯 Y 横移 ← 重点
+  leg 3/3 -> (1.582, 2.260, 1.57)   # 原地转 90°
+```
+
+**重点盯两处：**
+- **p1 的 leg1**（原点→1.685 沿 y≈0）会经过 ~`(1.1, 0)`，正是我上次编的点失败的地方。要是这段报 `state=4 ABORTED` → 那条 y≈0 的直线上真有障碍（之前失败就是这原因，不是 amcl）。
+- **p2 的 leg2**（2.2m 横移）漂不漂。
+
+跑完贴我全部 leg 日志 + 实际轨迹。
+
+能,而且这正是最该做的。我直接写原语控制器:不走 move_base/TEB/DWA,直接发 cmd_vel,闭环 tf(map→base) 走直角到点。这样teb/dwa 之争直接作废——我们绕过整个局部规划器。
+
+核心:每个点 = 两步直角(先沿一轴直行→再沿另一轴直行,全程锁航向主动消漂)+ 最后原地转。
+
+Created
+auto_task_runner.py
++244
+-0
+架构变了——从 move_base+TEB 改成直接原语控制。更新任务清单。
+
+
+Used 2 tools
+新原语控制器写好了(scripts/auto_task_runner.py)。它直接发 cmd_vel,绕过 move_base——所以 teb/dwa 不用管了,只要 bringup+navigate 在跑(给 amcl/tf 定位)。
+
+⚠️ 这是全新的直接速度控制器,第一次跑务必谨慎:万一有符号错会朝错方向冲(虽然限速 0.2m/s 很慢,能及时停)。所以:
+
+1. 传脚本:
+
+scp scripts\auto_task_runner.py abot@192.168.43.211:~/bags/
+2. 第一次测——开阔处、短距离、手指放 Ctrl-C 上。 最安全的做法:
+把车停到四周都空的地方,从 rviz 读出它当前 (x, y) 告诉我,我给你设一个很小的安全 L(比如 +0.3m X、+0.3m Y、转 90°),改 waypoints_test.yaml。这样移动幅度小、可控。
+
+3. 跑,重点看四件事:
+
+step1 直行 -> (...)   # 方向对不对?走完停不停?
+step2 直行 -> (...)   # 横移方向对不对?有没有漂?
+step3 原地转 -> 1.57  # 转到位停不停?
+调参旋钮都在脚本顶部:V_LIN(速度)、K_YAW(航向修正强度)、POS_TOL/YAW_TOL(容差)。太快/抖就降 V_LIN、K_YAW。
+
+先把车摆到开阔处、告诉我它的 (x,y),我设个小 L 给你跑首测。或者你想直接用现成的 origin→p1→p2 测试也行,但盯紧 step1、随时准备 Ctrl-C。
+
+收到——起点 `(1.753, 0.032)`、朝向 yaw=0（车头朝 map +X）。那"前方"=+X、"左边"=+Y。我设个**小 L**：前进 0.3m → 左移 0.3m → 原地左转 90°，幅度小、可控。
+
+传两个文件（新原语控制器脚本之前被打断没传上，连同测试文件一起）：
+
+```powershell
+scp scripts\auto_task_runner.py scripts\waypoints_test.yaml abot@192.168.43.211:~/bags/
+```
+
+**跑之前确认**：bringup + navigate 在跑、amcl 收敛、车在 `(1.753, 0.032)` 朝向 0。**手指放 Ctrl-C 上**（全新速度控制器首跑）。
+
+```bash
+cd ~/bags && python2 auto_task_runner.py waypoints_test.yaml
+```
+
+**应看到 + 实际动作：**
+```
+[1/1] small_L -> (2.053, 0.332, 1.57)
+  step1 直行 -> (2.053, 0.032)   # 前进 0.3m，到位停
+  step2 直行 -> (2.053, 0.332)   # 左移 0.3m，到位停
+  step3 原地转 -> 1.57            # 原地左转 90°，停
+all waypoints done
+```
+
+**重点盯**：
+- step1 是不是**笔直向前**0.3m 就停（不是斜着/不冲过头）
+- step2 是不是**笔直向左**横移、车头不转
+- step3 原地转到 90° 停得准不准
+- 任何方向不对 / 冲太快 → **立刻 Ctrl-C**（限速 0.2m/s，能及时停）
+
+跑完贴我日志 + 实际轨迹。顺/不顺我都好调（速度、增益、容差都在脚本顶部）。
+
+收到——起点 `(1.753, 0.032, yaw=0)`，前(+X)2m + 左(+Y)2m。设成 2m+2m 大 L，两个轴都拉满测漂。
+
+传测试文件（脚本上次已在车上，只传 yaml）：
+```powershell
+scp scripts\waypoints_test.yaml abot@192.168.43.211:~/bags/
+```
+
+车摆回起点 `(1.753, 0.032)` 朝向 0、amcl 收敛，**手指放 Ctrl-C**（这次走 2m，step1 前进时盯着别冲向远墙）：
+```bash
+cd ~/bags && python2 auto_task_runner.py waypoints_test.yaml
+```
+
+**应看到：**
+```
+step1 直行 -> (3.753, 0.0xx)   # 前进 2m
+step2 直行 -> (3.753, 2.032)   # 左移 2m ← 漂不漂的关键
+step3 原地转 -> 1.57
+```
+
+**抗漂重点盯（也是它和 DWA 的根本区别）：**
+- **step1 前进 2m**：车身有没有往左右偏（y 该锁在 0.03 附近）、车头有没有歪
+- **step2 左移 2m**：有没有往前后窜（x 该锁在 3.75 附近）、车头有没有被带歪 ← **麦轮长横移最容易漂的地方**
+- 终点到位 + 原地转准不准
+
+跑完贴我日志。我再从编码器剖面算它每段的横向/航向漂移量，量化给你看漂了几 cm。

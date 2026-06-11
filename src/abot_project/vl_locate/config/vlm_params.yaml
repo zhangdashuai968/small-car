@@ -13,7 +13,7 @@ font_size: 32                                          # 字体大小
 # API配置
 api_key: "sk-4f51e302d219401eb0e21dc9aa7f9bbd"         # API密钥
 base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # API基础URL
-model_name: "qwen-vl-max"                       # 模型名称
+model_name: "qwen3.7-plus"                             # 模型名称
 mode: "openai"                                         # 模式选择:openai 或 dashscope
 
 # 可视化配置

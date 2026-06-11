@@ -42,6 +42,8 @@ class BasicXArmGrasp():
         self.grasp_z = rospy.get_param("~grasp_z", -110)  # 抓取高度
         self.grasp_offset_x = rospy.get_param("~grasp_offset_x", 10)  # X轴偏移
         self.grasp_offset_y = rospy.get_param("~grasp_offset_y", 0)  # X轴偏移
+        self.place_offset_x = rospy.get_param("~place_offset_x", 0)  # 放置专用X轴偏移
+        self.place_offset_y = rospy.get_param("~place_offset_y", 0)  # 放置专用Y轴偏移
         self.rotation_factor = rospy.get_param("~rotation_factor", 0.33)  # 旋转因子
         self.max_rotation_angle = rospy.get_param("~max_rotation_angle", 45)  # 最大旋转角度
         
@@ -186,6 +188,10 @@ class BasicXArmGrasp():
         
         # 1. 计算put位姿
         self.camera_point_to_grasp_pose(self.grasp_obj)
+        self.x += self.place_offset_x
+        self.y += self.place_offset_y
+        rospy.loginfo("放置补偿后位姿: x=%d, y=%d, z=%d",
+                      self.x, self.y, -70)
         time.sleep(1)
         
         # 2. 移动到put位置

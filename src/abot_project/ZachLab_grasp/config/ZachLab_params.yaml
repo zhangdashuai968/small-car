@@ -18,14 +18,16 @@ gripper_default: 500
 
 # 标定参数
 cali_1_im: [48, 384]    # 左下角标定点像素坐标
-cali_1_mc: [-75, 99]   # 左下角标定点机械臂坐标
-cali_2_im: [588, 105]   # 右上角标定点像素坐标
-cali_2_mc: [120, 195]   # 右上角标定点机械臂坐标
+cali_1_mc: [-75, 110]   # 左下角标定点机械臂坐标
+cali_2_im: [590, 111]   # 右上角标定点像素坐标
+cali_2_mc: [120, 213]   # 右上角标定点机械臂坐标
 
 # 抓取参数
 grasp_z: -115           # 抓取高度
 grasp_offset_x: 10      # 
 grasp_offset_y: 0      # X轴偏移
+place_offset_x: 0       # 放置专用X轴偏移
+place_offset_y: -15     # 放置专用Y轴偏移，负值按车头视角向右修
 rotation_factor: 0.46   # 旋转因子
 max_rotation_angle: 45  # 最大旋转角度
 
