@@ -162,3 +162,5 @@ step3 -> -1.98 — 10.7s
 [12:42] 根据现场重新定位，更新 12 点路线中的第 9/10/11 点：point_07_pass 与 point_09_place 改为 (-3.001,-1.469,yaw=0.010)，point_08_grab 改为 (-3.002,-2.739,yaw=-0.003)。本次只改 waypoint，不改 DWA/AMCL 参数。
 [13:08] 按“发散发生在第 8 点附近”的现场判断，新增第 8 点 point_06_07_exit_pass 的 localize_checkpoint：到点成功并 yaw 对齐后，检查当前估计距 checkpoint 不超过 0.45m、yaw 误差不超过 0.61rad；随后发布 /initialpose=(-2.179,-0.238,yaw=-0.170)，cov_xy=0.05、cov_yaw=0.12，请求 /request_nomotion_update，小幅摆头约 ±0.21rad 并回正，再调用 /move_base/clear_costmaps。未改 DWA/AMCL 参数。
 [13:29] 根据现场重新定位，更新前段 1/2/3 点：point_01_pass 与 point_03_place 改为 (-0.408,-1.646,yaw=0.019)，point_02_grab 改为 (-0.445,-2.903,yaw=0.080)。本次只改 waypoint，不改 DWA/AMCL 参数。
+
+[02:00] 炸车分析：arduino_serial_node 在 02:41:47 崩溃（编码器冻结 12 秒后 atexit 自杀），连锁导致 abot_base_node → 里程计 → AMCL → costmap → move_base 全栈崩溃。根因：/dev/ttyUSB1（ch341 HL-340）串口不稳定，02:17 已出现第一次 Lost sync，02:26-02:27 期间崩了重启十几次。同时解释导航慢（夹完等一分钟）：串口间歇断联 → tf 延迟达 243 秒 → costmap 拿不到当前位姿 → move_base 反复进 recovery 死循环（clear_costmap + rotate），侥幸恢复才继续。非 AMCL/DWA 参数问题，是串口通信层故障。
