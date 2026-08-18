@@ -41,7 +41,7 @@ h1.doctitle{font-size:22px;margin:22px 0 4px;padding-bottom:10px;border-bottom:2
 .md hr{border:none;border-top:1px solid var(--line);margin:20px 0}
 .md img{max-width:100%}
 .missing{color:var(--danger)}
-</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>10 份</b></span><span class="tag">生成 <b>2026-05-28 00:38</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#quickstart">快速启动命令速查（建图 / 存图 / 定位）</a></li><li><a href="#rules">比赛规则（最终目标 · 硬约束）</a></li><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="quickstart" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 快速启动命令速查（建图 / 存图 / 定位）</h1><div class="src">来源: <code>docs/启动命令速查.md</code></div><div class="md"><h1 id="_1">快速启动命令速查（建图 / 存图 / 定位）</h1>
+</style></head><body><div class="wrap" id="top"><header><h1 class="page">abot small-car · 团队必读文档汇总</h1><div class="sub">单文件离线 HTML，浏览器直接打开即可阅读，无需克隆仓库。</div><div class="meta"><span class="tag">仓库 <b>zhangdashuai968/small-car</b></span><span class="tag">文档 <b>10 份</b></span><span class="tag">生成 <b>2026-08-18 14:22</b></span><span class="tag">平台 <b>Melodic / Tegra X1</b></span></header><div class="toc"><div class="th">目录</div><ol><li><a href="#quickstart">快速启动命令速查（建图 / 存图 / 定位）</a></li><li><a href="#rules">比赛规则（最终目标 · 硬约束）</a></li><li><a href="#overview">项目总览 README</a></li><li><a href="#guide">小车实验指南（技术教育详解）</a></li><li><a href="#trouble">故障排查 TROUBLESHOOTING</a></li><li><a href="#log0526">调试日志 2026-05-26 · SLAM建图与局部规划器解耦</a></li><li><a href="#tuning">调参极限分析报告</a></li><li><a href="#automap">自动建图指南 auto_map_guide</a></li><li><a href="#autoreadme">abot_project 自动化说明 README_AUTO</a></li><li><a href="#abotreadme">abot 包 README</a></li></ol></div><section id="quickstart" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">1. 快速启动命令速查（建图 / 存图 / 定位）</h1><div class="src">来源: <code>docs/启动命令速查.md</code></div><div class="md"><h1 id="_1">快速启动命令速查（建图 / 存图 / 定位）</h1>
 <blockquote>
 <p><code>localize.launch</code> 不绑定某个建图 launch，二者通过地图文件 <code>comp.yaml</code> 配对。
 <strong>建图与定位互斥</strong>——都发 <code>map→odom</code>，同一时间永远只能起一个。</p>
@@ -73,9 +73,13 @@ rosrun map_server map_saver -f $(rospack find abot)/maps/comp
 # 3. 定位（与建图互斥，二选一，都发 map→odom）
 roslaunch abot bringup.launch
 roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
+
+# 3a. 导航主流程（move_base + DWA；与建图互斥）
+roslaunch abot bringup.launch
+roslaunch abot navigate.launch            # 读 house.yaml + move_base(DWA)，amcl 初值 (0.6,-0.4)
 </code></pre>
-<h2 id="cmd_vel-move_base">运动执行（cmd_vel 原语，绕开 move_base）</h2>
-<p>定位起好后用以下脚本发 <code>cmd_vel</code>，都只沿 xy 轴走、锁航向，不碰 TEB/DWA：</p>
+<h2 id="move_base-dwa">运动执行（move_base + DWA 主流程；原语脚本为保底）</h2>
+<p>主流程把航线发给 move_base 执行（<code>navigate.launch</code> 已含 move_base）：</p>
 <table>
 <thead>
 <tr>
@@ -87,23 +91,30 @@ roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 </thead>
 <tbody>
 <tr>
-<td><code>goal_nav.py</code></td>
-<td>手动导航：rviz 点目标 → A* 全局规划 → 逐段执行</td>
-<td>bringup + localize</td>
+<td><code>scripts/move_base_waypoint_runner.py</code></td>
+<td>按 <code>scripts/waypoints.yaml</code> 顺序发 move_base 目标（<code>--nav-only</code> 跳过 VLM/机械臂）</td>
+<td>bringup + navigate</td>
 <td><code>map→base</code>(amcl)</td>
 </tr>
 <tr>
-<td><code>auto_task_runner.py</code></td>
-<td>多点航线 + 抓放（读 waypoints.yaml）</td>
-<td>bringup + localize</td>
+<td><code>auto_navigation_grasp.py</code></td>
+<td>10 点完整抓放（内联同航线坐标，含 VLM + 机械臂握手）</td>
+<td>bringup + navigate + vl_locate + grasp</td>
 <td><code>map→base</code>(amcl)</td>
 </tr>
+</tbody>
+</table>
+<p>历史 cmd_vel 原语脚本（<code>goal_nav.py</code> / <code>auto_task_runner.py</code> / <code>seven_point_test.py</code>，走 <code>localize.launch</code> 无 move_base）为保底方案；纯里程计保底仍可用：</p>
+<table>
+<thead>
 <tr>
-<td><code>seven_point_test.py</code></td>
-<td>7 点可达性测试（纯导航）</td>
-<td>bringup + localize</td>
-<td><code>map→base</code>(amcl)</td>
+<th>脚本</th>
+<th>用途</th>
+<th>前置</th>
+<th>位姿来源</th>
 </tr>
+</thead>
+<tbody>
 <tr>
 <td><code>ten_point_odom_race.py</code></td>
 <td>10 点纯里程计<strong>保底</strong>（定位栈挂了也能跑）</td>
@@ -112,7 +123,7 @@ roslaunch abot localize.launch            # 读 comp.yaml，amcl 初值 (0,0,0)
 </tr>
 </tbody>
 </table>
-<h3 id="goal_navpy">手动导航 goal_nav.py</h3>
+<h3 id="goal_navpy">手动导航 goal_nav.py（原语栈，保底）</h3>
 <pre><code class="language-bash"># 脚本不在 abot 包内, 用 python2 绝对路径(rosrun abot 找不到)
 python2 ~/catkin_ws/src/abot_project/scripts/goal_nav.py
 </code></pre>
@@ -124,9 +135,9 @@ python2 ~/catkin_ws/src/abot_project/scripts/goal_nav.py
 <h2 id="_4">关键点</h2>
 <ul>
 <li><strong>建图 launch 用 basename 启动</strong>：<code>roslaunch abot lidar_slam.launch</code>（<strong>不带 <code>slam/</code> 子目录</strong>），否则报 RLException。</li>
-<li><strong>起点摆位</strong>：localize 的 amcl 初值写死 <code>(0,0,0)</code>，所以建图起点必须摆在<strong>比赛原点、车头朝 +x</strong>，使地图原点 = (0,0) = amcl home 对齐。</li>
-<li><strong>运动执行</strong>：定位起好后用 <code>auto_task_runner.py</code> 自闭环发 <code>cmd_vel</code>，不经 move_base/TEB/DWA。</li>
-<li>⚠️ <strong>cartographer 路径隐患</strong>：车上 <code>rplidar_lds.lua</code> 仍是旧配置 <code>provide_odom_frame=true</code>，现在跑 cartographer 会和 EKF 双发 <code>odom→base</code> 冲突；gmapping 路径不受影响。</li>
+<li><strong>起点摆位</strong>：建图起点必须摆在<strong>比赛原点、车头朝 +x</strong>。localize 的 amcl 初值写死 <code>(0,0,0)</code>，使地图原点 = (0,0) = amcl home 对齐；navigate 用 <code>amcl.launch</code> 默认初值 <code>(0.6,-0.4,0)</code>。</li>
+<li><strong>运动执行</strong>：主流程用 <code>navigate.launch</code>（move_base + DWA），脚本把 <code>waypoints.yaml</code> 航线发给 move_base；原语脚本（<code>auto_task_runner.py</code> / <code>goal_nav.py</code> / <code>ten_point_*</code>）走 <code>localize.launch</code>（无 move_base）作保底。</li>
+<li>⚠️ <strong>cartographer 路径</strong>：<code>rplidar_lds.lua</code> 需保持 <code>published_frame=odom</code> + <code>provide_odom_frame=false</code>（仓库已是此配置），否则跑 cartographer 会和 EKF 双发 <code>odom→base</code> 冲突；gmapping 路径不受影响。</li>
 </ul></div></section><section id="rules" class="doc"><a class="back" href="#top">回到目录 ↑</a><h1 class="doctitle">2. 比赛规则（最终目标 · 硬约束）</h1><div class="src">来源: <code>docs/比赛规则.md</code></div><div class="md"><h1 id="_1">室内移动抓取搬运赛 — 比赛规则</h1>
 <blockquote>
 <p>这是 small-car 项目的<strong>最终目标</strong>。仓库里的导航、定位、抓取全部为它服务。
@@ -187,7 +198,7 @@ python2 ~/catkin_ws/src/abot_project/scripts/goal_nav.py
 <li>抓取目标物品<strong>赛前由裁判随机抽取公布</strong>，所以物体关键词运行时才喂给 <code>vl_locate</code>。</li>
 </ul>
 <blockquote>
-<p>对应代码：<code>scripts/auto_task_runner.py</code> + <code>scripts/waypoints.yaml</code>。
+<p>对应代码：<code>scripts/waypoints.yaml</code>（6 个搬运点 grab / place 交替 + pass/finish 过渡点）+ <code>scripts/move_base_waypoint_runner.py</code>（move_base 执行，<code>--nav-only</code> 纯导航测试）；完整抓放脚本为 <code>src/abot_project/scripts/auto_navigation_grasp.py</code>（内联同航线坐标）。
 <code>waypoints.yaml</code> 必须填<strong>真实的 6 个搬运点坐标</strong>，grab / place 交替，最后到终点。</p>
 </blockquote>
 <hr>
@@ -273,7 +284,7 @@ python2 ~/catkin_ws/src/abot_project/scripts/goal_nav.py
 </tr>
 <tr>
 <td><a href="docs/ARCHITECTURE.md"><code>docs/ARCHITECTURE.md</code></a></td>
-<td><strong>系统架构</strong>：数据流、tf 树、节点分层、绕开 move_base 的设计</td>
+<td><strong>系统架构</strong>：数据流、tf 树、节点分层、导航方案沿革（move_base + DWA）</td>
 </tr>
 <tr>
 <td><a href="docs/比赛规则.md"><code>docs/比赛规则.md</code></a></td>
@@ -307,24 +318,26 @@ python2 ~/catkin_ws/src/abot_project/scripts/goal_nav.py
 激光 ─► [gmapping 或 amcl, 二选一] ─► map→odom ┤
                                               ├─► map→base_footprint
                                               ▼
-        [运动脚本] 锁航向 cmd_vel 原语(只沿 xy 轴 + 原地转, 绕开 move_base/TEB/DWA)
+        [move_base] 全局规划(A*/Dijkstra) + DWA 局部规划 ──► /cmd_vel
 </code></pre>
-<p><strong>建图与定位互斥</strong>（都发 <code>map→odom</code>，永远二选一）。运动不经局部规划器，避免贴挡板判负。完整 tf 树 / 节点分层见 <a href="docs/ARCHITECTURE.md"><code>docs/ARCHITECTURE.md</code></a>。</p>
+<p><strong>建图与定位互斥</strong>（都发 <code>map→odom</code>，永远二选一）。运动走 move_base + DWA 局部规划器（保守中心线参数，避免贴挡板判负）。完整 tf 树 / 节点分层见 <a href="docs/ARCHITECTURE.md"><code>docs/ARCHITECTURE.md</code></a>。</p>
 <hr>
 <h2 id="_4">🚀 快速上手</h2>
 <pre><code class="language-bash"># 0. 连接（开发机）
 python scripts/ssh-car.py            # 交互式 shell；或 ssh-car.py &quot;命令&quot;
 
-# 1. 比赛主流程（车上，定位 + 闭环运动）
+# 1. 比赛主流程（车上，move_base + DWA 导航 + VLM 抓放）
 roslaunch abot bringup.launch        # 底盘 + IMU + EKF
-roslaunch abot localize.launch       # map_server(comp.yaml) + amcl
-python2 ~/catkin_ws/src/abot_project/scripts/ten_point_race.py   # 十点抓放
+roslaunch abot navigate.launch       # move_base(DWA) + amcl + map_server(house.yaml)
+conda activate 39 &amp;&amp; roslaunch vl_locate vl_locate.launch   # VLM 视觉检测
+roslaunch ZachLab_grasp grasp.launch # 机械臂
+python2 ~/catkin_ws/src/abot_project/scripts/auto_navigation_grasp.py   # 10 点抓放
 
 # 定位栈不可用时的纯里程计保底（只需 bringup）
 python2 ~/catkin_ws/src/abot_project/scripts/ten_point_odom_race.py
 </code></pre>
 <blockquote>
-<p>运动脚本在 <code>src/abot_project/scripts/</code>（<strong>不在 <code>abot</code> 包，用 <code>python2 &lt;路径&gt;</code> 跑，<code>rosrun abot</code> 找不到</strong>）。完整命令（含清残留进程、goal_nav 手动导航）见 <a href="docs/启动命令速查.md"><code>docs/启动命令速查.md</code></a>，脚本索引见 <a href="CLAUDE.md"><code>CLAUDE.md</code></a>。</p>
+<p>主流程把 <code>scripts/waypoints.yaml</code> 航线发给 move_base 执行（测试可用 <code>scripts/move_base_waypoint_runner.py --nav-only</code>）；历史 cmd_vel 原语脚本（<code>goal_nav.py</code> / <code>ten_point_race.py</code> 等）走 <code>localize.launch</code>（无 move_base）作保底。运动脚本在 <code>src/abot_project/scripts/</code>（<strong>不在 <code>abot</code> 包，用 <code>python2 &lt;路径&gt;</code> 跑，<code>rosrun abot</code> 找不到</strong>）。完整命令（含清残留进程、goal_nav 手动导航）见 <a href="docs/启动命令速查.md"><code>docs/启动命令速查.md</code></a>，脚本索引见 <a href="CLAUDE.md"><code>CLAUDE.md</code></a>。</p>
 </blockquote>
 <hr>
 <h2 id="_5">🔧 硬件</h2>
@@ -346,7 +359,7 @@ python2 ~/catkin_ws/src/abot_project/scripts/ten_point_odom_race.py
 </tr>
 <tr>
 <td>环境变量</td>
-<td><code>ABOTMODEL=x4</code> <code>ABOTBASE=omni</code> <code>NAV_PATH=teb</code> <code>ABOTLIDAR=rplidar</code> <code>ABOTIMU=mpu6050</code></td>
+<td><code>ABOTMODEL=x4</code> <code>ABOTBASE=omni</code> <code>NAV_PATH=dwa</code> <code>ABOTLIDAR=rplidar</code> <code>ABOTIMU=mpu6050</code></td>
 </tr>
 <tr>
 <td>激光</td>
@@ -375,8 +388,8 @@ python2 ~/catkin_ws/src/abot_project/scripts/ten_point_odom_race.py
 <pre><code>src/abot_project/   自有 ROS 包(abot 主包 + grasp/vision/speech…)，可改
 src/&lt;其余&gt;/         vendored 第三方包(robot_localization/lidar/depth_camera…)，勿改
 scripts/            主机侧工具(ssh-car/sync/patrol_run) + 历史测试脚本
-src/abot_project/scripts/   新运动脚本(goal_nav/ten_point_*/seven_point_test)
-src/abot_project/abot/maps/ 地图(comp.yaml=比赛图; launch 加载这份)
+src/abot_project/scripts/   运动脚本(auto_navigation_grasp/ten_point_*/goal_nav/seven_point_test)
+src/abot_project/abot/maps/ 地图(house.yaml=比赛图; navigate.launch 加载这份)
 scripts/  logs/  reports/  docs/  tools/  bags/
 </code></pre>
 <blockquote>
@@ -1076,8 +1089,8 @@ cv2.destroyAllWindows()
 <p><strong>解法</strong>：<code>x4_laserfilter.yaml</code> 中 <code>min_x</code> → -0.25（遮掉更多车体前方区域）。</p>
 <h3 id="24-cartographer-tracking_frame">2.4 Cartographer tracking_frame 配错</h3>
 <p><strong>症状</strong>：建图时轨迹扭曲，点云无法对齐。</p>
-<p><strong>根因</strong>：<code>tracking_frame</code> 和 <code>published_frame</code> 设为 <code>laser</code>，应该是 <code>base_footprint</code>。Cartographer 需要知道机器人的坐标系而非传感器坐标系。</p>
-<p><strong>解法</strong>：<code>rplidar_lds.lua</code> 中改 <code>tracking_frame = "base_footprint"</code>，<code>published_frame = "base_footprint"</code>。</p>
+<p><strong>根因</strong>：<code>tracking_frame</code> 和 <code>published_frame</code> 设为 <code>laser</code>，Cartographer 需要知道机器人的坐标系而非传感器坐标系。</p>
+<p><strong>解法</strong>：<code>rplidar_lds.lua</code> 中 <code>tracking_frame = "base_footprint"</code>（已改）；<code>published_frame</code> 保持 <code>"odom"</code> 且 <code>provide_odom_frame = false</code>，避免与 bringup 的 EKF 双发 <code>odom→base</code> 冲突（见文件内注释）。</p>
 <hr>
 <h2 id="3">3. 硬件与通信</h2>
 <h3 id="31">3.1 不同激光雷达型号波特率不同</h3>

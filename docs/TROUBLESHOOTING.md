@@ -50,9 +50,9 @@
 
 **症状**：建图时轨迹扭曲，点云无法对齐。
 
-**根因**：`tracking_frame` 和 `published_frame` 设为 `laser`，应该是 `base_footprint`。Cartographer 需要知道机器人的坐标系而非传感器坐标系。
+**根因**：`tracking_frame` 和 `published_frame` 设为 `laser`，Cartographer 需要知道机器人的坐标系而非传感器坐标系。
 
-**解法**：`rplidar_lds.lua` 中改 `tracking_frame = "base_footprint"`，`published_frame = "base_footprint"`。
+**解法**：`rplidar_lds.lua` 中 `tracking_frame = "base_footprint"`（已改）；`published_frame` 保持 `"odom"` 且 `provide_odom_frame = false`，避免与 bringup 的 EKF 双发 `odom→base` 冲突（见文件内注释）。
 
 ---
 

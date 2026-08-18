@@ -65,8 +65,8 @@ git -c http.proxy=http://127.0.0.1:2080 push origin main
 | `scripts/`（顶层） | 主机侧工具（`ssh-car.py` / `auto-sync.sh` / `sync-once.*` / `patrol_run.sh`）+ 历史脚本（`circle_run.py` 等） |
 | `bags/` | rosbag 录制；**注意**这里有一份 `auto_task_runner.py` 与 `scripts/` 版本已分叉 ⚠️ |
 
-> ⚠️ **待解决**：`bags/auto_task_runner.py`(283 行) 与 `scripts/auto_task_runner.py`(260 行) 内容不同。改它前先确认哪份为准（车上跑的是 `~/bags/`），别盲改。
-> 新脚本一律放 `src/abot_project/scripts/`，并复用 `auto_task_runner` 的锁航向 cmd_vel 原语（绕开 move_base，见 CLAUDE.md）。
+> ⚠️ **待解决**：`bags/auto_task_runner.py`(334 行) 与 `scripts/auto_task_runner.py`(462 行) 内容不同。改它前先确认哪份为准（车上跑的是 `~/bags/`），别盲改。
+> 新脚本一律放 `src/abot_project/scripts/`。主流程走 move_base（`navigate.launch` + DWA）；历史 cmd_vel 原语脚本（`goal_nav.py` / `ten_point_*` / `auto_task_runner.py`）为保底（见 CLAUDE.md）。
 
 ---
 

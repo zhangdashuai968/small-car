@@ -13,7 +13,7 @@
 |------|------|
 | [`CLAUDE.md`](CLAUDE.md) | **AI 上手中枢**：目录地图、脚本索引、当前导航方案、约定 |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | **协作约定**：git 流程、代理、编码/换行、脚本放哪、真机验证 |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | **系统架构**：数据流、tf 树、节点分层、绕开 move_base 的设计 |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | **系统架构**：数据流、tf 树、节点分层、导航方案沿革（move_base + DWA） |
 | [`docs/比赛规则.md`](docs/比赛规则.md) | **最终目标**：场地、6 点抓放流程、得分、致命终止条件 |
 | [`docs/启动命令速查.md`](docs/启动命令速查.md) | 清进程 → 建图 → 存图 → 定位 → 运动执行命令速查 |
 | [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | 踩坑手册（按症状 → 根因 → 解法） |
@@ -36,10 +36,10 @@
 激光 ─► [gmapping 或 amcl, 二选一] ─► map→odom ┤
                                               ├─► map→base_footprint
                                               ▼
-        [运动脚本] 锁航向 cmd_vel 原语(只沿 xy 轴 + 原地转, 绕开 move_base/TEB/DWA)
+        [move_base] 全局规划(A*/Dijkstra) + DWA 局部规划 ──► /cmd_vel
 ```
 
-**建图与定位互斥**（都发 `map→odom`，永远二选一）。运动不经局部规划器，避免贴挡板判负。完整 tf 树 / 节点分层见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
+**建图与定位互斥**（都发 `map→odom`，永远二选一）。运动走 move_base + DWA 局部规划器（保守中心线参数，避免贴挡板判负）。完整 tf 树 / 节点分层见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
 
 ---
 
@@ -49,16 +49,18 @@
 # 0. 连接（开发机）
 python scripts/ssh-car.py            # 交互式 shell；或 ssh-car.py "命令"
 
-# 1. 比赛主流程（车上，定位 + 闭环运动）
+# 1. 比赛主流程（车上，move_base + DWA 导航 + VLM 抓放）
 roslaunch abot bringup.launch        # 底盘 + IMU + EKF
-roslaunch abot localize.launch       # map_server(comp.yaml) + amcl
-python2 ~/catkin_ws/src/abot_project/scripts/ten_point_race.py   # 十点抓放
+roslaunch abot navigate.launch       # move_base(DWA) + amcl + map_server(house.yaml)
+conda activate 39 && roslaunch vl_locate vl_locate.launch   # VLM 视觉检测
+roslaunch ZachLab_grasp grasp.launch # 机械臂
+python2 ~/catkin_ws/src/abot_project/scripts/auto_navigation_grasp.py   # 10 点抓放
 
 # 定位栈不可用时的纯里程计保底（只需 bringup）
 python2 ~/catkin_ws/src/abot_project/scripts/ten_point_odom_race.py
 ```
 
-> 运动脚本在 `src/abot_project/scripts/`（**不在 `abot` 包，用 `python2 <路径>` 跑，`rosrun abot` 找不到**）。完整命令（含清残留进程、goal_nav 手动导航）见 [`docs/启动命令速查.md`](docs/启动命令速查.md)，脚本索引见 [`CLAUDE.md`](CLAUDE.md)。
+> 主流程把 `scripts/waypoints.yaml` 航线发给 move_base 执行（测试可用 `scripts/move_base_waypoint_runner.py --nav-only`）；历史 cmd_vel 原语脚本（`goal_nav.py` / `ten_point_race.py` 等）走 `localize.launch`（无 move_base）作保底。运动脚本在 `src/abot_project/scripts/`（**不在 `abot` 包，用 `python2 <路径>` 跑，`rosrun abot` 找不到**）。完整命令（含清残留进程、goal_nav 手动导航）见 [`docs/启动命令速查.md`](docs/启动命令速查.md)，脚本索引见 [`CLAUDE.md`](CLAUDE.md)。
 
 ---
 
@@ -68,7 +70,7 @@ python2 ~/catkin_ws/src/abot_project/scripts/ten_point_odom_race.py
 |------|----------|
 | 计算 | NVIDIA Jetson Nano（Tegra X1，L4T R32.6.1，Ubuntu 18.04 / ROS Melodic / Py 2.7） |
 | 底盘 | ABOT M1 ARM 麦克纳姆轮（四轮），MCU STM32F103RCT6，rosserial 115200，`linear_scale=1.014` |
-| 环境变量 | `ABOTMODEL=x4` `ABOTBASE=omni` `NAV_PATH=teb` `ABOTLIDAR=rplidar` `ABOTIMU=mpu6050` |
+| 环境变量 | `ABOTMODEL=x4` `ABOTBASE=omni` `NAV_PATH=dwa` `ABOTLIDAR=rplidar` `ABOTIMU=mpu6050` |
 | 激光 | 思岚 RPLidar C1 → `/scan`（460800），`/dev/abotlidar` |
 | 深度相机 | Astra RGBD → `/camera/rgb/image_raw`、`/camera/depth/points` |
 | IMU | MPU6050（板载）→ `/imu/data`（Madgwick 滤波） |
@@ -83,8 +85,8 @@ python2 ~/catkin_ws/src/abot_project/scripts/ten_point_odom_race.py
 src/abot_project/   自有 ROS 包(abot 主包 + grasp/vision/speech…)，可改
 src/<其余>/         vendored 第三方包(robot_localization/lidar/depth_camera…)，勿改
 scripts/            主机侧工具(ssh-car/sync/patrol_run) + 历史测试脚本
-src/abot_project/scripts/   新运动脚本(goal_nav/ten_point_*/seven_point_test)
-src/abot_project/abot/maps/ 地图(comp.yaml=比赛图; launch 加载这份)
+src/abot_project/scripts/   运动脚本(auto_navigation_grasp/ten_point_*/goal_nav/seven_point_test)
+src/abot_project/abot/maps/ 地图(house.yaml=比赛图; navigate.launch 加载这份)
 scripts/  logs/  reports/  docs/  tools/  bags/
 ```
 

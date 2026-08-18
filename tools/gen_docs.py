@@ -125,7 +125,7 @@ def build():
     tail = "".join(sections) + '</div></body></html>'
 
     out = head + header + toc + tail
-    with open(OUT, "w", encoding="utf-8") as f:
+    with open(OUT, "w", encoding="utf-8", newline="\n") as f:
         f.write(out)
     print("written:", OUT)
     print("size:", os.path.getsize(OUT), "bytes")
