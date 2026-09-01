@@ -1,4 +1,5 @@
-# 航线点配置，修改一份就够了，不用动 .py
+# 航线点配置：供 scripts/move_base_waypoint_runner.py / auto_task_runner.py 读取；
+# auto_navigation_grasp.py / ten_point_*.py 内联同坐标，改完这里还需同步改 .py
 # action 四选一：pass / grab / place / finish
 #   grab  : 到位 → 调用 vlm_detection(object) → 机械臂抓取 (/grab=True)
 #   place : 到位 → 调用 vlm_detection(object) → 机械臂释放 (/grab=False)

@@ -771,7 +771,7 @@ AMCL 自适应体现在哪里？
 | `mode` | openai | API 模式（dashscope / openai） |
 | `api_key` | sk-xxx | 通义千问 API Key |
 | `base_url` | dashscope.aliyuncs.com | API 地址 |
-| `model_name` | qwen-vl-max | 大模型版本 |
+| `model_name` | qwen3.7-plus | 大模型版本 |
 | `input_topic` | /new_topic | 图像输入话题 |
 | `output_topic` | /Pose | 检测结果输出话题 |
 

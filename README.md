@@ -1,7 +1,7 @@
 # Small Car — ABOT M1 ARM 智能小车
 
 > 基于 ROS 的自主导航 + 视觉抓取 + 机械臂操控竞赛平台。
-> 属于[三仓库生态](https://github.com/zhangdashuai968/morning-newspaper/blob/master/WORKFLOW.md)的「战场」仓（真机部署 + 调试）；课堂仓是 [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)。
+> 属于[三仓库生态](https://github.com/zhangdashuai968/morning-newspaper)的「战场」仓（真机部署 + 调试）；课堂仓是 [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)。
 
 `Jetson Nano` · `Ubuntu 18.04` · `ROS Melodic` · `Python 2.7` · `麦克纳姆轮全向底盘`
 
@@ -60,7 +60,7 @@ python2 ~/catkin_ws/src/abot_project/scripts/auto_navigation_grasp.py   # 10 点
 python2 ~/catkin_ws/src/abot_project/scripts/ten_point_odom_race.py
 ```
 
-> 主流程把 `scripts/waypoints.yaml` 航线发给 move_base 执行（测试可用 `scripts/move_base_waypoint_runner.py --nav-only`）；历史 cmd_vel 原语脚本（`goal_nav.py` / `ten_point_race.py` 等）走 `localize.launch`（无 move_base）作保底。运动脚本在 `src/abot_project/scripts/`（**不在 `abot` 包，用 `python2 <路径>` 跑，`rosrun abot` 找不到**）。完整命令（含清残留进程、goal_nav 手动导航）见 [`docs/启动命令速查.md`](docs/启动命令速查.md)，脚本索引见 [`CLAUDE.md`](CLAUDE.md)。
+> 航线以 `scripts/waypoints.yaml` 为正本：测试可用 `scripts/move_base_waypoint_runner.py` 读它执行（`--nav-only` 跳过抓放），主流程 `auto_navigation_grasp.py` 内联同坐标（改 yaml 需同步改 .py）；历史 cmd_vel 原语脚本（`goal_nav.py` / `ten_point_race.py` 等）走 `localize.launch`（无 move_base）作保底。运动脚本在 `src/abot_project/scripts/`（**不在 `abot` 包，用 `python2 <路径>` 跑，`rosrun abot` 找不到**）。完整命令（含清残留进程、goal_nav 手动导航）见 [`docs/启动命令速查.md`](docs/启动命令速查.md)，脚本索引见 [`CLAUDE.md`](CLAUDE.md)。
 
 ---
 

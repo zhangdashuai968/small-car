@@ -19,7 +19,7 @@
         │
         ▼
   [move_base] 全局规划(A*/Dijkstra) + DWA 局部规划 ──► /cmd_vel ──► 底盘 MCU
-        航线由 move_base_waypoint_runner / auto_navigation_grasp 按 waypoints.yaml 下发
+        航线以 scripts/waypoints.yaml 为正本（move_base_waypoint_runner 直接读取；auto_navigation_grasp 内联同坐标）
 ```
 
 **一句话**：EKF 给 `odom→base`，激光定位给 `map→odom`，合成的 `map→base` 供 move_base 规划，目标点经 DWA 局部规划发 `cmd_vel`。
@@ -60,7 +60,7 @@ map
 
 - **沿革**：2026-05-26 曾因 move_base 的局部规划器（TEB/DWA）反应式避障会贴近挡板（比赛**碰挡板即判负**）而绕开它，运动走轴对齐 cmd_vel 原语（`auto_task_runner.py` / `goal_nav.py` / `ten_point_*`，读 `map→base_footprint` tf 做 P 控制，L 形分解 + 锁航向）。
 - **2026-06-01 起切回 move_base**：先用 TEB 全向参数调优（`teb_omni_planner_params.yaml`），06-07 起转 DWA（`dwa_omni_planner_params.yaml`：保守中心线参数 + 到点后 yaw 对齐），并配合 AMCL 调优（`amcl.launch`）。
-- **主流程**：`navigate.launch`（rplidar + map_server + amcl + move_base），航线 `scripts/waypoints.yaml` 由 `move_base_waypoint_runner.py` / `auto_navigation_grasp.py` 发给 move_base 执行。
+- **主流程**：`navigate.launch`（rplidar + map_server + amcl + move_base），航线以 `scripts/waypoints.yaml` 为正本——`move_base_waypoint_runner.py` 读 yaml、`auto_navigation_grasp.py` 内联同坐标，发给 move_base 执行。
 - 历史原语脚本保留为**保底**（走 `localize.launch`，无 move_base）。
 
 ---

@@ -34,9 +34,9 @@
 - TEB 的 `weight_max_vel_theta` 太小（=1），规划器倾向旋转而非平移
 
 **解法**：
-- `controller_patience` → 5 秒（`move_base_params.yaml`）
-- `weight_max_vel_theta` → 10（`teb_omni_planner_params.yaml`）
-- `oscillation_timeout` → 15（留足够时间恢复）
+- `controller_patience` → 5 秒（`move_base_params.yaml`，已落实）
+- `weight_max_vel_theta` → 10（`teb_omni_planner_params.yaml`；⚠️ 仓库当前值仍为 1，此调整未入库）
+- `oscillation_timeout` → 15（留足够时间恢复；⚠️ 仓库当前值 10.0，此调整未入库）
 
 ### 2.3 激光雷达扫描到车体导致避障异常
 
