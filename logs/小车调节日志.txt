@@ -164,3 +164,12 @@ step3 -> -1.98 — 10.7s
 [13:29] 根据现场重新定位，更新前段 1/2/3 点：point_01_pass 与 point_03_place 改为 (-0.408,-1.646,yaw=0.019)，point_02_grab 改为 (-0.445,-2.903,yaw=0.080)。本次只改 waypoint，不改 DWA/AMCL 参数。
 
 [02:00] 炸车分析：arduino_serial_node 在 02:41:47 崩溃（编码器冻结 12 秒后 atexit 自杀），连锁导致 abot_base_node → 里程计 → AMCL → costmap → move_base 全栈崩溃。根因：/dev/ttyUSB1（ch341 HL-340）串口不稳定，02:17 已出现第一次 Lost sync，02:26-02:27 期间崩了重启十几次。同时解释导航慢（夹完等一分钟）：串口间歇断联 → tf 延迟达 243 秒 → costmap 拿不到当前位姿 → move_base 反复进 recovery 死循环（clear_costmap + rotate），侥幸恢复才继续。非 AMCL/DWA 参数问题，是串口通信层故障。
+
+[20:10] Windows 配好免密 SSH 上车(密钥认证)；ZCode 远程表单判死(node 需 GLIBC 2.28 > 18.04 的 2.27)
+[20:30] 定案系统: Ubuntu 18.04.6 / ROS Melodic(ls+rosversion 实测)；车上 docker 空装，配好国内加速源
+[21:40] 三方哈希查明 server.py 三分: 车=6/11前旧版 / GitHub=含错误unzoom / 本地=修正版未提交
+[22:00] 拆大小写雷(claude.md 重复跟踪移除, -126行纯删除; pathspec 提交踩 NTFS 坑一次, soft reset 重做)
+[22:20] 分组落库 4 提交(6c24079/f6c361b/5f79442/61f86b1)并 push 成功(50827f5..61f86b1, SSH直连)
+[22:25] 部署 server.py 修正版上车: 备份.bak-20260901-pre-fix → scp → CRLF清理 → py_compile OK → md5 三方一致(04cf22ad)
+[22:30] 机制改造落库: auto-sync 弃用改 AI 会话收尾制/报告双轨减负/车上快照改SSH拉取; 删除僵尸计划任务; 重生成汇总HTML
+[22:36] 遗留: bags 孤儿副本待拍板; server.py 内硬编码 qwen key 需轮换(public 仓库暴露); VLM 未重启不生效
