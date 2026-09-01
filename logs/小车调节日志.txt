@@ -173,3 +173,7 @@ step3 -> -1.98 — 10.7s
 [22:25] 部署 server.py 修正版上车: 备份.bak-20260901-pre-fix → scp → CRLF清理 → py_compile OK → md5 三方一致(04cf22ad)
 [22:30] 机制改造落库: auto-sync 弃用改 AI 会话收尾制/报告双轨减负/车上快照改SSH拉取; 删除僵尸计划任务; 重生成汇总HTML
 [22:36] 遗留: bags 孤儿副本待拍板; server.py 内硬编码 qwen key 需轮换(public 仓库暴露); VLM 未重启不生效
+
+[22:45] 三仓全方位审查: abot_arm_learning 结构100%兑现(docs5/cheatsheets4/parallel20)但notes/零笔记=Phase1勾选无佐证; morning-newspaper私有仓+README无暂停标记+Action大概率被GitHub60天规则自停; qwen key双点位暴露(vlm_params.yaml+server.py default, 公开仓)
+[22:52] 审查修复包落库 f2e4b10: 跨仓错链×3修正(模板页脚/映射表路径/生态链接改abot公开WORKFLOW)、安全条款改"禁硬编码"、删根目录5垃圾txt+bags孤儿脚本(净-1275行)
+[22:52] morning-newspaper README 加暂停横幅(commit 60068a8, 复活前置: 换课表/确认Action/核对Secrets)
