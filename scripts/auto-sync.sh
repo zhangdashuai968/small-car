@@ -1,4 +1,6 @@
 #!/bin/bash
+# [DEPRECATED 2026-09-01] auto-sync discontinued: ran only once in 3 months, scheduled task removed.
+# Sync is now the AI session-close flow (add specific files -> commit -> push -> report). See CLAUDE.md (Git).
 # 自动同步脚本 —— 每 30 秒检查变更，自动 add/commit/push
 # 用法：在 Git Bash 中运行 bash scripts/auto-sync.sh
 # 停止：Ctrl+C

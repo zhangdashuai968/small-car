@@ -37,8 +37,8 @@ git -c http.proxy=http://127.0.0.1:2080 -c https.proxy=http://127.0.0.1:2080 pus
 git -c http.proxy=http://127.0.0.1:2080 -c https.proxy=http://127.0.0.1:2080 fetch
 ```
 
-### 撞车处理（auto-sync / 多人同推）
-`scripts/auto-sync.sh` 每 30s 自动提交、`sync-once` 由 Windows 定时触发，所以 push 经常被拒：
+### 撞车处理（多人同推）
+auto-sync 已弃用（2026-09-01，见 CLAUDE.md Git 节），现为 AI 会话收尾制集中提交；队友手动 push 被拒时：
 ```bash
 git -c http.proxy=http://127.0.0.1:2080 fetch origin
 git rebase origin/main          # 几乎不冲突(各改各文件); 冲突就解
@@ -65,7 +65,7 @@ git -c http.proxy=http://127.0.0.1:2080 push origin main
 | `scripts/`（顶层） | 主机侧工具（`ssh-car.py` / `auto-sync.sh` / `sync-once.*` / `patrol_run.sh`）+ 历史脚本（`circle_run.py` 等） |
 | `bags/` | rosbag 录制；**注意**这里有一份 `auto_task_runner.py` 与 `scripts/` 版本已分叉 ⚠️ |
 
-> ⚠️ **待解决**：`bags/auto_task_runner.py`(334 行) 与 `scripts/auto_task_runner.py`(462 行) 内容不同。改它前先确认哪份为准（车上跑的是 `~/bags/`），别盲改。
+> ⚠️ **待解决**：`bags/auto_task_runner.py`(325 行) 与 `scripts/auto_task_runner.py`(445 行) 内容不同。改它前先确认哪份为准（车上跑的是 `~/bags/`），别盲改。
 > 新脚本一律放 `src/abot_project/scripts/`。主流程走 move_base（`navigate.launch` + DWA）；历史 cmd_vel 原语脚本（`goal_nav.py` / `ten_point_*` / `auto_task_runner.py`）为保底（见 CLAUDE.md）。
 
 ---
@@ -104,12 +104,15 @@ cd ~/catkin_ws && source /opt/ros/melodic/setup.bash && catkin_make
 > **为什么**：车上的实况（现场建的地图、live 调好的 params、车上版脚本）会随调试不断偏离 `main`。SD 卡挂了 / 误删 / 调崩了就全没了。所以**每搞一段时间、或每次大调整后，把车上当前状态打一个快照分支留底**。
 
 ```bash
-# 在车上 ~/catkin_ws (= 本仓库) 执行
-git checkout -b car-snapshot/2026-05-28      # 用当天日期
-git add -A
-git commit -m "snapshot: 车上实况 2026-05-28（场地图/params/脚本现状）"
+# 车上不是 git 仓库（2026-09-01 实测），快照由 AI 在开发机经免密 SSH 拉取后打分支：
+# 1) 从车拉实况（地图/参数/车上改过的脚本）
+scp -r abot@<车IP>:~/catkin_ws/src/abot_project/abot/maps  <repo>/car_snapshot_tmp/
+scp -r abot@<车IP>:~/catkin_ws/src/abot_project/abot/param <repo>/car_snapshot_tmp/
+# 2) 打快照分支留底（用当天日期）
+git checkout -b car-snapshot/2026-05-28
+git add car_snapshot_tmp && git commit -m "snapshot: 车上实况 2026-05-28（场地图/params/脚本现状）"
 git push -u origin car-snapshot/2026-05-28
-git checkout main                            # 回主线继续干活
+git checkout main && rm -rf car_snapshot_tmp
 ```
 
 - 快照分支**只为留底 / 可回滚**，不要求干净，不合回 main。
