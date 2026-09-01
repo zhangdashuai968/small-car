@@ -185,31 +185,6 @@ class VLM:
         y_max = max(0, min(img_h - 1, int(round(y_max))))
         return [x_min, y_min, x_max, y_max]
 
-    def unzoom_coordinates(self, cx, cy):
-        """把 resize_core.py 放大后的图像坐标反算回原始相机坐标
-        resize_core.py 管线: 原始640x480 → 裁剪ROI → GPU放大 → 居中放回640x480黑画布
-        标定是用原始相机图像做的，所以必须把VLM返回的zoom坐标反算回去
-        """
-        IMG_W, IMG_H = 640, 480
-        ROI_X1 = int(IMG_W * 0.43)
-        ROI_Y1 = int(IMG_H * 0.53)
-        ROI_X2 = int(IMG_W * 0.75)
-        ROI_Y2 = int(IMG_H * 0.78)
-        ROI_W = ROI_X2 - ROI_X1
-        ROI_H = ROI_Y2 - ROI_Y1
-        SCALE = min(IMG_W / float(ROI_W), IMG_H / float(ROI_H))
-        NEW_W = int(ROI_W * SCALE)
-        NEW_H = int(ROI_H * SCALE)
-        START_X = (IMG_W - NEW_W) // 2
-        START_Y = (IMG_H - NEW_H) // 2
-
-        roi_x = (cx - START_X) / SCALE
-        roi_y = (cy - START_Y) / SCALE
-        orig_x = int(ROI_X1 + roi_x)
-        orig_y = int(ROI_Y1 + roi_y)
-        rospy.loginfo('unzoom: zoomed({:.0f},{:.0f}) -> orig({:d},{:d})'.format(cx, cy, orig_x, orig_y))
-        return orig_x, orig_y
-
     def post_processing_viz(self, result, img_path):
         img_bgr = cv2.imread(img_path)
         img_h, img_w = img_bgr.shape[:2]
@@ -247,8 +222,7 @@ class VLM:
             return None
         
         X_CENTER, Y_CENTER = self.post_processing_viz(result, self.image_save_path)
-        X_CENTER, Y_CENTER = self.unzoom_coordinates(X_CENTER, Y_CENTER)
-        
+
         # 发布位姿信息  创建单个Detection消息
         pose_msg = Detection()
         pose_msg.class_name = self.object_name
