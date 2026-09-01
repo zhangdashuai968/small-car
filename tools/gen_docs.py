@@ -20,6 +20,8 @@ DOCS = [
     ("quickstart",  "快速启动命令速查（建图 / 存图 / 定位）",   "docs/启动命令速查.md"),
     ("rules",       "比赛规则（最终目标 · 硬约束）",            "docs/比赛规则.md"),
     ("overview",    "项目总览 README",                         "README.md"),
+    ("claudehub",   "AI 中枢 CLAUDE.md（机制·约定）",           "CLAUDE.md"),
+    ("contrib",     "协作约定 CONTRIBUTING",                    "CONTRIBUTING.md"),
     ("guide",       "小车实验指南（技术教育详解）",              "src/小车实验指南技术教育详解(2).md"),
     ("trouble",     "故障排查 TROUBLESHOOTING",                 "docs/TROUBLESHOOTING.md"),
     ("log0526",     "调试日志 2026-05-26 · SLAM建图与局部规划器解耦", "logs/2026-05-26_SLAM建图与局部规划器解耦.md"),

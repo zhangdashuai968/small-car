@@ -49,7 +49,8 @@ rosrun tf tf_echo map base_footprint # 确认 amcl 收敛
 
 - 代码跑在 Jetson Nano（Tegra X1，Ubuntu 18.04 / ROS Melodic，Python 2.7），SSH `abot@192.168.36.46` 或 `192.168.43.211`
 - 仓库同步走「AI 会话收尾制」（见 Git 节），auto-sync 已弃用
-- AI 可经免密 SSH `ssh abot@<车IP>` 直接在真机执行（2026-09-01 起，密钥认证，密码不落文档）；也可只给队友可执行命令。涉及运动/机械臂的命令，执行前队友必须在场且急停可达
+- 两套上车通道并存：队友用 `scripts/ssh-car.py`（密码认证），AI 用免密密钥 SSH `ssh abot@<车IP>`（2026-09-01 起，密码不落文档）
+- AI 可直接在真机执行，也可只给队友可执行命令。涉及运动/机械臂的命令，执行前队友必须在场且急停可达
 
 ## 当前导航方案（2026-06-01 起切回 move_base，06-07 起转 DWA）
 
