@@ -79,4 +79,4 @@ vehicle_state:
 
 ---
 
-> 关联：[人工报告](./YYYY-MM-DD_执行人_简述.md) | [调试日志模板](https://github.com/zhangdashuai968/abot_arm_learning/blob/main/logs/2026-05-26_%E6%A8%A1%E6%9D%BF_%E8%B0%83%E8%AF%95%E6%97%A5%E5%BF%97.md) | [协作工作流](https://github.com/zhangdashuai968/abot_arm_learning/blob/main/WORKFLOW.md)
+> 关联：[人工报告](./YYYY-MM-DD_执行人_简述.md) | [调试日志模板](../logs/模板_调试日志.md) | [协作工作流](https://github.com/zhangdashuai968/abot_arm_learning/blob/master/docs/WORKFLOW.md)

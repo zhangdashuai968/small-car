@@ -67,7 +67,7 @@ small-car/
 ├── src/<其余>/         ← vendored 第三方包(robot_localization/lidar/depth_camera/
 │                          opencv_apps/robot_arm/imu_* 等)，**勿改、勿删**
 ├── scripts/            ← 主机侧工具(ssh-car/sync/patrol_run) + 历史测试脚本
-├── bags/               ← rosbag; ⚠️ 内有与 scripts/ 分叉的 auto_task_runner.py
+├── bags/               ← rosbag 与历史数据分析产物（csv/png，调参报告引用）
 │       (地图在 abot/maps/: house.yaml=比赛图(navigate.launch 加载), my1_map=历史;
 │        localize.launch 默认读 comp.yaml=车上建图存出, 仓库未跟踪)
 ├── logs/ reports/      ← 调试日志 / 会话报告(均有模板)
@@ -119,7 +119,7 @@ rosrun tf tf_echo map base_footprint # map→base 有输出=amcl 收敛
 
 ## 安全（不可违反）
 
-- 密码：仅 `scripts/ssh-car.py` 可硬编码，新代码用环境变量或配置文件
+- 密码/API key：一律环境变量或本机参数文件注入（如 `ssh-car.py` 的 `CAR_PASSWORD`），禁止硬编码入仓库
 - 改参数前先备份原始值
 - 给 `/cmd_vel` 或 move_base 命令前，确认急停按钮可达
 - 机械臂回 home 再断电
@@ -148,7 +148,7 @@ rosrun tf tf_echo map base_footprint # map→base 有输出=amcl 收敛
 ## 交叉引用
 
 - 本仓库：[small-car](https://github.com/zhangdashuai968/small-car)
-- 学习仓库：[abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)（实验 spec 在 `parallel/`，映射表 `small-car-实验映射表.md`）
+- 学习仓库：[abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)（实验 spec 在 `parallel/`，映射表 `cheatsheets/small-car-实验映射表.md`）
 - 早报：[morning-newspaper](https://github.com/zhangdashuai968/morning-newspaper)
 - 硬件：`README.md`
 - 协作约定（git/编码/脚本放哪）：`CONTRIBUTING.md`

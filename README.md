@@ -1,7 +1,7 @@
 # Small Car — ABOT M1 ARM 智能小车
 
 > 基于 ROS 的自主导航 + 视觉抓取 + 机械臂操控竞赛平台。
-> 属于[三仓库生态](https://github.com/zhangdashuai968/morning-newspaper)的「战场」仓（真机部署 + 调试）；课堂仓是 [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)。
+> 属于[三仓库生态](https://github.com/zhangdashuai968/abot_arm_learning/blob/master/docs/WORKFLOW.md)的「战场」仓（真机部署 + 调试）；课堂仓是 [abot_arm_learning](https://github.com/zhangdashuai968/abot_arm_learning)。
 
 `Jetson Nano` · `Ubuntu 18.04` · `ROS Melodic` · `Python 2.7` · `麦克纳姆轮全向底盘`
 

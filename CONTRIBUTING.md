@@ -63,9 +63,9 @@ git -c http.proxy=http://127.0.0.1:2080 push origin main
 |------|--------|
 | `src/abot_project/scripts/` | **新运动/导航脚本归处**（`goal_nav.py` / `ten_point_race.py` / `ten_point_odom_race.py` / `seven_point_test.py` / `auto_navigation_grasp.py` 已在此） |
 | `scripts/`（顶层） | 主机侧工具（`ssh-car.py` / `auto-sync.sh` / `sync-once.*` / `patrol_run.sh`）+ 历史脚本（`circle_run.py` 等） |
-| `bags/` | rosbag 录制；**注意**这里有一份 `auto_task_runner.py` 与 `scripts/` 版本已分叉 ⚠️ |
+| `bags/` | rosbag 录制；历史数据分析产物（csv/png，调参报告引用） |
 
-> ⚠️ **待解决**：`bags/auto_task_runner.py`(325 行) 与 `scripts/auto_task_runner.py`(445 行) 内容不同。车上已无 `~/bags/` 目录（2026-09-01 实测），仓库副本为孤儿，主流程也已不用它——处置（删/标注）待拍板，别盲改。
+> `bags/auto_task_runner.py` 孤儿分叉副本已于 2026-09-01 删除（车上无 `~/bags/`，主流程不用；历史版本可从 git 历史找回）。
 > 新脚本一律放 `src/abot_project/scripts/`。主流程走 move_base（`navigate.launch` + DWA）；历史 cmd_vel 原语脚本（`goal_nav.py` / `ten_point_*` / `auto_task_runner.py`）为保底（见 CLAUDE.md）。
 
 ---
