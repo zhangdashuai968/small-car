@@ -12,6 +12,7 @@
 | 文档 | 用途 |
 |------|------|
 | [`CLAUDE.md`](CLAUDE.md) | **AI 上手中枢**：目录地图、脚本索引、当前导航方案、约定 |
+| [`docs/新队员培训教程.md`](docs/新队员培训教程.md) | **新队员入门主线**：连车 → 标定 → 建图 → 导航 → VLM 抓取通关（含厂商文档差异表、逐章验收） |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | **协作约定**：git 流程、代理、编码/换行、脚本放哪、真机验证 |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | **系统架构**：数据流、tf 树、节点分层、导航方案沿革（move_base + DWA） |
 | [`docs/比赛规则.md`](docs/比赛规则.md) | **最终目标**：场地、6 点抓放流程、得分、致命终止条件 |
