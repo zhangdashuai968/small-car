@@ -2,182 +2,203 @@
 # -*- coding: utf-8 -*-
 
 """
-物流搬运系统主程序
+物流搬运系统
 
-该程序负责控制机器人完成完整的物流搬运任务，包括：
-1. 导航到指定的抓取点
-2. 检测并抓取指定物体
-3. 导航到指定的放置点
-4. 放置物体
-5. 最后返回终点位置
+该模块实现了基于ROS的物流搬运机器人控制系统，主要功能包括：
+- 自动导航到指定位置
+- 检测并抓取目标物体
+- 将物体搬运到指定位置并放置
+- 自动返回终点
 
 依赖项：
-- ROS (Robot Operating System)
-- move_base (用于路径规划和导航)
-- vl_locate (用于目标检测)
-- 相关的服务和消息类型定义
+- ROS Melodic (Ubuntu 18.04)
+- move_base_msgs
+- geometry_msgs
+- tf
+- vl_locate服务
+- std_msgs
 """
 
 import rospy
 import actionlib
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
-import tf
-from vl_locate.srv import DetectObject, DetectObjectRequest
-from std_msgs.msg import String
+from geometry_msgs.msg import Pose, Point, Quaternion
+from tf.transformations import quaternion_from_euler
+from vl_locate.srv import GetObject
+from std_msgs.msg import Bool, String
 import time
-import traceback
 
-class CargoHandling:
+class CargoHandling():
     """
-    物流搬运类
+    物流搬运控制类
     
-    该类封装了物流搬运任务的所有功能，包括导航、物体检测、抓取和放置。
+    该类负责控制物流搬运机器人的整个搬运流程，包括导航、物体检测、抓取、放置等操作。
+    通过ROS消息和服务与底层硬件和感知系统进行交互。
     
     属性:
-        client (actionlib.SimpleActionClient): 用于与move_base动作服务器通信
-        vlm_detection_srv (rospy.ServiceProxy): 用于调用目标检测服务
-        waypoints (list): 包含所有路径点的列表
-        object_names (list): 包含所有要抓取物体名称的列表
-        end_pos (list): 终点位置
-        step_pub (rospy.Publisher): 用于发布当前步骤信息
+        waypoints (list): 路径点列表，包含抓取点和放置点的坐标
+        end_pos (list): 任务完成后的返回终点坐标
+        nav_offset (float): 导航偏移量，默认为0.2米
+        move_base (actionlib.SimpleActionClient): move_base动作客户端，用于导航
+        vlm_detection_srv (rospy.ServiceProxy): 目标检测服务代理
+        grab_finished (bool): 抓取完成状态标志
+        grab_pub (rospy.Publisher): 抓取命令发布者
     """
-    
     def __init__(self):
-        """
-        初始化物流搬运系统
-        """
         try:
-            # 获取参数
-            self.waypoints = rospy.get_param('~waypoints', [])
-            self.object_names = rospy.get_param('~object_names', [])
-            self.end_pos = rospy.get_param('~end_pos', [0, 0, 0])
+            # 正确缩进的代码（4空格）
+            self.waypoints = rospy.get_param('~waypoints')
+            self.end_pos = rospy.get_param('~end_pos')
+            self.nav_offset = rospy.get_param('~nav_offset', 0.2)
             
-            # 创建move_base客户端
-            self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-            rospy.loginfo(u"等待move_base动作服务器...")
-            self.client.wait_for_server()
-            rospy.loginfo(u"已连接到move_base动作服务器")
+            # 初始化导航客户端
+            self.move_base = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+            self.move_base.wait_for_server()
             
-            # 创建目标检测服务代理
+            # 等待目标识别服务
             rospy.wait_for_service('vlm_detection')
-            self.vlm_detection_srv = rospy.ServiceProxy('vlm_detection', DetectObject)
+            self.vlm_detection_srv = rospy.ServiceProxy('vlm_detection', GetObject)
             
-            # 创建步骤信息发布者
+            # 订阅抓取完成状态
+            self.grab_finished = False
+            rospy.Subscriber('/grab_finished', Bool, self.grab_finished_callback)
+            
+            # 发布抓取命令
+            self.grab_pub = rospy.Publisher('/grab', Bool, queue_size=1)
+            
+            # 发布步骤更新信息
             self.step_pub = rospy.Publisher('/update_step', String, queue_size=10)
             
+            rospy.loginfo("物流搬运系统初始化完成")
         except Exception as e:
-            rospy.logerr(u"初始化过程中发生错误: %s", str(e))
+            rospy.logerr("__init__方法中发生致命错误: %s", str(e))
             import traceback
-            rospy.logerr(traceback.format_exc())
-            raise
+            rospy.logerr(traceback.format_exc())  # 打印完整堆栈
+            raise  # 或者直接 sys.exit(1)
     
-    def grab_finished_callback(self, data):
+    def grab_finished_callback(self, msg):
         """
-        抓取完成回调函数
+        抓取完成状态回调函数
         
-        当抓取完成后，该函数会被调用。
+        该方法作为ROS订阅者回调函数，用于接收抓取完成状态消息，并更新
+        本地的抓取完成状态标志。
         
         参数:
-            data (String): 包含抓取结果的消息
+            msg (std_msgs.Bool): 抓取完成状态消息，True表示抓取完成，False表示未完成
+        
+        返回:
+            无
         """
-        rospy.loginfo(u"收到抓取完成信号: %s", data.data)
+        self.grab_finished = msg.data
     
     def send_goal(self, x, y, yaw):
         """
         发送导航目标
         
-        该方法向move_base发送一个导航目标，并等待结果。
+        该方法创建一个导航目标并发送给move_base动作服务器，实现机器人到指定位置的导航。
         
         参数:
-            x (float): 目标点的x坐标
-            y (float): 目标点的y坐标
-            yaw (float): 目标点的朝向（弧度）
+            x (float): 目标位置的x坐标
+            y (float): 目标位置的y坐标
+            yaw (float): 目标位置的偏航角（弧度）
         
         返回:
-            bool: 如果成功到达目标点则返回True，否则返回False
+            bool: 导航是否成功，True表示成功，False表示失败
+        
+        异常:
+            无
         """
         try:
-            # 创建目标
             goal = MoveBaseGoal()
-            goal.target_pose.header.frame_id = "map"
+            goal.target_pose.header.frame_id = 'map'
             goal.target_pose.header.stamp = rospy.Time.now()
             goal.target_pose.pose.position = Point(x, y, 0)
-            
-            # 将欧拉角转换为四元数
-            quat = tf.transformations.quaternion_from_euler(0, 0, yaw)
+            quat = quaternion_from_euler(0, 0, yaw)
             goal.target_pose.pose.orientation = Quaternion(*quat)
             
-            # 发送目标并等待结果
-            self.client.send_goal(goal)
-            self.client.wait_for_result()
+            self.move_base.send_goal(goal)
+            finished = self.move_base.wait_for_result(rospy.Duration(60))
             
-            # 检查结果
-            if self.client.get_state() == actionlib.GoalStatus.SUCCEEDED:
-                rospy.loginfo(u"成功到达目标点: (%.2f, %.2f, %.2f)", x, y, yaw)
-                return True
-            else:
-                rospy.logerr(u"未能到达目标点: (%.2f, %.2f, %.2f)", x, y, yaw)
+            if not finished:
+                rospy.logerr("导航超时!")
                 return False
+            else:
+                state = self.move_base.get_state()
+                if state == 3:  # SUCCEEDED
+                    rospy.loginfo("导航成功!")
+                    return True
+                else:
+                    rospy.logerr("导航失败!")
+                    return False
         except Exception as e:
-            rospy.logerr(u"send_goal方法中发生错误: %s", str(e))
+            rospy.logerr("send_goal方法中发生致命错误: %s", str(e))
             import traceback
-            rospy.logerr(traceback.format_exc())
+            rospy.logerr(traceback.format_exc())  # 打印完整堆栈
+            raise  # 或者直接 sys.exit(1)
             return False
     
     def detect_and_grab(self, object_name):
         """
         检测并抓取物体
         
-        该方法首先调用目标检测服务找到物体，然后发送抓取命令。
+        该方法调用目标识别服务检测指定物体并发送抓取命令，不检测抓取是否成功。
         
         参数:
-            object_name (str): 要抓取的物体名称
+            object_name (str): 要检测和抓取的物体名称
         
         返回:
-            bool: 如果成功抓取物体则返回True，否则返回False
+            bool: 始终返回True
+        
+        异常:
+            rospy.ServiceException: 当调用目标识别服务失败时抛出
         """
         try:
-            rospy.loginfo(u"开始检测并抓取物体: %s", object_name)
-            
-            # 设置抓取模式为1
+            # 调用目标识别服务前设置抓取模式
             rospy.set_param('/grab', 1)
-            rospy.loginfo(u"切换抓取模式: /grab = 1")
+            rospy.loginfo("切换抓取模式: /grab = 1")
             rospy.sleep(0.2)
             
-            # 调用目标检测服务
-            request = DetectObjectRequest()
-            request.object_name = object_name
-            response = self.vlm_detection_srv(request)
-            
+            # 调用目标识别服务
+            response = self.vlm_detection_srv(object_name)
             if response.success:
-                rospy.loginfo(u"检测到物体: %s", response.message)
-                # 发布抓取命令
-                rospy.loginfo(u"发送抓取命令")
-                return True
+                rospy.loginfo("目标识别成功: %s", response.message)
             else:
-                rospy.logwarn(u"未检测到物体: %s", response.message)
-                return False
+                rospy.logwarn("目标识别失败: %s", response.message)
+            
+            # 发送抓取命令
+            self.grab_pub.publish(True)
+            rospy.loginfo("已发送抓取命令，等待5秒...")
+            
+            # 等待5秒
+            rospy.sleep(5.0)
+            rospy.loginfo("等待完成，继续执行")
+            
+            return True
         except rospy.ServiceException as e:
-            rospy.logerr(u"调用目标检测服务失败: %s", str(e))
-            return False
+            rospy.logerr("调用目标识别服务失败: %s", str(e))
+            return True
         except Exception as e:
-            rospy.logerr(u"detect_and_grab方法中发生致命错误: %s", str(e))
+            rospy.logerr("detect_and_grab方法中发生致命错误: %s", str(e))
             import traceback
-            rospy.logerr(traceback.format_exc())
-            return False
+            rospy.logerr(traceback.format_exc())  # 打印完整堆栈
+            raise  # 或者直接 sys.exit(1)
+            return True
     
     def place_object(self, object_name):
         """
         放置物体
         
-        该方法在指定位置放置物体。
+        该方法通过设置/grab参数为0，然后调用vlm_detection服务来执行放置操作。
+        在抓取动作2点执行切换放置模式（/grab=0）的放置动作。
         
         参数:
-            object_name (str): 要放置的物体名称
+            object_name (str): 物体名称
         
         返回:
-            bool: 如果成功放置物体则返回True，否则返回False
+            bool: 始终返回True
+        
+        异常:
+            无
         """
         try:
             rospy.loginfo(u"在抓取动作2点放置物体: %s", object_name.encode('utf-8') if isinstance(object_name, unicode) else object_name)
@@ -217,96 +238,107 @@ class CargoHandling:
         
         返回:
             无
+        
+        异常:
+            无
         """
         try:
             # 发布初始步骤信息
             step_msg = String()
-            step_msg.data = u"任务开始"
+            step_msg.data = "任务开始"
             self.step_pub.publish(step_msg)
             
-            # 获取所有物体名称
-            object_names = self.object_names
+            # 从参数服务器获取物体名称列表，如果未设置则使用默认值
+            object_names = rospy.get_param('~object_names', [u"蓝方块", u"红方块", u"绿方块"])
             
-            # 遍历所有路径点
+            # 遍历所有点位
             for i in range(0, len(self.waypoints), 2):
-                # 检查是否有足够的路径点
-                if i + 1 >= len(self.waypoints):
-                    rospy.logwarn(u"路径点不足，跳过最后一个不完整的任务")
-                    break
-                
-                # 获取抓取点和放置点
-                grab_waypoint = self.waypoints[i]
-                place_waypoint = self.waypoints[i + 1]
-                
-                # 确保有对应的物体名称
-                if i // 2 >= len(object_names):
-                    rospy.logwarn(u"物体名称不足，跳过任务")
-                    break
-                
-                object_name = object_names[i // 2]
-                
-                # 发布当前步骤信息
-                step_msg.data = u"前往抓取点: %s" % object_name
+                # 发布步骤信息
+                step_msg.data = u"前往抓取点"
                 self.step_pub.publish(step_msg)
                 
                 # 导航到抓取点
+                grab_waypoint = self.waypoints[i]
+                rospy.loginfo(u"前往抓取点: %s", str(grab_waypoint))
                 if not self.send_goal(grab_waypoint[0], grab_waypoint[1], grab_waypoint[2]):
                     rospy.logerr(u"无法到达抓取点，跳过此任务")
                     continue
                 
-                # 检测并抓取物体
-                if not self.detect_and_grab(object_name):
-                    rospy.logerr(u"无法抓取物体，跳过此任务")
-                    continue
-                
-                # 发布当前步骤信息
-                step_msg.data = u"前往放置点(抓取动作2点)"
+                # 发布步骤信息
+                step_msg.data = u"检测并抓取物体"
                 self.step_pub.publish(step_msg)
                 
-                # 导航到放置点
-                if not self.send_goal(place_waypoint[0], place_waypoint[1], place_waypoint[2]):
-                    rospy.logerr(u"无法到达放置点，跳过此任务")
-                    continue
+                # 检测并抓取物体（不管成功与否都继续）
+                object_name = object_names[i//2] if i//2 < len(object_names) else "物体"
+                self.detect_and_grab(object_name)
                 
-                # 放置物体
-                self.place_object(object_name)
+                # 发布步骤信息
+                step_msg.data = "前往放置点(抓取动作2点)"
+                self.step_pub.publish(step_msg)
+                
+                # 导航到抓取动作2点作为放置点
+                place_waypoint = self.waypoints[i+1]
+                rospy.loginfo(u"前往放置点(抓取动作2点): %s", str(place_waypoint))
+                if not self.send_goal(place_waypoint[0], place_waypoint[1], place_waypoint[2]):
+                    rospy.logerr(u"无法到达放置点(抓取动作2点)")
+                    continue
             
-            # 发布最终步骤信息
-            step_msg.data = u"返回终点"
+            # 发布步骤信息
+            step_msg.data = u"放置物体"
+            self.step_pub.publish(step_msg)
+            
+            # 放置物体
+            self.place_object(object_name)
+        
+            # 发布步骤信息
+            step_msg.data = "返回终点"
             self.step_pub.publish(step_msg)
             
             # 返回终点
-            self.send_goal(self.end_pos[0], self.end_pos[1], self.end_pos[2])
-            
-            # 发布任务完成信息
-            step_msg.data = u"任务完成"
-            self.step_pub.publish(step_msg)
-            
+            rospy.loginfo("返回终点: %s", str(self.end_pos))
+            if self.send_goal(self.end_pos[0], self.end_pos[1], self.end_pos[2]):
+                # 发布步骤信息
+                step_msg.data = u"任务完成"
+                self.step_pub.publish(step_msg)
+                rospy.loginfo(u"任务完成!")
+            else:
+                # 发布步骤信息
+                step_msg.data = u"无法返回终点"
+                self.step_pub.publish(step_msg)
+                rospy.logerr(u"无法返回终点")
+                
         except Exception as e:
-            rospy.logerr(u"运行过程中发生致命错误: %s", str(e))
+            rospy.logerr("run方法中发生致命错误: %s", str(e))
             import traceback
-            rospy.logerr(traceback.format_exc())
-            # 发布任务失败信息
-            step_msg = String()
-            step_msg.data = u"任务失败"
-            self.step_pub.publish(step_msg)
-            raise
+            rospy.logerr(traceback.format_exc())  # 打印完整堆栈
+            raise  # 或者直接 sys.exit(1)
+
+def main():
+    """
+    ROS节点主函数
     
-    def main():
-        """
-        主函数
-        
-        初始化ROS节点，创建CargoHandling实例并运行主循环。
-        """
-        try:
-            rospy.init_node('cargo_handling')
-            handler = CargoHandling()
-            handler.run()
-        except Exception as e:
-            rospy.logerr(u"主函数中发生致命错误: %s", str(e))
-            import traceback
-            rospy.logerr(traceback.format_exc())
-            raise
+    该函数初始化ROS节点，创建CargoHandling实例，并启动物流搬运任务。
+    这是程序的入口点，负责协调整个物流搬运流程。
     
-    if __name__ == '__main__':
-        main()
+    参数:
+        无
+    
+    返回:
+        无
+    
+    异常:
+        rospy.ROSException: 当ROS节点初始化失败时抛出
+    """
+    try:
+        rospy.init_node('cargo_handling')
+        handler = CargoHandling()
+        handler.run()
+    except Exception as e:
+        rospy.logerr("cargo_handling.py 发生致命错误: %s", str(e))
+        import traceback
+        rospy.logerr(traceback.format_exc())  # 打印完整堆栈
+        raise  # 或者直接 sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

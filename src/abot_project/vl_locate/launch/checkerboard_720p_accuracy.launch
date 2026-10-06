@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="expected_x"/>
+  <arg name="expected_y"/>
+  <arg name="expected_z"/>
+  <arg name="required_attempts" default="20"/>
+  <arg name="capture_timeout" default="120.0"/>
+  <arg name="target_class" default="checkerboard"/>
+  <arg name="board_columns" default="8"/>
+  <arg name="board_rows" default="6"/>
+  <arg name="output_path" default="/tmp/rgbd_checkerboard_accuracy.json"/>
+  <arg name="rgb_camera_info_url"
+       default="file://$(find vl_locate)/config/gemini_rgb_1280x720.yaml"/>
+
+  <include file="$(find vl_locate)/launch/gemini_720p_rgbd.launch">
+    <arg name="start_localizer" value="true"/>
+    <arg name="source_mode" value="yolo"/>
+    <arg name="target_class" value="$(arg target_class)"/>
+    <arg name="rgb_camera_info_url" value="$(arg rgb_camera_info_url)"/>
+  </include>
+
+  <node pkg="vl_locate"
+        type="checkerboard_bbox_publisher.py"
+        name="checkerboard_bbox_publisher"
+        output="screen">
+    <param name="image_topic" value="/camera/rgb/image_raw"/>
+    <param name="output_topic" value="/yolov5/BoundingBoxes"/>
+    <param name="expected_width" value="1280"/>
+    <param name="expected_height" value="720"/>
+    <param name="board_columns" value="$(arg board_columns)"/>
+    <param name="board_rows" value="$(arg board_rows)"/>
+    <param name="class_name" value="$(arg target_class)"/>
+    <param name="outer_square_margin" value="1.0"/>
+    <param name="max_rate" value="5.0"/>
+  </node>
+
+  <include file="$(find vl_locate)/launch/rgbd_accuracy_gate.launch">
+    <arg name="source_mode" value="yolo"/>
+    <arg name="target_class" value="$(arg target_class)"/>
+    <arg name="expected_x" value="$(arg expected_x)"/>
+    <arg name="expected_y" value="$(arg expected_y)"/>
+    <arg name="expected_z" value="$(arg expected_z)"/>
+    <arg name="required_attempts" value="$(arg required_attempts)"/>
+    <arg name="capture_timeout" value="$(arg capture_timeout)"/>
+    <arg name="output_path" value="$(arg output_path)"/>
+  </include>
+</launch>

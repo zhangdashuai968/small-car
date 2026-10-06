@@ -11,9 +11,9 @@ font_path: "/home/abot/catkin_ws/src/abot_project/vl_locate/config/SimHei.ttf"  
 font_size: 32                                          # 字体大小
 
 # API配置
-api_key: "sk-4f51e302d219401eb0e21dc9aa7f9bbd"         # API密钥
+# API key 仅从私有参数 ~api_key 或环境变量 VLM_API_KEY 读取，不写入本文件。
 base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # API基础URL
-model_name: "qwen3.7-plus"                             # 模型名称
+model_name: "qwen3.7-plus"                             # 保留真机当前模型口径
 mode: "openai"                                         # 模式选择:openai 或 dashscope
 
 # 可视化配置

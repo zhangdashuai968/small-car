@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="board_columns" default="8"/>
+  <arg name="board_rows" default="6"/>
+  <arg name="square_size" default="0.03"/>
+  <arg name="required_views" default="25"/>
+  <arg name="capture_timeout" default="180.0"/>
+  <arg name="output_yaml"
+       default="/tmp/gemini_rgb_1280x720_calibrated.yaml"/>
+  <arg name="output_report"
+       default="/tmp/gemini_rgb_1280x720_calibration_report.json"/>
+
+  <include file="$(find vl_locate)/launch/gemini_720p_rgbd.launch">
+    <arg name="start_localizer" value="false"/>
+  </include>
+
+  <node pkg="vl_locate"
+        type="calibrate_rgb_intrinsics.py"
+        name="calibrate_rgb_intrinsics"
+        output="screen"
+        required="true">
+    <param name="image_topic" value="/camera/rgb/image_raw"/>
+    <param name="expected_width" value="1280"/>
+    <param name="expected_height" value="720"/>
+    <param name="board_columns" value="$(arg board_columns)"/>
+    <param name="board_rows" value="$(arg board_rows)"/>
+    <param name="square_size" value="$(arg square_size)"/>
+    <param name="required_views" value="$(arg required_views)"/>
+    <param name="capture_timeout" value="$(arg capture_timeout)"/>
+    <param name="output_yaml" value="$(arg output_yaml)"/>
+    <param name="output_report" value="$(arg output_report)"/>
+    <param name="max_rms" value="0.5"/>
+    <param name="max_view_p95" value="1.0"/>
+    <param name="min_centroid_span" value="0.25"/>
+    <param name="min_scale_span" value="0.05"/>
+  </node>
+</launch>

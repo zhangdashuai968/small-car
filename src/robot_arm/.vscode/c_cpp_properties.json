@@ -1,0 +1,37 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/rikibot/catkin_ws/devel/include/**",
+        "/opt/ros/melodic/include/**",
+        "/home/rikibot/catkin_ws/src/depth_camera/ros_astra_camera/include/**",
+        "/home/rikibot/catkin_ws/src/m-explore/explore/include/**",
+        "/home/rikibot/catkin_ws/src/imu_calib/include/**",
+        "/home/rikibot/catkin_ws/src/imu_filter_madgwick/include/**",
+        "/home/rikibot/catkin_ws/src/camera_umd/jpeg_streamer/include/**",
+        "/home/rikibot/catkin_ws/src/lidar/lslidar_C16/lslidar_c16_decoder/include/**",
+        "/home/rikibot/catkin_ws/src/lidar/lslidar_C16/lslidar_c16_driver/include/**",
+        "/home/rikibot/catkin_ws/src/opencv_apps/include/**",
+        "/home/rikibot/catkin_ws/src/rikibot_project/rikibot/include/**",
+        "/home/rikibot/catkin_ws/src/rikibot_project/rikibot_clean/include/**",
+        "/home/rikibot/catkin_ws/src/rikibot_project/rikibot_qt_app/include/**",
+        "/home/rikibot/catkin_ws/src/rikibot_project/rikibot_line_follower/include/**",
+        "/home/rikibot/catkin_ws/src/rikibot_project/rikibot_pid/include/**",
+        "/home/rikibot/catkin_ws/src/rikibot_project/rikibot_yolo_detection/include/**",
+        "/home/rikibot/catkin_ws/src/robot_localization/include/**",
+        "/home/rikibot/catkin_ws/src/camera_umd/uvc_camera/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-arm64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

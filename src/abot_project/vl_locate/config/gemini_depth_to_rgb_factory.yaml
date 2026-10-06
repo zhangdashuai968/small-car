@@ -1,0 +1,5 @@
+# Factory stereo calibration converted from right-to-left to depth-to-RGB.
+# Translation units are metres. A physical checkerboard/target calibration
+# must replace this provisional transform before enabling robot motion.
+depth_to_rgb_rotation: [0.999998688698, -0.001487227273, 0.000599743507, 0.001489084214, 0.999994039536, -0.003107869532, -0.000595117803, 0.003108758480, 0.999994993210]
+depth_to_rgb_translation: [0.009982426102, -0.000055305776, 0.000754593032]

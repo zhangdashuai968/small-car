@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+# _*_ coding:utf-8 _*_
+"""
+VLM 2D detection service.
+
+The service freezes the exact input image and Header before the remote API call,
+then publishes the same Header with the result so RGB-D localization can use the
+matching depth frame instead of the frame available after API latency.
+"""
+import base64
+import copy
+import json
+import os
+import sys
+import threading
+
+import cv2
+from dashscope import MultiModalConversation
+import numpy as np
+from openai import OpenAI
+from PIL import Image, ImageDraw, ImageFont
+import rospy
+from sensor_msgs.msg import Image as ROSImage
+from std_msgs.msg import Header
+
+from vl_locate.msg import Detection, DetectionArray
+from vl_locate.srv import GetObject, GetObjectResponse
+
+
+class VLM:
+    def __init__(self):
+        self.input_topic = rospy.get_param("~input_topic", "/new_topic")
+        self.output_topic = rospy.get_param("~output_topic", "/Pose")
+        self.service_name = rospy.get_param("~service_name", "vlm_detection")
+        self.frame_request_topic = rospy.get_param(
+            "~frame_request_topic", "/vl_locate/frame_request"
+        )
+        self.image_save_path = rospy.get_param(
+            "~image_save_path",
+            "/home/abot/catkin_ws/src/abot_project/vl_locate/image/vlm_now.jpg",
+        )
+        self.font_path = rospy.get_param(
+            "~font_path",
+            "/home/abot/catkin_ws/src/abot_project/vl_locate/config/SimHei.ttf",
+        )
+        self.font_size = int(rospy.get_param("~font_size", 32))
+        self.api_key = str(
+            rospy.get_param("~api_key", "") or os.environ.get("VLM_API_KEY", "")
+        ).strip()
+        self.base_url = rospy.get_param(
+            "~base_url", "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        )
+        self.model_name = rospy.get_param("~model_name", "qwen3.7-plus")
+        self.mode = rospy.get_param("~mode", "dashscope")
+        self.bbox_color = rospy.get_param("~bbox_color", [0, 0, 255])
+        self.bbox_thickness = int(rospy.get_param("~bbox_thickness", 3))
+        self.center_radius = int(rospy.get_param("~center_radius", 6))
+        self.text_color = rospy.get_param("~text_color", [255, 0, 0])
+
+        self.system_prompt = """
+        检测图像中的目标，并以坐标的形式返回其位置。
+        例如检测图像中的绿色方块，输出格式应为
+        {"label": "绿色方块", "bbox_2d": [x1, y1, x2, y2], "probability": 1.0}。
+        只回复 JSON 本身，不要回复其它内容。
+
+        我现在的指令是：
+        """
+
+        self.image_lock = threading.Lock()
+        self.service_lock = threading.Lock()
+        self.latest_image = None
+        self.latest_header = None
+
+        self.subscriber = rospy.Subscriber(
+            self.input_topic, ROSImage, self.image_callback, queue_size=1
+        )
+        self.detection_pub = rospy.Publisher(
+            self.output_topic, DetectionArray, queue_size=10
+        )
+        self.frame_request_pub = rospy.Publisher(
+            self.frame_request_topic, Header, queue_size=4
+        )
+
+        try:
+            self.font = ImageFont.truetype(self.font_path, self.font_size)
+        except Exception:
+            rospy.logwarn("无法加载字体文件 %s，使用默认字体", self.font_path)
+            self.font = ImageFont.load_default()
+
+        self.service = rospy.Service(
+            self.service_name, GetObject, self.handle_vlm_detection
+        )
+        if not self.api_key:
+            rospy.logerr(
+                "VLM_API_KEY/私有参数 ~api_key 未设置；服务保持运行但检测请求会失败关闭"
+            )
+        rospy.loginfo(
+            "VLM detection ready: input=%s output=%s service=%s mode=%s model=%s",
+            self.input_topic,
+            self.output_topic,
+            self.service_name,
+            self.mode,
+            self.model_name,
+        )
+
+    @staticmethod
+    def encode_image(image_path):
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode("utf-8")
+
+    @staticmethod
+    def imgmsg_to_cv2(image_msg):
+        dtype = np.dtype("uint8")
+        dtype = dtype.newbyteorder(">" if image_msg.is_bigendian else "<")
+        image = np.ndarray(
+            shape=(image_msg.height, image_msg.width, 3),
+            dtype=dtype,
+            buffer=image_msg.data,
+        )
+        if image_msg.is_bigendian != (sys.byteorder == "big"):
+            image = image.byteswap().newbyteorder()
+        if image_msg.encoding == "rgb8":
+            return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        if image_msg.encoding == "mono8":
+            return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        if image_msg.encoding != "bgr8":
+            rospy.logerr_throttle(
+                5.0, "Unsupported VLM image encoding: %s", image_msg.encoding
+            )
+            return None
+        return image
+
+    def image_callback(self, image_msg):
+        image = self.imgmsg_to_cv2(image_msg)
+        if image is None:
+            return
+        with self.image_lock:
+            self.latest_image = image.copy()
+            self.latest_header = copy.deepcopy(image_msg.header)
+
+    def snapshot(self):
+        with self.image_lock:
+            if self.latest_image is None or self.latest_header is None:
+                return None, None
+            return self.latest_image.copy(), copy.deepcopy(self.latest_header)
+
+    def call_api(self, prompt, image):
+        if not self.api_key:
+            rospy.logerr("VLM request rejected because API key is not configured")
+            return None
+        if not cv2.imwrite(self.image_save_path, image):
+            rospy.logerr("无法写入 VLM 快照: %s", self.image_save_path)
+            return None
+
+        if self.mode == "openai":
+            client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            response = client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": "data:image/jpeg;base64,"
+                                + self.encode_image(self.image_save_path),
+                            },
+                            {"type": "text", "text": self.system_prompt + prompt},
+                        ],
+                    }
+                ],
+            )
+            content = response.choices[0].message.content
+        elif self.mode == "dashscope":
+            response = MultiModalConversation.call(
+                api_key=self.api_key,
+                model=self.model_name,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"image": self.image_save_path},
+                            {"text": self.system_prompt + prompt},
+                        ],
+                    }
+                ],
+            )
+            content = response["output"]["choices"][0]["message"].content[0]["text"]
+        else:
+            rospy.logerr("Unsupported VLM mode: %s", self.mode)
+            return None
+
+        content = content.strip()
+        if content.startswith("```json") and content.endswith("```"):
+            content = content[7:-3].strip()
+        try:
+            result = json.loads(content)
+            if isinstance(result, list):
+                result = result[0] if result else None
+            return result
+        except (TypeError, ValueError) as error:
+            rospy.logerr("VLM JSON parse failed: %s", error)
+            return None
+
+    def normalize_result(self, result, image):
+        if not isinstance(result, dict) or "bbox_2d" not in result:
+            return None
+        bbox = result["bbox_2d"]
+        if not isinstance(bbox, (list, tuple)) or len(bbox) != 4:
+            return None
+
+        height, width = image.shape[:2]
+        x_min, y_min, x_max, y_max = [int(round(float(value))) for value in bbox]
+        x_min = max(0, min(width - 1, x_min))
+        y_min = max(0, min(height - 1, y_min))
+        x_max = max(x_min + 1, min(width, x_max))
+        y_max = max(y_min + 1, min(height, y_max))
+        return {
+            "label": str(result.get("label") or self.object_name),
+            "probability": float(result.get("probability", result.get("score", 1.0))),
+            "bbox": (x_min, y_min, x_max, y_max),
+        }
+
+    def draw_result(self, image, normalized):
+        x_min, y_min, x_max, y_max = normalized["bbox"]
+        center_x = int((x_min + x_max) / 2)
+        center_y = int((y_min + y_max) / 2)
+        annotated = image.copy()
+        cv2.rectangle(
+            annotated,
+            (x_min, y_min),
+            (x_max, y_max),
+            tuple(self.bbox_color),
+            self.bbox_thickness,
+        )
+        cv2.circle(
+            annotated,
+            (center_x, center_y),
+            self.center_radius,
+            tuple(self.bbox_color),
+            -1,
+        )
+        image_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
+        image_pil = Image.fromarray(image_rgb)
+        draw = ImageDraw.Draw(image_pil)
+        draw.text(
+            (x_min, max(0, y_min - self.font_size)),
+            normalized["label"],
+            font=self.font,
+            fill=tuple(self.text_color),
+        )
+        cv2.imwrite(
+            self.image_save_path,
+            cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR),
+        )
+        return center_x, center_y
+
+    def detect(self):
+        image, header = self.snapshot()
+        if image is None:
+            rospy.logerr("尚未收到 VLM 输入图像")
+            return None
+
+        self.frame_request_pub.publish(header)
+        result = self.call_api("检测图中的{}".format(self.object_name), image)
+        normalized = self.normalize_result(result, image)
+        if normalized is None:
+            rospy.logerr("VLM 返回结果缺少有效 bbox")
+            return None
+
+        center_x, center_y = self.draw_result(image, normalized)
+        x_min, y_min, x_max, y_max = normalized["bbox"]
+        detection = Detection()
+        detection.class_name = normalized["label"]
+        detection.x_center = center_x
+        detection.y_center = center_y
+        detection.probability = normalized["probability"]
+        detection.xmin = x_min
+        detection.ymin = y_min
+        detection.xmax = x_max
+        detection.ymax = y_max
+
+        output = DetectionArray()
+        output.header = header
+        output.detections.append(detection)
+        self.detection_pub.publish(output)
+        rospy.loginfo(
+            "VLM target %s bbox=%s stamp=%d",
+            detection.class_name,
+            normalized["bbox"],
+            header.stamp.to_nsec(),
+        )
+        return center_x, center_y
+
+    def handle_vlm_detection(self, request):
+        with self.service_lock:
+            self.object_name = str(request.object_name)
+            try:
+                result = self.detect()
+            except Exception as error:
+                rospy.logerr("VLM detection failed: %s", error)
+                result = None
+            if result is None:
+                return GetObjectResponse(success=False, message="检测失败")
+            return GetObjectResponse(
+                success=True,
+                message="检测到目标坐标：{}".format(result),
+            )
+
+
+def main():
+    rospy.init_node("vlm_detection_node")
+    VLM()
+    rospy.loginfo("VL 检测服务已启动，等待请求")
+    rospy.spin()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="rgb_width" value="1280"/>
+  <arg name="rgb_height" value="720"/>
+  <arg name="rgb_frame_rate" value="30"/>
+  <arg name="rgb_video_mode" value="mjpeg"/>
+  <arg name="depth_registration" value="false"/>
+  <arg name="depth_registered_processing" value="false"/>
+  <arg name="geometry_input" value="depth_image"/>
+  <arg name="depth_image_topic" value="/camera/depth/image_rect_raw"/>
+  <arg name="depth_camera_info_topic" value="/camera/depth/camera_info"/>
+  <arg name="depth_frame" value="camera_depth_optical_frame"/>
+  <arg name="output_frame" value="camera_rgb_optical_frame"/>
+  <arg name="start_localizer" default="false"/>
+  <arg name="source_mode" default="yolo"/>
+  <arg name="target_class" default=""/>
+  <arg name="rgb_camera_info_url"
+       default="file://$(find vl_locate)/config/gemini_rgb_1280x720.yaml"/>
+
+  <include file="$(find astra_launch)/launch/gemini.launch">
+    <arg name="rgb_width" value="$(arg rgb_width)"/>
+    <arg name="rgb_height" value="$(arg rgb_height)"/>
+    <arg name="rgb_frame_rate" value="$(arg rgb_frame_rate)"/>
+    <arg name="rgb_video_mode" value="$(arg rgb_video_mode)"/>
+    <arg name="rgb_camera_info_url" value="$(arg rgb_camera_info_url)"/>
+    <arg name="depth_registration" value="$(arg depth_registration)"/>
+    <arg name="depth_registered_processing" value="$(arg depth_registered_processing)"/>
+    <arg name="hw_registered_processing" value="false"/>
+    <arg name="sw_registered_processing" value="false"/>
+  </include>
+
+  <include if="$(arg start_localizer)"
+           file="$(find vl_locate)/launch/rgbd_localizer.launch">
+    <arg name="source_mode" value="$(arg source_mode)"/>
+    <arg name="target_class" value="$(arg target_class)"/>
+    <arg name="geometry_input" value="$(arg geometry_input)"/>
+    <arg name="depth_image_topic" value="$(arg depth_image_topic)"/>
+    <arg name="depth_camera_info_topic" value="$(arg depth_camera_info_topic)"/>
+    <arg name="depth_frame" value="$(arg depth_frame)"/>
+    <arg name="output_frame" value="$(arg output_frame)"/>
+    <arg name="depth_to_rgb_rotation"
+         value="[0.999998688698, -0.001487227273, 0.000599743507, 0.001489084214, 0.999994039536, -0.003107869532, -0.000595117803, 0.003108758480, 0.999994993210]"/>
+    <arg name="depth_to_rgb_translation"
+         value="[0.009982426102, -0.000055305776, 0.000754593032]"/>
+  </include>
+</launch>

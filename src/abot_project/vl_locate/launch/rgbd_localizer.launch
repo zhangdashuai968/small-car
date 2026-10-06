@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="source_mode" default="yolo"/>
+  <arg name="target_class" default=""/>
+  <arg name="output_topic" default="/target_point"/>
+  <arg name="geometry_input" default="point_cloud"/>
+  <arg name="point_cloud_topic" default="/camera/depth_registered/points"/>
+  <arg name="point_cloud_frame" default="camera_rgb_optical_frame"/>
+  <arg name="depth_image_topic" default="/camera/depth/image_rect_raw"/>
+  <arg name="depth_camera_info_topic" default="/camera/depth/camera_info"/>
+  <arg name="depth_frame" default="camera_depth_optical_frame"/>
+  <arg name="output_frame" default="camera_rgb_optical_frame"/>
+  <arg name="depth_to_rgb_rotation" default="[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]"/>
+  <arg name="depth_to_rgb_translation" default="[0.0, 0.0, 0.0]"/>
+
+  <node pkg="vl_locate"
+        type="rgbd_target_localizer.py"
+        name="rgbd_target_localizer"
+        output="screen">
+    <param name="source_mode" value="$(arg source_mode)"/>
+    <param name="target_class" value="$(arg target_class)"/>
+    <param name="output_topic" value="$(arg output_topic)"/>
+    <param name="geometry_input" value="$(arg geometry_input)"/>
+    <param name="point_cloud_topic" value="$(arg point_cloud_topic)"/>
+    <param name="point_cloud_frame" value="$(arg point_cloud_frame)"/>
+    <param name="depth_image_topic" value="$(arg depth_image_topic)"/>
+    <param name="depth_camera_info_topic" value="$(arg depth_camera_info_topic)"/>
+    <param name="depth_frame" value="$(arg depth_frame)"/>
+    <param name="output_frame" value="$(arg output_frame)"/>
+    <rosparam param="depth_to_rgb_rotation" subst_value="true">$(arg depth_to_rgb_rotation)</rosparam>
+    <rosparam param="depth_to_rgb_translation" subst_value="true">$(arg depth_to_rgb_translation)</rosparam>
+    <param name="min_depth" value="0.15"/>
+    <param name="max_depth" value="3.0"/>
+    <param name="central_roi_scale" value="0.6"/>
+    <param name="min_points" value="30"/>
+    <param name="depth_bin_size" value="0.02"/>
+    <param name="min_cluster_fraction" value="0.10"/>
+    <param name="sync_tolerance" value="0.10"/>
+    <param name="history_size" value="12"/>
+    <param name="pinned_size" value="4"/>
+    <param name="pinned_ttl" value="60.0"/>
+    <param name="max_rate" value="5.0"/>
+    <param name="roi_margin_px" value="3"/>
+  </node>
+</launch>

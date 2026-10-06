@@ -13,22 +13,7 @@ from abot_grasp_race.msg import ObjectInfo, ObjectInfoArray
 from geometry_msgs.msg import Twist
 
 
-"""
-Object detection and point calculation module for ROS.
-
-This module provides a class for detecting objects in camera images and calculating
-their 3D coordinates using depth information.
-"""
-
-
 class ObjectVision():
-    """
-    A class for detecting objects in camera images and calculating their 3D coordinates.
-    
-    This class subscribes to camera and depth image topics, processes the images to
-    detect objects of specific colors, and calculates their 3D coordinates using depth
-    information.
-    """
     def __init__(self):
         rospy.init_node('abot_object_xyz_node', log_level=rospy.INFO)
         self.camera_topic = rospy.get_param('~camera_topic', '/camera/rgb/image_raw')

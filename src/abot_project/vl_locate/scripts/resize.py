@@ -1,109 +1,129 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # _*_ coding:utf-8 _*_
-import rospy
-import numpy as np
+import copy
+
 import cv2
-import sys
-from sensor_msgs.msg import Image
+import message_filters
+import numpy as np
+import rospy
+from sensor_msgs.msg import CameraInfo, Image
 
-def imgmsg_to_cv2(img_msg):
-    dtype = np.dtype("uint8")  # Hardcode to 8 bits...
-    dtype = dtype.newbyteorder('>' if img_msg.is_bigendian else '<')
-    image_opencv = np.ndarray(shape=(img_msg.height, img_msg.width, 3), dtype=dtype, buffer=img_msg.data)
+from rgbd_geometry import (
+    compute_zoom_geometry,
+    image_array_from_bytes,
+    transform_camera_matrix,
+    transform_projection_matrix,
+)
 
-    # If the byte order is different between the message and the system.
-    if img_msg.is_bigendian == (sys.byteorder == 'little'):
-        image_opencv = image_opencv.byteswap().newbyteorder()
 
-    # Convert to BGR if the encoding is not already BGR
-    if img_msg.encoding == "rgb8":
-        image_opencv = cv2.cvtColor(image_opencv, cv2.COLOR_RGB2BGR)
-    elif img_msg.encoding == "mono8":
-        image_opencv = cv2.cvtColor(image_opencv, cv2.COLOR_GRAY2BGR)
-    elif img_msg.encoding != "bgr8":
-        rospy.logerr("Unsupported encoding: %s", img_msg.encoding)
-        return None
+class ImageZoomer:
+    def __init__(self):
+        self.input_image_topic = rospy.get_param(
+            "~input_image_topic", "/camera/rgb/image_raw"
+        )
+        self.input_info_topic = rospy.get_param(
+            "~input_camera_info_topic", "/camera/rgb/camera_info"
+        )
+        self.output_image_topic = rospy.get_param("~output_image_topic", "/new_topic")
+        self.output_info_topic = rospy.get_param(
+            "~output_camera_info_topic", "/new_topic/camera_info"
+        )
+        self.crop_ratios = (
+            float(rospy.get_param("~crop_x1_ratio", 0.43)),
+            float(rospy.get_param("~crop_y1_ratio", 0.53)),
+            float(rospy.get_param("~crop_x2_ratio", 0.75)),
+            float(rospy.get_param("~crop_y2_ratio", 0.78)),
+        )
+        self.sync_tolerance = float(rospy.get_param("~sync_tolerance", 0.10))
 
-    return image_opencv
+        self.image_pub = rospy.Publisher(
+            self.output_image_topic, Image, queue_size=1
+        )
+        self.info_pub = rospy.Publisher(
+            self.output_info_topic, CameraInfo, queue_size=1
+        )
+        self.image_sub = message_filters.Subscriber(self.input_image_topic, Image)
+        self.info_sub = message_filters.Subscriber(self.input_info_topic, CameraInfo)
+        self.synchronizer = message_filters.ApproximateTimeSynchronizer(
+            [self.image_sub, self.info_sub],
+            queue_size=10,
+            slop=self.sync_tolerance,
+        )
+        self.synchronizer.registerCallback(self.callback)
 
-def cv2_to_imgmsg(cv_image):
-    img_msg = Image()
-    img_msg.height = cv_image.shape[0]
-    img_msg.width = cv_image.shape[1]
-    img_msg.encoding = "bgr8"
-    img_msg.is_bigendian = 0
-    img_msg.data = cv_image.tobytes()
-    img_msg.step = len(img_msg.data) // img_msg.height  # That double line is actually integer division, not a comment
-    return img_msg
+        rospy.loginfo(
+            "image_zoomer: %s + %s -> %s + %s",
+            self.input_image_topic,
+            self.input_info_topic,
+            self.output_image_topic,
+            self.output_info_topic,
+        )
 
-def image_callback(img_msg):
-    # Convert ROS Image message to OpenCV image
-    cv_image = imgmsg_to_cv2(img_msg)
-    
-    if cv_image is not None:
-        # Get the dimensions of the image
-        height, width = cv_image.shape[:2]
-        
-        # Define the red box region coordinates
-        x1 = int(width * 0.43)
-        y1 = int(height * 0.53)
-        x2 = int(width * 0.75)
-        y2 = int(height * 0.78)
-        
-        # Ensure coordinates are within image bounds
-        x1 = max(x1, 0)
-        y1 = max(y1, 0)
-        x2 = min(x2, width)
-        y2 = min(y2, height)
-        
-        # Extract the region of interest (ROI)
-        roi = cv_image[y1:y2, x1:x2]
-        
-        # 方案1：保持纵横比的放大
-        roi_height, roi_width = roi.shape[:2]
-        
-        # 计算放大倍数，保持纵横比
-        scale_x = width / roi_width
-        scale_y = height / roi_height
-        scale = min(scale_x, scale_y)  # 使用较小的缩放比例保持纵横比
-        
-        # 计算新的尺寸
-        new_width = int(roi_width * scale)
-        new_height = int(roi_height * scale)
-        
-        # 使用更好的插值方法进行放大
-        if scale > 2.0:
-            # 对于大倍数放大，使用立方插值
-            zoomed_roi = cv2.resize(roi, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
-        else:
-            # 对于小倍数放大，使用线性插值
-            zoomed_roi = cv2.resize(roi, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
-        
-        # 创建黑色背景图像
+    def callback(self, image_msg, camera_info_msg):
+        try:
+            image = image_array_from_bytes(
+                data=image_msg.data,
+                width=image_msg.width,
+                height=image_msg.height,
+                step=image_msg.step,
+                encoding=image_msg.encoding,
+            )
+        except ValueError as error:
+            rospy.logerr_throttle(5.0, "image_zoomer conversion failed: %s", error)
+            return
+
+        height, width = image.shape[:2]
+        geometry = compute_zoom_geometry(width, height, self.crop_ratios)
+        roi = image[
+            geometry["y1"] : geometry["y2"],
+            geometry["x1"] : geometry["x2"],
+        ]
+        interpolation = (
+            cv2.INTER_CUBIC if geometry["scale"] > 2.0 else cv2.INTER_LINEAR
+        )
+        zoomed_roi = cv2.resize(
+            roi,
+            (geometry["new_width"], geometry["new_height"]),
+            interpolation=interpolation,
+        )
         zoomed_image = np.zeros((height, width, 3), dtype=np.uint8)
-        
-        # 计算居中位置
-        start_x = (width - new_width) // 2
-        start_y = (height - new_height) // 2
-        
-        # 将放大的ROI放置在中心
-        zoomed_image[start_y:start_y+new_height, start_x:start_x+new_width] = zoomed_roi
-        
-        # Convert back to ROS Image message
-        zoomed_img_msg = cv2_to_imgmsg(zoomed_image)
-        
-        # Publish the zoomed image
-        pub.publish(zoomed_img_msg)
+        start_x = geometry["start_x"]
+        start_y = geometry["start_y"]
+        zoomed_image[
+            start_y : start_y + geometry["new_height"],
+            start_x : start_x + geometry["new_width"],
+        ] = zoomed_roi
 
-if __name__ == '__main__':
-    # Initialize the ROS node
-    rospy.init_node('image_zoomer', anonymous=True)
-    
-    # Create a publisher for the new topic
-    pub = rospy.Publisher('/new_topic', Image, queue_size=10)
-    
-    # Subscribe to the /usb_cam/image_raw topic
-    rospy.Subscriber('/camera/rgb/image_raw', Image, image_callback)
-    
-    # Keep the node running
+        output_image = Image()
+        output_image.header = copy.deepcopy(image_msg.header)
+        output_image.height = height
+        output_image.width = width
+        output_image.encoding = image_msg.encoding
+        output_image.is_bigendian = image_msg.is_bigendian
+        output_image.step = width * 3
+        output_image.data = zoomed_image.tobytes()
+
+        output_info = copy.deepcopy(camera_info_msg)
+        output_info.header = copy.deepcopy(image_msg.header)
+        output_info.width = width
+        output_info.height = height
+        output_info.K = transform_camera_matrix(camera_info_msg.K, geometry)
+        output_info.P = transform_projection_matrix(camera_info_msg.P, geometry)
+        output_info.roi.x_offset = 0
+        output_info.roi.y_offset = 0
+        output_info.roi.width = 0
+        output_info.roi.height = 0
+        output_info.roi.do_rectify = False
+
+        self.image_pub.publish(output_image)
+        self.info_pub.publish(output_info)
+
+
+def main():
+    rospy.init_node("image_zoomer")
+    ImageZoomer()
     rospy.spin()
+
+
+if __name__ == "__main__":
+    main()

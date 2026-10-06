@@ -9,7 +9,9 @@ project(abot_yolov5)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  sensor_msgs
   std_msgs
+  yolov5_ros_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -102,10 +104,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES yolov5_ros
-#  CATKIN_DEPENDS rospy std_msgs
-#  DEPENDS system_lib
+  CATKIN_DEPENDS rospy sensor_msgs std_msgs yolov5_ros_msgs
 )
 
 ###########
@@ -158,10 +157,21 @@ include_directories(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# catkin_install_python(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+catkin_install_python(PROGRAMS
+  node/yolov5_node.py
+  node/yolov5_runtime.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(PROGRAMS
+  tools/build_yolov5n_tensorrt.sh
+  tools/prune_yolov5_onnx_outputs.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
@@ -202,4 +212,6 @@ include_directories(
 # endif()
 
 ## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+if(CATKIN_ENABLE_TESTING)
+  catkin_add_nosetests(test/test_yolov5_runtime.py)
+endif()

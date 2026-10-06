@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+  <arg name="engine_path"
+       default="$(env HOME)/.cache/abot/tensorrt/yolov5n_1x3x384x640_fp16_trt8.engine"/>
+  <include file="$(find abot_yolov5)/launch/abot_yolov5.launch">
+    <arg name="weight_path" value="$(arg engine_path)"/>
+    <arg name="device" value="0"/>
+    <arg name="half" value="true"/>
+    <arg name="input_width" value="640"/>
+    <arg name="input_height" value="384"/>
+    <arg name="publish_debug_image" value="false"/>
+  </include>
+</launch>

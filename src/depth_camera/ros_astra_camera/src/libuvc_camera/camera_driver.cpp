@@ -395,8 +395,16 @@ void CameraDriver::ImageCallback(uvc_frame_t *frame) {
   sensor_msgs::CameraInfo::Ptr cinfo(new sensor_msgs::CameraInfo(cinfo_manager_.getCameraInfo()));
   if (device_type_init_ == true && astraWithUVC(device_type_no_))
   {
-    // update cinfo
-    if (camera_info_init_ == true && camera_info_valid_ == true)
+    const bool mode_calibration_matches =
+      cinfo_manager_.isCalibrated() &&
+      cinfo->width == image->width &&
+      cinfo->height == image->height;
+
+    // A mode-specific camera_info_manager calibration is authoritative. The
+    // factory service only describes the native 640x480 mode and must not
+    // overwrite a matching high-resolution calibration.
+    if (!mode_calibration_matches &&
+        camera_info_init_ == true && camera_info_valid_ == true)
     {
       cinfo->height = image->height;
       cinfo->width = image->width;
@@ -418,6 +426,13 @@ void CameraDriver::ImageCallback(uvc_frame_t *frame) {
       {
         cinfo->P[i] = camera_info_.P[i];
       }
+    }
+    else if (cinfo_manager_.isCalibrated() && !mode_calibration_matches)
+    {
+      ROS_ERROR_THROTTLE(
+        5.0,
+        "Ignoring camera_info calibration sized %ux%u for active RGB mode %ux%u",
+        cinfo->width, cinfo->height, image->width, image->height);
     }
     image->header.frame_id = ns_no_slash + "_rgb_optical_frame";
     cinfo->header.frame_id = ns_no_slash + "_rgb_optical_frame";

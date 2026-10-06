@@ -8,11 +8,14 @@ project(vl_locate)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  cv_bridge
   geometry_msgs
+  message_filters
   roscpp
   rospy
   sensor_msgs
   std_msgs
+  yolov5_ros_msgs
   message_generation
 )
 
@@ -105,10 +108,16 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES vl_locate
-#  CATKIN_DEPENDS geometry_msgs.msg roscpp rospy sensor_msgs.msg std_msgs.msg
-#  DEPENDS system_lib
+  CATKIN_DEPENDS
+    cv_bridge
+    geometry_msgs
+    message_filters
+    message_runtime
+    roscpp
+    rospy
+    sensor_msgs
+    std_msgs
+    yolov5_ros_msgs
 )
 
 ###########
@@ -161,10 +170,21 @@ include_directories(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# catkin_install_python(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+catkin_install_python(PROGRAMS
+  scripts/calibrate_rgb_intrinsics.py
+  scripts/calibration_tools.py
+  scripts/checkerboard_bbox_publisher.py
+  scripts/resize.py
+  scripts/rgbd_accuracy_gate.py
+  scripts/rgbd_geometry.py
+  scripts/rgbd_target_localizer.py
+  scripts/server.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY launch config
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
@@ -205,4 +225,8 @@ include_directories(
 # endif()
 
 ## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+if(CATKIN_ENABLE_TESTING)
+  catkin_add_nosetests(test/test_calibration_tools.py)
+  catkin_add_nosetests(test/test_rgbd_geometry.py)
+  catkin_add_nosetests(test/test_highres_mode_contract.py)
+endif()
