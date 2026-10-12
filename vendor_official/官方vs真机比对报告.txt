@@ -1,0 +1,612 @@
+vl_locate/CMakeLists.txt                   不同 +33/-9
+vl_locate/package.xml                      不同 +16/-1
+vl_locate/config/SimHei.ttf                二进制一致
+vl_locate/config/vlm_params.yaml           不同 +2/-3
+vl_locate/image/vlm_now.jpg                二进制不同
+vl_locate/launch/vl_locate.launch          不同 +7/-12
+vl_locate/msg/Detection.msg                不同 +5/-0
+vl_locate/msg/DetectionArray.msg           不同 +1/-2
+vl_locate/rviz/nav.rviz                    不同 +8/-8
+vl_locate/scripts/client.py                完全一致
+vl_locate/scripts/resize.py                不同 +118/-98
+vl_locate/scripts/server.py                不同 +50/-7
+vl_locate/srv/GetObject.srv                完全一致
+ZachLab_grasp/CMakeLists.txt               完全一致
+ZachLab_grasp/package.xml                  完全一致
+ZachLab_grasp/config/ZachLab_params.yaml   不同 +7/-7
+ZachLab_grasp/launch/grasp.launch          完全一致
+ZachLab_grasp/node/gg.py                   完全一致
+ZachLab_grasp/node/xarm_driver.py          完全一致
+ZachLab_grasp/node/xarm_driver.pyc         车上无此文件
+
+
+======================================================================
+内容差异明细
+======================================================================
+
+----- vl_locate/CMakeLists.txt -----
+--- 官方
++++ 车上
+@@ -9,9 +9,12 @@
+ ## is used, also find other catkin packages
+ find_package(catkin REQUIRED COMPONENTS
++  cv_bridge
+   geometry_msgs
++  message_filters
+   roscpp
+   rospy
+   sensor_msgs
+   std_msgs
++  yolov5_ros_msgs
+   message_generation
+ )
+@@ -106,8 +109,14 @@
+ ## DEPENDS: system dependencies of this project that dependent projects also need
+ catkin_package(
+-#  INCLUDE_DIRS include
+-#  LIBRARIES vl_locate
+-#  CATKIN_DEPENDS geometry_msgs.msg roscpp rospy sensor_msgs.msg std_msgs.msg
+-#  DEPENDS system_lib
++  CATKIN_DEPENDS
++    cv_bridge
++    geometry_msgs
++    message_filters
++    message_runtime
++    roscpp
++    rospy
++    sensor_msgs
++    std_msgs
++    yolov5_ros_msgs
+ )
+ 
+@@ -162,8 +171,19 @@
+ ## Mark executable scripts (Python etc.) for installation
+ ## in contrast to setup.py, you can choose the destination
+-# catkin_install_python(PROGRAMS
+-#   scripts/my_python_script
+-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+-# )
++catkin_install_python(PROGRAMS
++  scripts/calibrate_rgb_intrinsics.py
++  scripts/calibration_tools.py
++  scripts/checkerboard_bbox_publisher.py
++  scripts/resize.py
++  scripts/rgbd_accuracy_gate.py
++  scripts/rgbd_geometry.py
++  scripts/rgbd_target_localizer.py
++  scripts/server.py
++  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
++)
++
++install(DIRECTORY launch config
++  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
++)
+ 
+ ## Mark executables for installation
+@@ -206,3 +226,7 @@
+ 
+ ## Add folders to be run by python nosetests
+-# catkin_add_nosetests(test)
++if(CATKIN_ENABLE_TESTING)
++  catkin_add_nosetests(test/test_calibration_tools.py)
++  catkin_add_nosetests(test/test_rgbd_geometry.py)
++  catkin_add_nosetests(test/test_highres_mode_contract.py)
++endif()
+
+----- vl_locate/package.xml -----
+--- 官方
++++ 车上
+@@ -50,21 +50,36 @@
+   <!--   <doc_depend>doxygen</doc_depend> -->
+   <buildtool_depend>catkin</buildtool_depend>
++  <build_depend>cv_bridge</build_depend>
+   <build_depend>geometry_msgs</build_depend>
++  <build_depend>message_filters</build_depend>
+   <build_depend>roscpp</build_depend>
+   <build_depend>rospy</build_depend>
+   <build_depend>sensor_msgs</build_depend>
+   <build_depend>std_msgs</build_depend>
++  <build_depend>yolov5_ros_msgs</build_depend>
++  <build_depend>message_generation</build_depend>
++  <build_export_depend>cv_bridge</build_export_depend>
+   <build_export_depend>geometry_msgs</build_export_depend>
++  <build_export_depend>message_filters</build_export_depend>
+   <build_export_depend>roscpp</build_export_depend>
+   <build_export_depend>rospy</build_export_depend>
+   <build_export_depend>sensor_msgs</build_export_depend>
+   <build_export_depend>std_msgs</build_export_depend>
++  <build_export_depend>yolov5_ros_msgs</build_export_depend>
++  <exec_depend>cv_bridge</exec_depend>
+   <exec_depend>geometry_msgs</exec_depend>
++  <exec_depend>message_filters</exec_depend>
+   <exec_depend>roscpp</exec_depend>
+   <exec_depend>rospy</exec_depend>
+   <exec_depend>sensor_msgs</exec_depend>
+   <exec_depend>std_msgs</exec_depend>
+-  <build_depend>message_generation</build_depend>
++  <exec_depend>yolov5_ros_msgs</exec_depend>
+   <exec_depend>message_runtime</exec_depend>
++  <exec_depend>python3-numpy</exec_depend>
++  <exec_depend>python3-opencv</exec_depend>
++  <exec_depend>python3-yaml</exec_depend>
++  <test_depend>python-numpy</test_depend>
++  <test_depend>python-opencv</test_depend>
++  <test_depend>python3-nose</test_depend>
+ 
+ 
+
+----- vl_locate/config/vlm_params.yaml -----
+--- 官方
++++ 车上
+@@ -12,7 +12,7 @@
+ 
+ # API配置
+-api_key: ""         # API密钥
++# API key 仅从私有参数 ~api_key 或环境变量 VLM_API_KEY 读取，不写入本文件。
+ base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # API基础URL
+-model_name: "qwen-vl-max-latest"                       # 模型名称
++model_name: "qwen3.7-plus"                             # 保留真机当前模型口径
+ mode: "openai"                                         # 模式选择:openai 或 dashscope
+ 
+@@ -22,3 +22,2 @@
+ center_radius: 6                  # 中心点半径
+ text_color: [255, 0, 0]          # 文本颜色 (RGB格式)
+-
+
+----- vl_locate/launch/vl_locate.launch -----
+--- 官方
++++ 车上
+@@ -1,25 +1,20 @@
+ <?xml version="1.0"?>
+ <launch>
+-    <!--<include file="$(find abot_description)/launch/display.launch"/>-->
++    <include file="$(find abot_description)/launch/display.launch"/>
+     <!-- 启动RViz -->
+     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find vl_locate)/rviz/nav.rviz"/>
+     <!-- 加载参数文件 -->
+     <rosparam file="$(find vl_locate)/config/vlm_params.yaml" command="load" ns="vlm_detection_node" />
+-    <!--<include file="$(find abot)/launch/camera.launch"/>-->
++    <include file="$(find abot)/launch/camera.launch"/>
+     <!-- 启动VLM检测节点 -->
+     <node name="vlm_detection_node" pkg="vl_locate" type="server.py" output="screen">
+         <!-- 节点特定参数 -->
+-        <!-- <param name="mode" value="dashscope" /> -->
++        <param name="mode" value="dashscope" />
+     </node>
+     <node name='image_zoomer'  pkg="vl_locate" type="resize.py" output="screen" />
+-    <node  name='vlm_detection_client' pkg="vl_locate" type="client.py" output="screen" >
+-        <!--                              0      1       2      3        4      5      6      7      8      9      10     11   12      13    14   15  16  -->
+-        <param name="goalListX" value="   0.5,   1.83,   3.1,   3.3,    3.3,   3.3,   3,    1.6,   0.42,  0.05 ,  0.05, 0.05, 0.4,
+-0.55, 1.83"/>
+-        <param name="goalListY" value="   0,   0.25,   0.2,  -0.04,  -1.38,  -2.5,  -2.86, -2.86, -2.86, -2.62 , -1.25, 0.05, -0.5,
+--0.5,-1.25"/>
+-        <param name="goalListYaw" value=" 90,    90,    90,     0,     0,      0,   -90,   -90,    -90,   -180 ,  -180 ,-180, 0,
+-0,   0"/>
+-    </node>
++    <include file="$(find vl_locate)/launch/rgbd_localizer.launch">
++        <arg name="source_mode" value="vlm"/>
++        <arg name="output_topic" value="/target_point"/>
++    </include>
+     
+     <!--启动图像查看器 -->
+
+----- vl_locate/msg/Detection.msg -----
+--- 官方
++++ 车上
+@@ -2,2 +2,7 @@
+ float32 x_center
+ float32 y_center
++float32 probability
++int32 xmin
++int32 ymin
++int32 xmax
++int32 ymax
+
+----- vl_locate/msg/DetectionArray.msg -----
+--- 官方
++++ 车上
+@@ -1,3 +1,2 @@
+-
++std_msgs/Header header
+ Detection[] detections
+-
+
+----- vl_locate/rviz/nav.rviz -----
+--- 官方
++++ 车上
+@@ -16,5 +16,5 @@
+         - /Path1
+       Splitter Ratio: 0.5
+-    Tree Height: 441
++    Tree Height: 469
+   - Class: rviz/Selection
+     Name: Selection
+@@ -241,5 +241,5 @@
+     Current:
+       Class: rviz/Orbit
+-      Distance: 5.916280746459961
++      Distance: 7.18968391418457
+       Enable Stereo Rendering:
+         Stereo Eye Separation: 0.05999999865889549
+@@ -248,7 +248,7 @@
+         Value: false
+       Focal Point:
+-        X: 0
+-        Y: 0
+-        Z: 0
++        X: 1.7857853174209595
++        Y: 2.2891530990600586
++        Z: 1.607179880142212
+       Focal Shape Fixed Size: true
+       Focal Shape Size: 0.05000000074505806
+@@ -264,8 +264,8 @@
+   Displays:
+     collapsed: false
+-  Height: 716
++  Height: 744
+   Hide Left Dock: false
+   Hide Right Dock: false
+-  QMainWindow State: 000000ff00000000fd00000004000000000000015600000244fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000002700000244000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000244fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000002700000244000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004f30000003efc0100000002fb0000000800540069006d00650100000000000004f3000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000002820000024400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
++  QMainWindow State: 000000ff00000000fd00000004000000000000015600000260fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000002700000260000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000260fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000002700000260000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000050f0000003efc0100000002fb0000000800540069006d006501000000000000050f000002eb00fffffffb0000000800540069006d006501000000000000045000000000000000000000029e0000026000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+   Selection:
+     collapsed: false
+@@ -276,5 +276,5 @@
+   Views:
+     collapsed: false
+-  Width: 1267
++  Width: 1295
+   X: 65
+   Y: 24
+
+----- vl_locate/scripts/resize.py -----
+--- 官方
++++ 车上
+@@ -1,109 +1,129 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # _*_ coding:utf-8 _*_
++import copy
++
++import cv2
++import message_filters
++import numpy as np
+ import rospy
+-import numpy as np
+-import cv2
+-import sys
+-from sensor_msgs.msg import Image
++from sensor_msgs.msg import CameraInfo, Image
+ 
+-def imgmsg_to_cv2(img_msg):
+-    dtype = np.dtype("uint8")  # Hardcode to 8 bits...
+-    dtype = dtype.newbyteorder('>' if img_msg.is_bigendian else '<')
+-    image_opencv = np.ndarray(shape=(img_msg.height, img_msg.width, 3), dtype=dtype, buffer=img_msg.data)
++from rgbd_geometry import (
++    compute_zoom_geometry,
++    image_array_from_bytes,
++    transform_camera_matrix,
++    transform_projection_matrix,
++)
+ 
+-    # If the byte order is different between the message and the system.
+-    if img_msg.is_bigendian == (sys.byteorder == 'little'):
+-        image_opencv = image_opencv.byteswap().newbyteorder()
+ 
+-    # Convert to BGR if the encoding is not already BGR
+-    if img_msg.encoding == "rgb8":
+-        image_opencv = cv2.cvtColor(image_opencv, cv2.COLOR_RGB2BGR)
+-    elif img_msg.encoding == "mono8":
+-        image_opencv = cv2.cvtColor(image_opencv, cv2.COLOR_GRAY2BGR)
+-    elif img_msg.encoding != "bgr8":
+-        rospy.logerr("Unsupported encoding: %s", img_msg.encoding)
+-        return None
++class ImageZoomer:
++    def __init__(self):
++        self.input_image_topic = rospy.get_param(
++            "~input_image_topic", "/camera/rgb/image_raw"
++        )
++        self.input_info_topic = rospy.get_param(
++            "~input_camera_info_topic", "/camera/rgb/camera_info"
++        )
++        self.output_image_topic = rospy.get_param("~output_image_topic", "/new_topic")
++        self.output_info_topic = rospy.get_param(
++            "~output_camera_info_topic", "/new_topic/camera_info"
++        )
++        self.crop_ratios = (
++            float(rospy.get_param("~crop_x1_ratio", 0.43)),
++            float(rospy.get_param("~crop_y1_ratio", 0.53)),
++            float(rospy.get_param("~crop_x2_ratio", 0.75)),
++            float(rospy.get_param("~crop_y2_ratio", 0.78)),
++        )
++        self.sync_tolerance = float(rospy.get_param("~sync_tolerance", 0.10))
+ 
+-    return image_opencv
++        self.image_pub = rospy.Publisher(
++            self.output_image_topic, Image, queue_size=1
++        )
++        self.info_pub = rospy.Publisher(
++            self.output_info_topic, CameraInfo, queue_size=1
++        )
++        self.image_sub = message_filters.Subscriber(self.input_image_topic, Image)
++        self.info_sub = message_filters.Subscriber(self.input_info_topic, CameraInfo)
++        self.synchronizer = message_filters.ApproximateTimeSynchronizer(
++            [self.image_sub, self.info_sub],
++            queue_size=10,
++            slop=self.sync_tolerance,
++        )
++        self.synchronizer.registerCallback(self.callback)
+ 
+-def cv2_to_imgmsg(cv_image):
+-    img_msg = Image()
+-    img_msg.height = cv_image.shape[0]
+-    img_msg.width = cv_image.shape[1]
+-    img_msg.encoding = "bgr8"
+-    img_msg.is_bigendian = 0
+-    img_msg.data = cv_image.tobytes()
+-    img_msg.step = len(img_msg.data) // img_msg.height  # That double line is actually integer division, not a comment
+-    return img_msg
++        rospy.loginfo(
++            "image_zoomer: %s + %s -> %s + %s",
++            self.input_image_topic,
++            self.input_info_topic,
++            self.output_image_topic,
++            self.output_info_topic,
++        )
+ 
+-def image_callback(img_msg):
+-    # Convert ROS Image message to OpenCV image
+-    cv_image = imgmsg_to_cv2(img_msg)
+-    
+-    if cv_image is not None:
+-        # Get the dimensions of the image
+-        height, width = cv_image.shape[:2]
+-        
+-        # Define the red box region coordinates
+-        x1 = int(width * 0.43)
+-        y1 = int(height * 0.53)
+-        x2 = int(width * 0.75)
+-        y2 = int(height * 0.78)
+-        
+-        # Ensure coordinates are within image bounds
+-        x1 = max(x1, 0)
+-        y1 = max(y1, 0)
+-        x2 = min(x2, width)
+-        y2 = min(y2, height)
+-        
+-        # Extract the region of interest (ROI)
+-        roi = cv_image[y1:y2, x1:x2]
+-        
+-        # 方案1：保持纵横比的放大
+-        roi_height, roi_width = roi.shape[:2]
+-        
+-        # 计算放大倍数，保持纵横比
+-        scale_x = width / roi_width
+-        scale_y = height / roi_height
+-        scale = min(scale_x, scale_y)  # 使用较小的缩放比例保持纵横比
+-        
+-        # 计算新的尺寸
+-        new_width = int(roi_width * scale)
+-        new_height = int(roi_height * scale)
+-        
+-        # 使用更好的插值方法进行放大
+-        if scale > 2.0:
+-            # 对于大倍数放大，使用立方插值
+-            zoomed_roi = cv2.resize(roi, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+-        else:
+-            # 对于小倍数放大，使用线性插值
+-            zoomed_roi = cv2.resize(roi, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
+-        
+-        # 创建黑色背景图像
++    def callback(self, image_msg, camera_info_msg):
++        try:
++            image = image_array_from_bytes(
++                data=image_msg.data,
++                width=image_msg.width,
++                height=image_msg.height,
++                step=image_msg.step,
++                encoding=image_msg.encoding,
++            )
++        except ValueError as error:
++            rospy.logerr_throttle(5.0, "image_zoomer conversion failed: %s", error)
++            return
++
++        height, width = image.shape[:2]
++        geometry = compute_zoom_geometry(width, height, self.crop_ratios)
++        roi = image[
++            geometry["y1"] : geometry["y2"],
++            geometry["x1"] : geometry["x2"],
++        ]
++        interpolation = (
++            cv2.INTER_CUBIC if geometry["scale"] > 2.0 else cv2.INTER_LINEAR
++        )
++        zoomed_roi = cv2.resize(
++            roi,
++            (geometry["new_width"], geometry["new_height"]),
++            interpolation=interpolation,
++        )
+         zoomed_image = np.zeros((height, width, 3), dtype=np.uint8)
+-        
+-        # 计算居中位置
+-        start_x = (width - new_width) // 2
+-        start_y = (height - new_height) // 2
+-        
+-        # 将放大的ROI放置在中心
+-        zoomed_image[start_y:start_y+new_height, start_x:start_x+new_width] = zoomed_roi
+-        
+-        # Convert back to ROS Image message
+-        zoomed_img_msg = cv2_to_imgmsg(zoomed_image)
+-        
+-        # Publish the zoomed image
+-        pub.publish(zoomed_img_msg)
++        start_x = geometry["start_x"]
++        start_y = geometry["start_y"]
++        zoomed_image[
++            start_y : start_y + geometry["new_height"],
++            start_x : start_x + geometry["new_width"],
++        ] = zoomed_roi
+ 
+-if __name__ == '__main__':
+-    # Initialize the ROS node
+-    rospy.init_node('image_zoomer', anonymous=True)
+-    
+-    # Create a publisher for the new topic
+-    pub = rospy.Publisher('/new_topic', Image, queue_size=10)
+-    
+-    # Subscribe to the /usb_cam/image_raw topic
+-    rospy.Subscriber('/camera/rgb/image_raw', Image, image_callback)
+-    
+-    # Keep the node running
++        output_image = Image()
++        output_image.header = copy.deepcopy(image_msg.header)
++        output_image.height = height
++        output_image.width = width
++        output_image.encoding = image_msg.encoding
++        output_image.is_bigendian = image_msg.is_bigendian
++        output_image.step = width * 3
++        output_image.data = zoomed_image.tobytes()
++
++        output_info = copy.deepcopy(camera_info_msg)
++        output_info.header = copy.deepcopy(image_msg.header)
++        output_info.width = width
++        output_info.height = height
++        output_info.K = transform_camera_matrix(camera_info_msg.K, geometry)
++        output_info.P = transform_projection_matrix(camera_info_msg.P, geometry)
++        output_info.roi.x_offset = 0
++        output_info.roi.y_offset = 0
++        output_info.roi.width = 0
++        output_info.roi.height = 0
++        output_info.roi.do_rectify = False
++
++        self.image_pub.publish(output_image)
++        self.info_pub.publish(output_info)
++
++
++def main():
++    rospy.init_node("image_zoomer")
++    ImageZoomer()
+     rospy.spin()
++
++
++if __name__ == "__main__":
++    main()
+
+----- vl_locate/scripts/server.py -----
+--- 官方
++++ 车上
+@@ -32,8 +32,8 @@
+         self.font_path = rospy.get_param('~font_path', '/home/abot/catkin_ws/src/abot_project/vl_locate/config/SimHei.ttf')
+         self.font_size = rospy.get_param('~font_size', 32)
+-        self.api_key = rospy.get_param('~api_key', '')
++        self.api_key = rospy.get_param('~api_key', 'sk-4f51e302d219401eb0e21dc9aa7f9bbd')
+         self.base_url = rospy.get_param('~base_url', 'https://dashscope.aliyuncs.com/compatible-mode/v1')
+-        self.model_name = rospy.get_param('~model_name', 'qwen-vl-max-latest')
+-        self.mode = rospy.get_param('~mode', 'openai')
++        self.model_name = rospy.get_param('~model_name', 'qwen-vl-max')
++        self.mode = rospy.get_param('~mode', 'dashscope')
+         self.bbox_color = rospy.get_param('~bbox_color', [0, 0, 255])  # BGR格式
+         self.bbox_thickness = rospy.get_param('~bbox_thickness', 3)
+@@ -131,9 +131,12 @@
+         if content.startswith("```json") and content.endswith("```"):
+             content = content[7:-3].strip()
+-        
++
+         try:
+-            result = json.loads(content)
++            result = self.extract_json_result(content)
+             # 如果返回的是列表，取第一个元素
+             if isinstance(result, list):
++                if not result:
++                    rospy.logwarn("大模型未检测到目标（返回空列表）")
++                    return None
+                 result = result[0]
+             rospy.loginfo('大模型调用成功！')
+@@ -144,4 +147,43 @@
+             return None
+ 
++    def extract_json_result(self, content):
++        """从任意格式文本中提取JSON对象或数组，容忍markdown/多余字符"""
++        decoder = json.JSONDecoder()
++        candidates = []
++        for idx, char in enumerate(content):
++            if char not in '[{':
++                continue
++            try:
++                result, _ = decoder.raw_decode(content[idx:])
++                candidates.append(result)
++            except ValueError:
++                continue
++        if not candidates:
++            raise json.JSONDecodeError('no json object found', content, 0)
++        for result in candidates:
++            if isinstance(result, dict):
++                return result
++            if isinstance(result, list) and result:
++                return result
++        return candidates[0]
++
++    def normalize_bbox(self, bbox_2d, img_w, img_h):
++        """归一化bbox到图像像素坐标：VLM可能返回0-1000归一化坐标或真实像素坐标"""
++        x_min, y_min, x_max, y_max = map(float, bbox_2d)
++        if max(x_min, x_max) > img_w or max(y_min, y_max) > img_h:
++            rospy.logwarn(
++                f"bbox坐标超出图像尺寸，按0-1000坐标归一化: bbox={bbox_2d}, image=({img_w},{img_h})"
++            )
++            x_min = x_min / 1000.0 * img_w
++            x_max = x_max / 1000.0 * img_w
++            y_min = y_min / 1000.0 * img_h
++            y_max = y_max / 1000.0 * img_h
++
++        x_min = max(0, min(img_w - 1, int(round(x_min))))
++        x_max = max(0, min(img_w - 1, int(round(x_max))))
++        y_min = max(0, min(img_h - 1, int(round(y_min))))
++        y_max = max(0, min(img_h - 1, int(round(y_max))))
++        return [x_min, y_min, x_max, y_max]
++
+     def post_processing_viz(self, result, img_path):
+         img_bgr = cv2.imread(img_path)
+@@ -150,6 +192,7 @@
+         START_NAME = result['label']
+         bbox_2d = result['bbox_2d']
++        bbox_2d = self.normalize_bbox(bbox_2d, img_w, img_h)
+         rospy.loginfo(f"检测到目标: {START_NAME}, 坐标: {bbox_2d}")
+-        
++
+         x_min, y_min, x_max, y_max = map(int, bbox_2d)
+         center_x = int((x_min + x_max) / 2)
+@@ -180,5 +223,5 @@
+         
+         X_CENTER, Y_CENTER = self.post_processing_viz(result, self.image_save_path)
+-        
++
+         # 发布位姿信息  创建单个Detection消息
+         pose_msg = Detection()
+
+----- ZachLab_grasp/config/ZachLab_params.yaml -----
+--- 官方
++++ 车上
+@@ -18,18 +18,18 @@
+ 
+ # 标定参数
+-cali_1_im: [66, 361]    # 左下角标定点像素坐标
+-cali_1_mc: [-60, 125]   # 左下角标定点机械臂坐标
+-cali_2_im: [584, 125]   # 右上角标定点像素坐标
+-cali_2_mc: [135, 195]   # 右上角标定点机械臂坐标
++cali_1_im: [48, 384]    # 左下角标定点像素坐标
++cali_1_mc: [-75, 110]   # 左下角标定点机械臂坐标
++cali_2_im: [590, 111]   # 右上角标定点像素坐标
++cali_2_mc: [120, 213]   # 右上角标定点机械臂坐标
+ 
+ # 抓取参数
+-grasp_z: -110           # 抓取高度
++grasp_z: -115           # 抓取高度
+ grasp_offset_x: 10      # 
+ grasp_offset_y: 0      # X轴偏移
+-rotation_factor: 0.33   # 旋转因子
++rotation_factor: 0.46   # 旋转因子
+ max_rotation_angle: 45  # 最大旋转角度
+ 
+ # 模式参数
+-continuous_mode: true   # True为持续抓取，False为单次抓取
++continuous_mode: True   # True为持续抓取，False为单次抓取
+ 
+ # 话题名称

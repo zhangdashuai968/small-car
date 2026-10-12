@@ -1,0 +1,24 @@
+# VLM检测节点参数配置
+
+# 话题配置
+input_topic: "/new_topic"          # 输入图像话题
+output_topic: "/Pose"              # 输出检测结果话题
+service_name: "vlm_detection"       # 服务名称
+
+# 文件路径配置
+image_save_path: "/home/abot/catkin_ws/src/abot_project/vl_locate/image/vlm_now.jpg"                    # 图像保存路径
+font_path: "/home/abot/catkin_ws/src/abot_project/vl_locate/config/SimHei.ttf"  # 字体文件路径
+font_size: 32                                          # 字体大小
+
+# API配置
+api_key: ""         # API密钥
+base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"  # API基础URL
+model_name: "qwen-vl-max-latest"                       # 模型名称
+mode: "openai"                                         # 模式选择:openai 或 dashscope
+
+# 可视化配置
+bbox_color: [0, 0, 255]           # 边界框颜色 (BGR格式)
+bbox_thickness: 3                 # 边界框线条粗细
+center_radius: 6                  # 中心点半径
+text_color: [255, 0, 0]          # 文本颜色 (RGB格式)
+
