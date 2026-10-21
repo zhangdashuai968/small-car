@@ -7,29 +7,30 @@
 #   finish: 终点收尾，停止抓取并让舵机回 home
 # object : 喂给 vl_locate 的目标关键词，pass 时填什么都行（不生效）
 # arm_pose: 可选，机械臂预设姿态，不填就用默认姿态
+# localize_checkpoint: 可选；到点成功后重发 /initialpose，小幅摆头更新 AMCL，再清 costmap
 
 waypoints:
   - name: point_01_pass
     frame: map
-    x: -0.571
-    y: -1.560
-    yaw: 0.121
+    x: -0.408
+    y: -1.646
+    yaw: 0.019
     action: pass
     object: ""
 
   - name: point_02_grab
     frame: map
-    x: -0.417
-    y: -2.791
-    yaw: 0.068
+    x: -0.445
+    y: -2.903
+    yaw: 0.080
     action: grab
     object: 苹果
 
   - name: point_03_place
     frame: map
-    x: -0.571
-    y: -1.560
-    yaw: 0.121
+    x: -0.408
+    y: -1.646
+    yaw: 0.019
     action: place
     object: 图片中心点
 
@@ -72,28 +73,38 @@ waypoints:
     yaw: -0.170
     action: pass
     object: ""
+    localize_checkpoint: true
+    checkpoint_cov_xy: 0.05
+    checkpoint_cov_yaw: 0.12
+    checkpoint_sweep_yaw: 0.21
+    checkpoint_sweep_speed: 0.12
+    checkpoint_sweep_timeout: 8.0
+    checkpoint_updates: 3
+    checkpoint_pause: 0.5
+    checkpoint_max_distance: 0.45
+    checkpoint_max_yaw_error: 0.61
 
   - name: point_07_pass
     frame: map
-    x: -3.130
-    y: -2.130
-    yaw: 0.633
+    x: -3.001
+    y: -1.469
+    yaw: 0.010
     action: pass
     object: ""
 
   - name: point_08_grab
     frame: map
-    x: -2.298
-    y: -3.067
-    yaw: 0.851
+    x: -3.002
+    y: -2.739
+    yaw: -0.003
     action: grab
     object: 西瓜
 
   - name: point_09_place
     frame: map
-    x: -3.130
-    y: -2.130
-    yaw: 0.633
+    x: -3.001
+    y: -1.469
+    yaw: 0.010
     action: place
     object: 图片中心点
 

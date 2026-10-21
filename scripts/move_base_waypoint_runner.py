@@ -18,9 +18,10 @@ import rospy
 import tf
 import yaml
 from actionlib_msgs.msg import GoalStatus
-from geometry_msgs.msg import Quaternion, Twist
+from geometry_msgs.msg import PoseWithCovarianceStamped, Quaternion, Twist
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from riki_msgs.msg import Servo
+from std_srvs.srv import Empty
 from vl_locate.srv import GetObject
 
 import tf.transformations as tft
@@ -77,6 +78,8 @@ class MoveBaseWaypointRunner(object):
         self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.servo_pub = rospy.Publisher('servo', Servo, queue_size=1, latch=True)
         self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+        self.initialpose_pub = rospy.Publisher(
+            '/initialpose', PoseWithCovarianceStamped, queue_size=1)
         self.tf_listener = tf.TransformListener()
         self.vlm = None
 
@@ -92,7 +95,23 @@ class MoveBaseWaypointRunner(object):
         self.servo_pub.publish(msg)
 
     def _stop_base(self):
-        self.cmd_pub.publish(Twist())
+        for _ in range(3):
+            self.cmd_pub.publish(Twist())
+            rospy.sleep(0.03)
+
+    def _call_empty_service(self, service_name, timeout=1.0):
+        try:
+            rospy.wait_for_service(service_name, timeout=timeout)
+            rospy.ServiceProxy(service_name, Empty)()
+            return True
+        except (rospy.ROSException, rospy.ServiceException) as exc:
+            rospy.logwarn('%s call skipped: %s', service_name, exc)
+            return False
+
+    def _request_nomotion_updates(self, count):
+        for _ in range(max(0, int(count))):
+            self._call_empty_service('/request_nomotion_update', timeout=0.8)
+            rospy.sleep(0.15)
 
     def _lookup_yaw(self, frame):
         self.tf_listener.waitForTransform(
@@ -100,6 +119,13 @@ class MoveBaseWaypointRunner(object):
         _, quat = self.tf_listener.lookupTransform(
             frame, 'base_footprint', rospy.Time(0))
         return tft.euler_from_quaternion(quat)[2]
+
+    def _lookup_pose(self, frame):
+        self.tf_listener.waitForTransform(
+            frame, 'base_footprint', rospy.Time(0), rospy.Duration(1.0))
+        trans, quat = self.tf_listener.lookupTransform(
+            frame, 'base_footprint', rospy.Time(0))
+        return trans[0], trans[1], tft.euler_from_quaternion(quat)[2]
 
     def _align_yaw(self, wp):
         if not self.yaw_align:
@@ -138,6 +164,113 @@ class MoveBaseWaypointRunner(object):
         rospy.logerr('yaw align TIMEOUT target=%.3f last_err=%.3f',
                      target_yaw, error if 'error' in locals() else float('nan'))
         return False
+
+    def _rotate_to_yaw(self, frame, target_yaw, speed, timeout, label):
+        deadline = rospy.Time.now() + rospy.Duration(timeout)
+        rate = rospy.Rate(10)
+
+        while not rospy.is_shutdown() and rospy.Time.now() < deadline:
+            try:
+                current_yaw = self._lookup_yaw(frame)
+            except (tf.LookupException, tf.ConnectivityException,
+                    tf.ExtrapolationException) as exc:
+                rospy.logwarn('%s waiting tf: %s', label, exc)
+                rate.sleep()
+                continue
+
+            error = normalize_angle(target_yaw - current_yaw)
+            if abs(error) <= self.yaw_tolerance:
+                self._stop_base()
+                rospy.loginfo('%s reached: target=%.3f current=%.3f err=%.3f',
+                              label, target_yaw, current_yaw, error)
+                return True
+
+            cmd = Twist()
+            angular = max(-speed, min(speed, 0.8 * error))
+            if abs(angular) < 0.04:
+                angular = 0.04 if error > 0.0 else -0.04
+            cmd.angular.z = angular
+            self.cmd_pub.publish(cmd)
+            rate.sleep()
+
+        self._stop_base()
+        rospy.logerr('%s TIMEOUT target=%.3f last_err=%.3f',
+                     label, target_yaw, error if 'error' in locals() else float('nan'))
+        return False
+
+    def _publish_initialpose(self, frame, x, y, yaw, cov_xy, cov_yaw):
+        msg = PoseWithCovarianceStamped()
+        msg.header.frame_id = frame
+        msg.pose.pose.position.x = x
+        msg.pose.pose.position.y = y
+        quat = tft.quaternion_from_euler(0.0, 0.0, yaw)
+        msg.pose.pose.orientation = Quaternion(*quat)
+        msg.pose.covariance[0] = cov_xy
+        msg.pose.covariance[7] = cov_xy
+        msg.pose.covariance[35] = cov_yaw
+
+        for _ in range(3):
+            msg.header.stamp = rospy.Time.now()
+            self.initialpose_pub.publish(msg)
+            rospy.sleep(0.12)
+
+    def _localize_checkpoint(self, wp):
+        if not wp.get('localize_checkpoint', False):
+            return True
+
+        frame = wp.get('frame', 'map')
+        target_x = float(wp['x'])
+        target_y = float(wp['y'])
+        target_yaw = float(wp['yaw'])
+        max_distance = float(wp.get('checkpoint_max_distance', 0.45))
+        max_yaw_error = float(wp.get('checkpoint_max_yaw_error', 0.61))
+        cov_xy = float(wp.get('checkpoint_cov_xy', 0.05))
+        cov_yaw = float(wp.get('checkpoint_cov_yaw', 0.12))
+        sweep_yaw = abs(float(wp.get('checkpoint_sweep_yaw', 0.21)))
+        sweep_speed = abs(float(wp.get('checkpoint_sweep_speed', 0.12)))
+        sweep_timeout = float(wp.get('checkpoint_sweep_timeout', 8.0))
+        update_count = int(wp.get('checkpoint_updates', 3))
+        pause = float(wp.get('checkpoint_pause', 0.5))
+
+        try:
+            current_x, current_y, current_yaw = self._lookup_pose(frame)
+        except (tf.LookupException, tf.ConnectivityException,
+                tf.ExtrapolationException) as exc:
+            rospy.logerr('localize checkpoint failed to read pose: %s', exc)
+            return False
+
+        distance = math.hypot(target_x - current_x, target_y - current_y)
+        yaw_error = normalize_angle(target_yaw - current_yaw)
+        if distance > max_distance or abs(yaw_error) > max_yaw_error:
+            rospy.logerr(
+                'localize checkpoint guard failed: dist=%.3f yaw_err=%.3f',
+                distance, yaw_error)
+            return False
+
+        rospy.loginfo('localize checkpoint start at (%.3f, %.3f, %.3f)',
+                      target_x, target_y, target_yaw)
+        self._stop_base()
+        rospy.sleep(pause)
+        self._publish_initialpose(frame, target_x, target_y, target_yaw,
+                                  cov_xy, cov_yaw)
+        rospy.sleep(pause)
+        self._request_nomotion_updates(update_count)
+
+        targets = [
+            ('checkpoint sweep left', normalize_angle(target_yaw + sweep_yaw)),
+            ('checkpoint sweep right', normalize_angle(target_yaw - sweep_yaw)),
+            ('checkpoint sweep return', target_yaw),
+        ]
+        for label, yaw in targets:
+            if not self._rotate_to_yaw(frame, yaw, sweep_speed,
+                                       sweep_timeout, label):
+                return False
+            self._request_nomotion_updates(1)
+
+        self._call_empty_service('/move_base/clear_costmaps', timeout=1.0)
+        rospy.sleep(pause)
+        rospy.loginfo('localize checkpoint done')
+        return True
 
     def _do_action(self, action, obj):
         if self.nav_only or action in ('pass', 'finish'):
@@ -180,6 +313,9 @@ class MoveBaseWaypointRunner(object):
                 return False
             if not self._align_yaw(wp):
                 rospy.logerr('goal %s yaw align failed', name)
+                return False
+            if not self._localize_checkpoint(wp):
+                rospy.logerr('goal %s localize checkpoint failed', name)
                 return False
             if not self._do_action(action, wp.get('object', '')):
                 return False
