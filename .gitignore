@@ -1,6 +1,9 @@
 # Claude Code 本地配置
 .claude/
 
+# 学习仓库（AGENTS.md 约定：不混入本仓库）
+abot_arm_learning/
+
 # 千问配置
 .qwen/
 
