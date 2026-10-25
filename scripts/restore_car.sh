@@ -26,9 +26,16 @@ if [ -d "$WS" ]; then
   mv "$WS" "$WS.bak-$STAMP"
 fi
 
-echo "[2/5] 从 bundle 克隆新工作区到 $WS ..."
-git clone --quiet "$BUNDLE" "$WS"
-git -C "$WS" remote set-url origin "$REMOTE_URL"
+echo "[2/5] 恢复工作区到 $WS ..."
+case "$BUNDLE" in
+  *.bundle)
+    git clone --quiet "$BUNDLE" "$WS"
+    git -C "$WS" remote set-url origin "$REMOTE_URL" ;;
+  *.tar.gz|*.tgz)
+    mkdir -p "$WS" && tar -xzf "$BUNDLE" -C "$WS"
+    echo "    （tar 快照模式：无 .git，网络好时可 git clone 重取完整历史）" ;;
+  *) echo "不支持的包类型（需 .bundle 或 .tar.gz）"; exit 1 ;;
+esac
 
 echo "[3/5] 给 5 个 GPU 依赖包打 CATKIN_IGNORE ..."
 for p in "${IGNORE_PKGS[@]}"; do touch "$WS/$p/CATKIN_IGNORE"; done
