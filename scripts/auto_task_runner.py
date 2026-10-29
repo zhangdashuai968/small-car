@@ -53,6 +53,10 @@ POS_TOL_WP = 0.10  # m     中间拐点容差(松一点，不在每个拐点急�
 YAW_TOL   = 0.03   # rad   终点角度容差(~1.7°)
 RATE_HZ   = 20
 STEP_TIMEOUT = 30.0  # s  单步超时(fail-fast)
+ZSTOP_SEC = 2.0   # s  停车零速流时长(固件无cmd_vel看门狗，锁存最后速度会跑飞；
+                 #     单条/短脉冲零速会丢，必须持续流)
+CRAB_X_DRIFT = 0.05   # 横移纵向后偏前馈比(10-29实测恒向后2~3cm/50cm，左右移方向不变)
+CRAB_REALIGN = True   # 横移段末强制航向回正(右移伴生-7°/左移+3°，锁航向环压不全)
 
 # --- A* 规划参数 ---
 OBST_THRESH = 50       # OccupancyGrid >=此值视为障碍; -1(未知)也视为障碍
@@ -249,10 +253,36 @@ class TaskRunner(object):
 
     # ---------- 原语 ----------
     def _stop(self):
+        """零速流停车：20Hz 持续 ZSTOP_SEC 秒。
+        固件会锁存最后一条 cmd_vel 且无看门狗，单条/短脉冲零速在
+        rosserial 链路上会丢(2026-10-28 超程事故根因)，必须发流。"""
         t = Twist()
-        for _ in range(3):
+        end = rospy.Time.now() + rospy.Duration(ZSTOP_SEC)
+        while rospy.Time.now() < end and not rospy.is_shutdown():
             self._pub.publish(t)
-            rospy.sleep(0.02)
+            rospy.sleep(1.0 / RATE_HZ)
+
+    def _verify_stopped(self, tries=3, tol=0.005, yaw_tol=0.01):
+        """停车静止验证：0.5s 间隔两次位姿差 位移<5mm 且偏航<0.57° 视为停死。
+        未停死则补发零速流重试；超次返回 False(fail-fast 由上层中止任务)。
+        TF 不可用时跳过验证(零速流已发，只是无法确认)。"""
+        for _ in range(tries):
+            a = self._cur()
+            if a is None:
+                rospy.logwarn('    verify_stopped: no TF, skip')
+                return True
+            rospy.sleep(0.5)
+            b = self._cur()
+            if b is None:
+                rospy.logwarn('    verify_stopped: no TF, skip')
+                return True
+            dm = math.hypot(b[0] - a[0], b[1] - a[1])
+            dyaw = abs(_norm(b[2] - a[2]))
+            if dm < tol and dyaw < yaw_tol:
+                return True
+            rospy.logwarn('    verify_stopped: still moving dm=%.3f dyaw=%.3f, re-stop', dm, dyaw)
+            self._stop()
+        return False
 
     def _drive_to_point(self, tx, ty, hold_yaw, pos_tol=POS_TOL, timeout=STEP_TIMEOUT):
         """闭环直行到 map 下 (tx,ty)，全程锁 hold_yaw，位移到达时无需笔直直线。"""
@@ -264,13 +294,16 @@ class TaskRunner(object):
                 self._stop(); return False
             ex = tx - cur[0]
             ey = ty - cur[1]
-            dist = math.hypot(ex, ey)
-            if dist < pos_tol:
+            lat_dom = abs(ex) < abs(ey)
+            # 横移主导段到位判据只看横向误差：odom纵向通道横移时是幻影
+            # (10-29实测虚报2~5倍)，hypot会被偷走横移预算；纵向残差由后续段收敛
+            arrived = abs(ey) < pos_tol if lat_dom else math.hypot(ex, ey) < pos_tol
+            if arrived:
                 break
             if (rospy.Time.now() - t0).to_sec() > timeout:
-                rospy.logwarn('    drive_to (%.2f,%.2f) TIMEOUT dist=%.3f', tx, ty, dist)
+                rospy.logwarn('    drive_to (%.2f,%.2f) TIMEOUT dist=%.3f', tx, ty, math.hypot(ex, ey))
                 self._stop(); return False
-            if abs(ex) < abs(ey):
+            if lat_dom:
                 vx_map = _clamp(K_LIN_HOLD * ex, -V_LIN, V_LIN)
                 vy_map = _clamp(K_LIN * ey, -V_LIN, V_LIN)
             else:
@@ -285,6 +318,9 @@ class TaskRunner(object):
             tw = Twist()
             tw.linear.x =  c * vx_map + s * vy_map
             tw.linear.y = -s * vx_map + c * vy_map
+            if lat_dom:
+                # 横移恒向后偏前馈(车体系向前，2~3cm/50cm)
+                tw.linear.x += CRAB_X_DRIFT * abs(vy_map)
             eyaw = _norm(hold_yaw - th)
             if abs(eyaw) > 0.02:
                 wz = _clamp(K_YAW * eyaw, -V_ROT, V_ROT)
@@ -294,7 +330,54 @@ class TaskRunner(object):
             self._pub.publish(tw)
             rate.sleep()
         self._stop()
-        return True
+        if CRAB_REALIGN:
+            cur = self._cur()
+            if cur is not None and abs(_norm(hold_yaw - cur[2])) > YAW_TOL:
+                if not self._rotate_to(hold_yaw):
+                    return False
+        return self._verify_stopped()
+
+    def _crab_to(self, tx, ty, hold_yaw, lat_tol=POS_TOL, timeout=STEP_TIMEOUT):
+        """横移到 map 下 (tx,ty)，全程锁 hold_yaw，只做侧向运动。
+        精对位用(<30cm级)；长位移优先 goto 走直行+原地转(直行50cm仅0.6°伴生
+        偏航，横移50cm带3~7°+恒向后偏)。判据/前馈/回正规则同 _drive_to_point
+        横移主导段。"""
+        rate = rospy.Rate(RATE_HZ)
+        t0 = rospy.Time.now()
+        while not rospy.is_shutdown():
+            cur = self._cur()
+            if cur is None:
+                self._stop(); return False
+            ey = ty - cur[1]
+            if abs(ey) < lat_tol:
+                break
+            if (rospy.Time.now() - t0).to_sec() > timeout:
+                rospy.logwarn('    crab_to (%.2f,%.2f) TIMEOUT ey=%.3f', tx, ty, ey)
+                self._stop(); return False
+            th = cur[2]
+            c = math.cos(th); s = math.sin(th)
+            vy_map = _clamp(K_LIN * ey, -V_LIN, V_LIN)
+            sp = abs(vy_map)
+            if 1e-6 < sp < V_LIN_MIN:
+                vy_map = math.copysign(V_LIN_MIN, vy_map)
+            tw = Twist()
+            tw.linear.x = s * vy_map + CRAB_X_DRIFT * abs(vy_map)  # 前馈恒向前
+            tw.linear.y = c * vy_map
+            eyaw = _norm(hold_yaw - th)
+            if abs(eyaw) > 0.02:
+                wz = _clamp(K_YAW * eyaw, -V_ROT, V_ROT)
+                if abs(wz) < V_ROT_MIN:
+                    wz = math.copysign(V_ROT_MIN, wz)
+                tw.angular.z = wz
+            self._pub.publish(tw)
+            rate.sleep()
+        self._stop()
+        if CRAB_REALIGN:
+            cur = self._cur()
+            if cur is not None and abs(_norm(hold_yaw - cur[2])) > YAW_TOL:
+                if not self._rotate_to(hold_yaw):
+                    return False
+        return self._verify_stopped()
 
     def _rotate_to(self, target_yaw, yaw_tol=YAW_TOL, timeout=STEP_TIMEOUT):
         rate = rospy.Rate(RATE_HZ)
@@ -317,7 +400,7 @@ class TaskRunner(object):
             self._pub.publish(tw)
             rate.sleep()
         self._stop()
-        return True
+        return self._verify_stopped()
 
     def goto(self, x, y, yaw, frame='map'):
         """移动到 (x, y, yaw)。
