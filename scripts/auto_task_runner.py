@@ -379,27 +379,38 @@ class TaskRunner(object):
                     return False
         return self._verify_stopped()
 
-    def _rotate_to(self, target_yaw, yaw_tol=YAW_TOL, timeout=STEP_TIMEOUT):
-        rate = rospy.Rate(RATE_HZ)
-        t0 = rospy.Time.now()
-        while not rospy.is_shutdown():
+    def _rotate_to(self, target_yaw, yaw_tol=YAW_TOL, timeout=STEP_TIMEOUT, passes=3):
+        """原地转到 target_yaw。固件角速度减速斜坡会在退出后多转几度
+        (2026-10-29 实测刹停过冲最大 4.4°，超 1.72° 容差)，所以每轮
+        停车后复检残差，超容差补转——误差逐轮减小、刹停逐轮变轻。"""
+        for attempt in range(passes):
+            rate = rospy.Rate(RATE_HZ)
+            t0 = rospy.Time.now()
+            while not rospy.is_shutdown():
+                cur = self._cur()
+                if cur is None:
+                    self._stop(); return False
+                e = _norm(target_yaw - cur[2])
+                if abs(e) < yaw_tol:
+                    break
+                if (rospy.Time.now() - t0).to_sec() > timeout:
+                    rospy.logwarn('    rotate_to %.2f TIMEOUT err=%.3f', target_yaw, e)
+                    self._stop(); return False
+                wz = _clamp(K_YAW * e, -V_ROT, V_ROT)
+                if abs(wz) < V_ROT_MIN:
+                    wz = math.copysign(V_ROT_MIN, wz)
+                tw = Twist()
+                tw.angular.z = wz
+                self._pub.publish(tw)
+                rate.sleep()
+            self._stop()
             cur = self._cur()
             if cur is None:
-                self._stop(); return False
+                return False
             e = _norm(target_yaw - cur[2])
             if abs(e) < yaw_tol:
                 break
-            if (rospy.Time.now() - t0).to_sec() > timeout:
-                rospy.logwarn('    rotate_to %.2f TIMEOUT err=%.3f', target_yaw, e)
-                self._stop(); return False
-            wz = _clamp(K_YAW * e, -V_ROT, V_ROT)
-            if abs(wz) < V_ROT_MIN:
-                wz = math.copysign(V_ROT_MIN, wz)
-            tw = Twist()
-            tw.angular.z = wz
-            self._pub.publish(tw)
-            rate.sleep()
-        self._stop()
+            rospy.logwarn('    rotate_to brake residual %.3f rad, pass %d', e, attempt + 2)
         return self._verify_stopped()
 
     def goto(self, x, y, yaw, frame='map'):
