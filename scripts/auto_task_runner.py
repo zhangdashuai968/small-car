@@ -44,11 +44,12 @@ GRASP_WAIT_SEC = 25
 V_LIN     = 0.20   # m/s   直线/横移线速度上限
 V_ROT     = 0.40   # rad/s 原地转角速度上限
 V_LIN_MIN = 0.04   # m/s   最小线速度(克服静摩擦)
+V_LIN_APPROACH = 0.06  # m/s 近距(15cm内)限速，压刹车过冲(0.10时余5.5cm后偏)
 V_ROT_MIN = 0.10   # rad/s 最小转角速度
 K_LIN     = 4.0    # 线速度 P 增益
 K_LIN_HOLD = 5.0   # 非主运动轴P增益(压制漂移)
 K_YAW     = 1.5    # 角速度 P 增益
-POS_TOL   = 0.04   # m     终点位置容差
+POS_TOL   = 0.025  # m     终点位置容差(11-01实测:0.04时落点±6~8cm散布,收紧+慢进压刹)
 POS_TOL_WP = 0.10  # m     中间拐点容差(松一点，不在每个拐点急停)
 YAW_TOL   = 0.03   # rad   终点角度容差(~1.7°)
 RATE_HZ   = 20
@@ -310,6 +311,10 @@ class TaskRunner(object):
                 vx_map = _clamp(K_LIN * ex, -V_LIN, V_LIN)
                 vy_map = _clamp(K_LIN_HOLD * ey, -V_LIN, V_LIN)
             sp = math.hypot(vx_map, vy_map)
+            # 近距慢进:15cm内限速0.10，压刹车过冲散布(11-01两轮0→1实测±6~8cm)
+            if math.hypot(ex, ey) < 0.15 and sp > V_LIN_APPROACH:
+                vx_map *= V_LIN_APPROACH / sp
+                vy_map *= V_LIN_APPROACH / sp
             if 1e-6 < sp < V_LIN_MIN:
                 vx_map *= V_LIN_MIN / sp
                 vy_map *= V_LIN_MIN / sp

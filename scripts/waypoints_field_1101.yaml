@@ -1,0 +1,37 @@
+# 2026-11-01 比赛场地实测航路（新house地图，现场摆车逐点记录）
+waypoints:
+  - name: point_00_origin
+    frame: map
+    x: 0.112
+    y: 0.025
+    yaw: 0.148
+    action: pass
+    object: ""
+  - name: point_01
+    frame: map
+    x: -2.064
+    y: 0.193
+    yaw: 0.108
+    action: pass
+    object: ""
+  - name: point_02
+    frame: map
+    x: -2.147
+    y: 1.318
+    yaw: -0.021
+    action: pass
+    object: ""
+  - name: point_03
+    frame: map
+    x: -2.311
+    y: 2.377
+    yaw: 0.135
+    action: pass
+    object: ""
+  - name: point_04_finish
+    frame: map
+    x: -0.100
+    y: 3.325
+    yaw: 0.270
+    action: finish
+    object: ""
