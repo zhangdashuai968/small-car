@@ -1,0 +1,17 @@
+<launch>
+  <!-- 定位栈(无 move_base): lidar + map + amcl, 仅提供 map->base_footprint tf -->
+  <!-- 运动由 auto_task_runner.py 自闭环发 cmd_vel, 不经局部规划器(TEB/DWA) -->
+  <param name="/use_sim_time" value="false"/>
+
+  <include file="$(find abot)/launch/lidar/$(env ABOTLIDAR).launch" />
+
+  <arg name="map_file" default="$(find abot)/maps/comp.yaml"/>
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" />
+
+  <!-- amcl 初值设 (0,0,0): home = 建图起点(gmapping 地图原点), 不再用 house.yaml 的 0.6,-0.4 -->
+  <include file="$(find abot)/launch/amcl.launch">
+    <arg name="initial_pose_x" value="0.0"/>
+    <arg name="initial_pose_y" value="0.0"/>
+    <arg name="initial_pose_a" value="0.0"/>
+  </include>
+</launch>
