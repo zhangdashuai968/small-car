@@ -44,6 +44,10 @@ class BasicXArmGrasp():
         # 可选第三锚点(11-02三点标定升级)：两点线性在对角线外象限有残差
         self.cali_3_im = rospy.get_param("~cali_3_im", None)
         self.cali_3_mc = rospy.get_param("~cali_3_mc", None)
+        self.cali_4_im = rospy.get_param("~cali_4_im", None)
+        self.cali_4_mc = rospy.get_param("~cali_4_mc", None)
+        # 11-02四点标定: 转盘角度随像素y插值(四角实测40~120各不相同,单一factor罩不住)
+        self.cali_rotary_anchors = rospy.get_param("~cali_rotary_anchors", None)
         
         # 从参数服务器获取抓取参数
         self.grasp_z = rospy.get_param("~grasp_z", -110)  # 抓取高度
@@ -98,6 +102,9 @@ class BasicXArmGrasp():
         if self.cali_3_im and self.cali_3_mc:
             pts_x.append((self.cali_3_im[0], self.cali_3_mc[0]))
             pts_y.append((self.cali_3_im[1], self.cali_3_mc[1]))
+        if self.cali_4_im and self.cali_4_mc:
+            pts_x.append((self.cali_4_im[0], self.cali_4_mc[0]))
+            pts_y.append((self.cali_4_im[1], self.cali_4_mc[1]))
         pts_x.sort(key=lambda t: t[0])
         pts_y.sort(key=lambda t: t[0])
         X_cali_im = [t[0] for t in pts_x]
@@ -114,7 +121,11 @@ class BasicXArmGrasp():
         self.y = -X+self.grasp_offset_y
         self.z = self.grasp_z
 
-        if self.y > 0:
+        if self.cali_rotary_anchors:
+            rp = sorted([tuple(a) for a in self.cali_rotary_anchors])
+            self.rotary = int(np.interp(obj_info.x_center,
+                                        [t[0] for t in rp], [t[1] for t in rp]))
+        elif self.y > 0:
             rotation_angle = min(abs(self.y) * self.rotation_factor, self.max_rotation_angle)
             self.rotary = 90 + rotation_angle
         elif self.y < 0:
