@@ -123,6 +123,22 @@ class AbotxArmGrasp():
         if self.is_calibration_mode is True:
             self.xArmGripperTxData(GRIPPER_OPEN)
             srv_xarm = Server(XarmPoseParamsConfig, self.cbGetxArmPoseParam)
+            # 原厂缺陷修复(11-02)：标定发送循环原本藏在/grab回调内，必须先收到
+            # 一条/grab消息才会启动——现改为init即启动独立线程，滑条直接可用
+            import threading
+            def _calib_send_loop():
+                self.last_x = self.x; self.last_y = self.y
+                self.last_z = self.z; self.last_rotary = self.rotary
+                while not rospy.is_shutdown():
+                    if self.last_x != self.x or self.last_y != self.y or self.last_z != self.z or self.last_rotary != self.rotary:
+                        rospy.loginfo("Update Pose (calib thread)")
+                        self.last_x = self.x
+                        self.last_y = self.y
+                        self.last_z = self.z
+                        self.last_rotary = self.rotary
+                        self.xArmPoseTxData(self.x, self.y, self.z, self.rotary)
+                    r.sleep()
+            threading.Thread(target=_calib_send_loop).start()
 
        
         if self.fix_grasp_mode is False and self.is_calibration_mode is False:
@@ -454,7 +470,7 @@ class AbotxArmGrasp():
         参数:
             gripper_step (int, optional): 夹具的步进值。默认为GRIPPER_CLOSE
         """
-        self.xArmPoseTxData(0, 0, 250)
+        self.xArmPoseTxData(45, -5, 230)  # M1-S实测home(11-02标定)
         time.sleep(1)
         self.xArmGripperTxData(gripper_step)
 

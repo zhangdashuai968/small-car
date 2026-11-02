@@ -41,6 +41,9 @@ class BasicXArmGrasp():
         self.cali_1_mc = rospy.get_param("~cali_1_mc", [-60, 125])  # 左下角标定点机械臂坐标
         self.cali_2_im = rospy.get_param("~cali_2_im", [584, 125])  # 右上角标定点像素坐标
         self.cali_2_mc = rospy.get_param("~cali_2_mc", [135, 195])  # 右上角标定点机械臂坐标
+        # 可选第三锚点(11-02三点标定升级)：两点线性在对角线外象限有残差
+        self.cali_3_im = rospy.get_param("~cali_3_im", None)
+        self.cali_3_mc = rospy.get_param("~cali_3_mc", None)
         
         # 从参数服务器获取抓取参数
         self.grasp_z = rospy.get_param("~grasp_z", -110)  # 抓取高度
@@ -89,10 +92,18 @@ class BasicXArmGrasp():
     def camera_point_to_grasp_pose(self, obj_info):
         """相机坐标转换为抓取位姿"""
         
-        X_cali_im = [self.cali_1_im[0], self.cali_2_im[0]]     # 像素坐标
-        X_cali_mc = [self.cali_1_mc[0], self.cali_2_mc[0]]     # 机械臂坐标
-        Y_cali_im = [self.cali_2_im[1], self.cali_1_im[1]]     # 像素坐标，先小后大
-        Y_cali_mc = [self.cali_2_mc[1], self.cali_1_mc[1]]     # 机械臂坐标，先大后小
+        # 11-02三点标定：锚点按像素升序排列后分段线性插值(np.interp要求xp递增)
+        pts_x = [(self.cali_1_im[0], self.cali_1_mc[0]), (self.cali_2_im[0], self.cali_2_mc[0])]
+        pts_y = [(self.cali_1_im[1], self.cali_1_mc[1]), (self.cali_2_im[1], self.cali_2_mc[1])]
+        if self.cali_3_im and self.cali_3_mc:
+            pts_x.append((self.cali_3_im[0], self.cali_3_mc[0]))
+            pts_y.append((self.cali_3_im[1], self.cali_3_mc[1]))
+        pts_x.sort(key=lambda t: t[0])
+        pts_y.sort(key=lambda t: t[0])
+        X_cali_im = [t[0] for t in pts_x]
+        X_cali_mc = [t[1] for t in pts_x]
+        Y_cali_im = [t[0] for t in pts_y]
+        Y_cali_mc = [t[1] for t in pts_y]
 
         # X差值
         X = int(np.interp(obj_info.x_center, X_cali_im, X_cali_mc))
