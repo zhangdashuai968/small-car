@@ -46,6 +46,8 @@ class BasicXArmGrasp():
         self.cali_3_mc = rospy.get_param("~cali_3_mc", None)
         self.cali_4_im = rospy.get_param("~cali_4_im", None)
         self.cali_4_mc = rospy.get_param("~cali_4_mc", None)
+        self.cali_5_im = rospy.get_param("~cali_5_im", None)
+        self.cali_5_mc = rospy.get_param("~cali_5_mc", None)
         # 11-02四点标定: 转盘角度随像素y插值(四角实测40~120各不相同,单一factor罩不住)
         self.cali_rotary_anchors = rospy.get_param("~cali_rotary_anchors", None)
         
@@ -105,6 +107,9 @@ class BasicXArmGrasp():
         if self.cali_4_im and self.cali_4_mc:
             pts_x.append((self.cali_4_im[0], self.cali_4_mc[0]))
             pts_y.append((self.cali_4_im[1], self.cali_4_mc[1]))
+        if self.cali_5_im and self.cali_5_mc:
+            pts_x.append((self.cali_5_im[0], self.cali_5_mc[0]))
+            pts_y.append((self.cali_5_im[1], self.cali_5_mc[1]))
         pts_x.sort(key=lambda t: t[0])
         pts_y.sort(key=lambda t: t[0])
         X_cali_im = [t[0] for t in pts_x]

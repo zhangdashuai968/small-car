@@ -25,7 +25,7 @@ cali_3_im: [63, 193]
 cali_3_mc: [-90, 195]
 cali_4_im: [590, 373]
 cali_4_mc: [130, 100]
-cali_rotary_anchors: [[38, 120], [63, 110], [577, 40]]
+cali_rotary_anchors: [[38, 120], [63, 110], [331, 75], [577, 40]]
 
 # 抓取参数
 grasp_z: -105            # 四点标定实测平面
@@ -39,3 +39,5 @@ continuous_mode: true   # True为持续抓取，False为单次抓取
 
 # 话题名称
 pose_topic: "/Pose"
+cali_5_im: [331, 218]
+cali_5_mc: [35, 150]
