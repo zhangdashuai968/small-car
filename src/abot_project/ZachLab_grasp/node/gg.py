@@ -19,6 +19,10 @@ class BasicXArmGrasp():
         self.x = rospy.get_param("~x", 0)
         self.y = rospy.get_param("~y", 0) 
         self.z = rospy.get_param("~z", 250)
+        # M1-S实测home(2026-11-01标定)：独立保存，防抓取流程覆盖
+        self.home_x = rospy.get_param("~home_x", 45)
+        self.home_y = rospy.get_param("~home_y", -5)
+        self.home_z = rospy.get_param("~home_z", 230)
         self.rotary = rospy.get_param("~rotary", 90)
         
         rospy.set_param('grab', False) 
@@ -131,7 +135,7 @@ class BasicXArmGrasp():
         """机械臂回到初始位置"""
         if gripper_step is None:
             gripper_step = self.gripper_close
-        self.xarm_pose_tx_data(0, 0, 250)
+        self.xarm_pose_tx_data(self.home_x, self.home_y, self.home_z)
         time.sleep(1)
         self.xarm_gripper_tx_data(gripper_step)
         rospy.loginfo("机械臂回到初始位置")
