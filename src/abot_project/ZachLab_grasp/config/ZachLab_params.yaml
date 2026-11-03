@@ -41,3 +41,6 @@ continuous_mode: true   # True为持续抓取，False为单次抓取
 pose_topic: "/Pose"
 cali_5_im: [331, 218]
 cali_5_mc: [35, 150]
+home_x: 90
+home_y: 0
+home_z: 60
