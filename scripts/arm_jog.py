@@ -11,8 +11,8 @@ import sys, json, serial
 
 PORT, BAUD = '/dev/ttyACM0', 115200
 GRIP_OPEN, GRIP_CLOSE, GRIP_HALF = 150, 700, 500
-HOME = (90, 0, 60, 90)
-state = {'x': 90, 'y': 0, 'z': 60, 'rotary': 90}
+HOME = (25, 0, 240, 90)
+state = {'x': 25, 'y': 0, 'z': 240, 'rotary': 90}
 ser = serial.Serial(PORT, BAUD, timeout=1)
 
 def send_pose(x, y, z, rotary=90, speed=800):

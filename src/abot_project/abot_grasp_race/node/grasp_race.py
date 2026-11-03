@@ -470,7 +470,7 @@ class AbotxArmGrasp():
         参数:
             gripper_step (int, optional): 夹具的步进值。默认为GRIPPER_CLOSE
         """
-        self.xArmPoseTxData(90, 0, 60)  # M1-S实测home(11-02标定)
+        self.xArmPoseTxData(25, 0, 240)  # M1-S实测home(11-02标定)
         time.sleep(1)
         self.xArmGripperTxData(gripper_step)
 
