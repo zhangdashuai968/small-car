@@ -18,17 +18,17 @@ gripper_default: 500
 
 # 标定参数
 cali_1_im: [38, 366]
-cali_1_mc: [-70, 100]
+cali_1_mc: [-70, 105]
 cali_2_im: [577, 92]
-cali_2_mc: [130, 205]
+cali_2_mc: [130, 195]
 cali_3_im: [63, 193]
-cali_3_mc: [-90, 195]
+cali_3_mc: [-75, 190]
 cali_4_im: [590, 373]
-cali_4_mc: [130, 100]
-cali_rotary_anchors: [[38, 120], [63, 110], [331, 75], [577, 40]]
+cali_4_mc: [120, 95]
+cali_rotary_anchors: [[38, 120], [63, 110], [331, 75], [577, 55], [590, 40]]
 
 # 抓取参数
-grasp_z: -105            # 四点标定实测平面
+grasp_z: -95             # -95平面微调终版(11-03)
 grasp_offset_x: 10      # 
 grasp_offset_y: 0      # X轴偏移
 rotation_factor: 0.0             # 11-02:自动转盘旋转关闭,标定系=rotary90,旋转会引入偏移
