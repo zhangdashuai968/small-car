@@ -21,6 +21,7 @@ waypoints:
     y: -0.37
     yaw: -0.063
     action: pass
+    rotate: false
     object: ""
   - name: point_02_hub4
     frame: map
@@ -35,6 +36,7 @@ waypoints:
     y: -0.37
     yaw: -0.063
     action: pass
+    rotate: false
     object: ""
   - name: point_03
     frame: map
@@ -56,6 +58,7 @@ waypoints:
     y: 0.585
     yaw: 0.039
     action: pass
+    rotate: false
     object: ""
   - name: point_05_hub4
     frame: map
@@ -70,6 +73,7 @@ waypoints:
     y: 0.585
     yaw: 0.039
     action: pass
+    rotate: false
     object: ""
   - name: point_06
     frame: map
@@ -91,6 +95,7 @@ waypoints:
     y: 1.496
     yaw: 0.078
     action: pass
+    rotate: false
     object: ""
   - name: point_08_hub4
     frame: map
@@ -105,6 +110,7 @@ waypoints:
     y: 1.496
     yaw: 0.078
     action: pass
+    rotate: false
     object: ""
   - name: point_09
     frame: map
