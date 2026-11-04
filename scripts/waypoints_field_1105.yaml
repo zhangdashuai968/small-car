@@ -1,4 +1,5 @@
-# 2026-11-05 建图现场实测航路（map系，建图中记录，存图后建议复核漂移）
+# 2026-11-05 任务航路：0→1→4→1-1→2→4→2-1→3→4→3-1→终点（4号=中转枢纽，往返穿梭）
+# map系建图中记录，存图后需复核漂移
 waypoints:
   - name: point_00_start
     frame: map
@@ -14,49 +15,63 @@ waypoints:
     yaw: -0.063
     action: pass
     object: ""
-  - name: point_01_1
-    frame: map
-    x: -2.153
-    y: -0.655
-    yaw: -0.070
-    action: pass
-    object: ""
-  - name: point_02
-    frame: map
-    x: -1.694
-    y: 0.514
-    yaw: 0.039
-    action: pass
-    object: ""
-  - name: point_02_1
-    frame: map
-    x: -2.096
-    y: 0.501
-    yaw: 0.038
-    action: pass
-    object: ""
-  - name: point_03
-    frame: map
-    x: -1.755
-    y: 1.689
-    yaw: 0.078
-    action: pass
-    object: ""
-  - name: point_03_1
-    frame: map
-    x: -2.134
-    y: 1.661
-    yaw: 0.071
-    action: pass
-    object: ""
-  - name: point_04
+  - name: point_02_hub4
     frame: map
     x: 0.103
     y: 0.688
     yaw: -3.020
     action: pass
     object: ""
-  - name: point_05_finish
+  - name: point_03
+    frame: map
+    x: -2.153
+    y: -0.655
+    yaw: -0.070
+    action: pass
+    object: ""
+  - name: point_04
+    frame: map
+    x: -1.694
+    y: 0.514
+    yaw: 0.039
+    action: pass
+    object: ""
+  - name: point_05_hub4
+    frame: map
+    x: 0.103
+    y: 0.688
+    yaw: -3.020
+    action: pass
+    object: ""
+  - name: point_06
+    frame: map
+    x: -2.096
+    y: 0.501
+    yaw: 0.038
+    action: pass
+    object: ""
+  - name: point_07
+    frame: map
+    x: -1.755
+    y: 1.689
+    yaw: 0.078
+    action: pass
+    object: ""
+  - name: point_08_hub4
+    frame: map
+    x: 0.103
+    y: 0.688
+    yaw: -3.020
+    action: pass
+    object: ""
+  - name: point_09
+    frame: map
+    x: -2.134
+    y: 1.661
+    yaw: 0.071
+    action: pass
+    object: ""
+  - name: point_10_finish
     frame: map
     x: 0.09
     y: 2.32
