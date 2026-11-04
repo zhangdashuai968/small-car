@@ -454,6 +454,9 @@ class TaskRunner(object):
                         if not self._drive_to_point(wx, wy, hold, tol):
                             rospy.logerr('  leg%d 失败', i + 1)
                             return False
+                    if yaw is None:
+                        rospy.loginfo('  中间点免旋转，直接过')
+                        return self._verify_stopped()
                     rospy.loginfo('  旋转 -> %.2f', yaw)
                     return self._rotate_to(yaw)
 
@@ -474,6 +477,9 @@ class TaskRunner(object):
             rospy.loginfo('  step%d -> (%.3f, %.3f) hold_yaw=%.2f', i + 1, gx, gy, hold)
             if not self._drive_to_point(gx, gy, hold):
                 return False
+        if yaw is None:
+            rospy.loginfo('  中间点免旋转，直接过')
+            return self._verify_stopped()
         rospy.loginfo('  step3 -> %.2f', yaw)
         return self._rotate_to(yaw)
 
@@ -538,7 +544,8 @@ class TaskRunner(object):
             rospy.loginfo('[%d/%d] %s -> (%.3f, %.3f, %.2f) action=%s',
                           i + 1, len(self.waypoints), name,
                           wp['x'], wp['y'], wp['yaw'], action)
-            if not self.goto(wp['x'], wp['y'], wp['yaw'], wp.get('frame', 'map')):
+            yaw = None if wp.get('rotate') is False else wp.get('yaw')
+            if not self.goto(wp['x'], wp['y'], yaw, wp.get('frame', 'map')):
                 self.fail_streak += 1
                 rospy.logerr('goto %s failed (%d consecutive)', name, self.fail_streak)
                 if self.fail_streak >= 2:
