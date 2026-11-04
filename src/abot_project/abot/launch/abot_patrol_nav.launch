@@ -4,7 +4,7 @@
   <!-- startup patrol navigation node -->
   <node pkg="abot" type="abot_patrol_nav.py" name="abot_patrol_nav_node" output="screen" >
     <param name="rest_time"     value="5" />
-    <param name="keep_patrol"   value="true" />
+    <param name="keep_patrol"   value="false" />
     <param name="random_patrol" value="false" />
     <param name="patrol_type"   value="0" />
     <param name="patrol_loop"   value="1" />
