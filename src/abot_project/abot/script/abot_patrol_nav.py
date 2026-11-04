@@ -23,13 +23,15 @@ class PatrolNav():
  
         #set all navigation target pose
         self.locations = dict()
-        self.locations['one']   = Pose(Point(0.014, 2.778, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
-        self.locations['two']   = Pose(Point(0.258, 1.646, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
-        self.locations['three'] = Pose(Point(1.432, 2.678, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
-        self.locations['four']  = Pose(Point(1.622, 1.476, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
-        self.locations['five']  = Pose(Point(2.674, 2.654, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
-        self.locations['six']   = Pose(Point(2.784, 1.507, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
-        self.locations['seven'] = Pose(Point(3.100, -0.216, 0.000), Quaternion(0.000, 0.000, 0.000, 1.000))
+        self.locations['one']     = Pose(Point(0.057, -1.009, 0.000), Quaternion(0.000, 0.000, -0.006, 1.000))
+        self.locations['two']     = Pose(Point(-1.713, -0.680, 0.000), Quaternion(0.000, 0.000, -0.0315, 0.9995))
+        self.locations['three']   = Pose(Point(0.103, 0.688, 0.000), Quaternion(0.000, 0.000, -0.9982, 0.0608))
+        self.locations['four']    = Pose(Point(-2.153, -0.655, 0.000), Quaternion(0.000, 0.000, -0.0175, 0.9998))
+        self.locations['five']    = Pose(Point(-1.694, 0.514, 0.000), Quaternion(0.000, 0.000, 0.0095, 1.000))
+        self.locations['six']     = Pose(Point(-2.096, 0.501, 0.000), Quaternion(0.000, 0.000, 0.0095, 1.000))
+        self.locations['seven']   = Pose(Point(-1.755, 1.689, 0.000), Quaternion(0.000, 0.000, 0.0195, 0.9998))
+        self.locations['eight']   = Pose(Point(-2.134, 1.661, 0.000), Quaternion(0.000, 0.000, 0.0175, 0.9998))
+        self.locations['nine']    = Pose(Point(0.090, 2.320, 0.000), Quaternion(0.000, 0.000, 0.7362, 0.6767))
  
         # Goal state return values
         goal_states = ['PENDING', 'ACTIVE', 'PREEMPTED', 'SUCCEEDED', 'ABORTED',
@@ -49,7 +51,7 @@ class PatrolNav():
         location   = ""
         start_time = rospy.Time.now()
         locations_cnt = len(self.locations)
-        sequeue = ['one', 'two', 'three', 'four', 'five', 'six']
+        sequeue = ['one', 'two', 'three', 'four', 'five', 'three', 'six', 'seven', 'three', 'eight', 'nine']
  
         rospy.loginfo("Starting position navigation ")
         # Begin the main loop and run through a sequence of locations
