@@ -521,6 +521,7 @@ class TaskRunner(object):
         return True
 
     def run(self):
+        self.fail_streak = 0
         # 等待地图加载，避免第一个航点盲走
         if self.block is None:
             rospy.loginfo('waiting /map ...')
@@ -538,8 +539,13 @@ class TaskRunner(object):
                           i + 1, len(self.waypoints), name,
                           wp['x'], wp['y'], wp['yaw'], action)
             if not self.goto(wp['x'], wp['y'], wp['yaw'], wp.get('frame', 'map')):
-                rospy.logerr('goto %s failed, skip', name)
+                self.fail_streak += 1
+                rospy.logerr('goto %s failed (%d consecutive)', name, self.fail_streak)
+                if self.fail_streak >= 2:
+                    rospy.logerr('FAIL-FAST: 2 consecutive failures, abort route')
+                    break
                 continue
+            self.fail_streak = 0
             if not self.do_action(action, wp.get('object', '')):
                 rospy.logerr('action on %s failed, skip', name)
                 continue

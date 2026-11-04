@@ -1,0 +1,164 @@
+# 2026-11-05 加密版航路：1↔4大横跳间插3个密度点(每段~0.6m，amcl高频修正防漂移)
+# 任务序: 0→1→4→1-1→2→4→2-1→3→4→3-1→终点
+waypoints:
+  - name: point_00_start
+    frame: map
+    x: 0.057
+    y: -1.009
+    yaw: -0.012
+    action: pass
+    object: ""
+  - name: point_01
+    frame: map
+    x: -1.713
+    y: -0.68
+    yaw: -0.063
+    action: pass
+    object: ""
+  - name: densify_a
+    frame: map
+    x: -1.0
+    y: -0.3
+    yaw: -0.020
+    action: pass
+    object: ""
+  - name: densify_b
+    frame: map
+    x: -0.5
+    y: 0.2
+    yaw: 0.010
+    action: pass
+    object: ""
+  - name: densify_c
+    frame: map
+    x: 0.0
+    y: 0.45
+    yaw: -3.020
+    action: pass
+    object: ""
+  - name: point_02_hub4
+    frame: map
+    x: 0.103
+    y: 0.688
+    yaw: -3.020
+    action: pass
+    object: ""
+  - name: point_03
+    frame: map
+    x: -2.153
+    y: -0.655
+    yaw: -0.070
+    action: pass
+    object: ""
+  - name: densify_a2
+    frame: map
+    x: -1.0
+    y: -0.3
+    yaw: -0.020
+    action: pass
+    object: ""
+  - name: densify_b2
+    frame: map
+    x: -0.5
+    y: 0.2
+    yaw: 0.010
+    action: pass
+    object: ""
+  - name: densify_c2
+    frame: map
+    x: 0.0
+    y: 0.45
+    yaw: -3.020
+    action: pass
+    object: ""
+  - name: point_04
+    frame: map
+    x: -1.694
+    y: 0.514
+    yaw: 0.039
+    action: pass
+    object: ""
+  - name: point_05_hub4
+    frame: map
+    x: 0.103
+    y: 0.688
+    yaw: -3.020
+    action: pass
+    object: ""
+  - name: densify_a3
+    frame: map
+    x: -1.0
+    y: -0.3
+    yaw: -0.020
+    action: pass
+    object: ""
+  - name: densify_b3
+    frame: map
+    x: -0.5
+    y: 0.2
+    yaw: 0.010
+    action: pass
+    object: ""
+  - name: densify_c3
+    frame: map
+    x: 0.0
+    y: 0.45
+    yaw: -3.020
+    action: pass
+    object: ""
+  - name: point_06
+    frame: map
+    x: -2.096
+    y: 0.501
+    yaw: 0.038
+    action: pass
+    object: ""
+  - name: point_07
+    frame: map
+    x: -1.755
+    y: 1.689
+    yaw: 0.078
+    action: pass
+    object: ""
+  - name: point_08_hub4
+    frame: map
+    x: 0.103
+    y: 0.688
+    yaw: -3.020
+    action: pass
+    object: ""
+  - name: densify_a4
+    frame: map
+    x: -1.0
+    y: -0.3
+    yaw: -0.020
+    action: pass
+    object: ""
+  - name: densify_b4
+    frame: map
+    x: -0.5
+    y: 0.2
+    yaw: 0.010
+    action: pass
+    object: ""
+  - name: densify_c4
+    frame: map
+    x: 0.0
+    y: 0.45
+    yaw: -3.020
+    action: pass
+    object: ""
+  - name: point_09
+    frame: map
+    x: -2.134
+    y: 1.661
+    yaw: 0.071
+    action: pass
+    object: ""
+  - name: point_10_finish
+    frame: map
+    x: 0.09
+    y: 2.32
+    yaw: 1.655
+    action: finish
+    object: ""
