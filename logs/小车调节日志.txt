@@ -226,3 +226,11 @@ step3 -> -1.98 — 10.7s
 [21:39] 全程导航两连挫收工（zhang）：①route2(11点航路)在1→4大横跳段amcl漂移(旋转修正残差0.5rad级、verify停不住)→leg8失败skip继续→撞西侧图外(x=-3.1)；②route3(23点加密版)发车后用户急停——复盘发现route2当时未杀净，实际跑完了全程(急停时车在东北角≈终点位置)，急停杀的是route3；'幽灵Publisher'=kill-9未注销的master残留。日志教训：nohup+python print缓冲导致route3日志只有警告无航点行，发车必须python -u；杀runner必须pgrep逐PID验证+rostopic info确认无发布者。两刀新装：23点加密航路+fail-fast(连续2败全停,已上车py2编译过)。明天比赛日计划：①车复位0号+initialpose ②加密版发车(u参数+日志盯紧) ③现场有人跟车急停。栈状态：底盘/定位/视觉活着，臂节点死了没重启，车静止东角。
 [23:08] 重大决策：比赛改用旧方案move_base（zhang）：rviz实测2D Nav Goal 0→1超级顺畅，对比runner两撞，用户拍板推翻新方案。nav三连崩根因=环境变量从未凑齐(bashrc非交互保护挡export，脚本须显式export全套ABOTMODEL/CMM_MODE/ABOTBASE/ABOTIMU/ABOTLIDAR/NAV_PATH=dwa)；雷达/波特率/接线全部无辜。旧方案已就位：patrol_nav九点新坐标+任务序(0→1→4→1-1→2→4→2-1→3→4→3-1→终点,枢纽4三插)+one-pass模式(keep_patrol=false,patrol_loop=1)；备份.bak-20261105。比赛启动卡：杀残余navigate→roslaunch abot abot_patrol_nav.launch→initialpose 0号→自动跑完任务序。遗留:抓取动作与move_base流程的衔接(move_base到位后如何触发抓取)明天定。
 [23:20] 旧方案比赛化收尾（zhang）：用户实跑反馈=位置小偏差可接受/旧版只停4号一次+未回终点(均系补丁前版本,新one-pass任务序已修)/轻微撞墙x2。避障微调：inflation_radius 0.2→0.25、dwa_omni occdist_scale 0.02→0.05(取仓库调优版旧值,备份.bak-1105),重启nav栈生效。当前=DWA。比赛启动卡定版:杀残余栈→roslaunch abot abot_patrol_nav.launch→initialpose 0号→自动跑任务序11段one-pass自停。遗留:到位后抓取触发衔接(明天)。
+[19:15] 比赛任务最终规格确认（zhang口述）：
+【流程】三轮循环 0→1号(看题)→4号(抓取)→1-1(放置)→2号(看题)→4号(抓)→2-1(放)→3号(看题)→4号(抓)→3-1(放)→终点。导航序=昨晚定版任务序✓。
+【看题】1/2/3号位旁有画着水果的题目卡，车停准即可识别(vlm)。
+【抓取】4号位同一堆水果，每轮按题目抓指定水果(记忆名字→近距识别拿坐标→gg.py抓)。
+【放置】地上有框且框上有图像，可识别框图放置；位置跑准即不会放错。
+【相机】Servo1:88/Servo2:20 定版，与手眼标定一致。
+【最高原则】识别失败不得死机，跳过继续跑完全程——跑完全程+位置准>>抓取成功。
+【实现约束】新文件abot_race_nav.py，不动patrol_nav原版；全部动作超时+try/except容错。
