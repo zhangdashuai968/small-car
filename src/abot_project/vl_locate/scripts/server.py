@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/home/abot/miniconda3/envs/39/bin/python
 # _*_ coding:utf-8 _*_
 '''
 Copyright (c) [Zachary]
@@ -74,12 +74,12 @@ class VLM:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
     def imgmsg_to_cv2(self, img_msg):
-        dtype = np.dtype("uint8")
-        dtype = dtype.newbyteorder('>' if img_msg.is_bigendian else '<')
+        # uint8 单字节无字节序，原生 dtype 即可(NumPy 2.0 移除 newbyteorder 的
+        # 折中——原大端 swap 逻辑对 bgr8 无实际意义，保留 byteswap 兜底)
         image_opencv = np.ndarray(shape=(img_msg.height, img_msg.width, 3),
-                                 dtype=dtype, buffer=img_msg.data)
-        if img_msg.is_bigendian != sys.byteorder == 'little':
-            image_opencv = image_opencv.byteswap().newbyteorder()
+                                 dtype=np.dtype("uint8"), buffer=img_msg.data)
+        if img_msg.is_bigendian != (sys.byteorder == 'little'):
+            image_opencv = image_opencv.byteswap()
         if img_msg.encoding == "rgb8":
             image_opencv = cv2.cvtColor(image_opencv, cv2.COLOR_RGB2BGR)
         elif img_msg.encoding == "mono8":

@@ -55,14 +55,13 @@ def image_callback(img_msg):
     if cv_image is None:
         return
 
-    # CPU: crop ROI (must copy for contiguous GPU upload)
+    # CPU: crop ROI
     roi = cv_image[_ROI_Y1:_ROI_Y2, _ROI_X1:_ROI_X2].copy()
 
-    # GPU: resize with INTER_CUBIC
-    gpu_src = cv2.cuda_GpuMat()
-    gpu_src.upload(roi)
-    gpu_dst = cv2.cuda.resize(gpu_src, (_NEW_W, _NEW_H), interpolation=cv2.INTER_CUBIC)
-    zoomed_roi = gpu_dst.download()
+    # CPU resize with INTER_CUBIC——原版走 cv2.cuda，但当前卡的 OpenCV 4.1.1
+    # 未编 CUDA 支持(2026-11-01 实测 throw_no_cuda)，改 CPU 路径；
+    # 640x480 ROI 缩放 CPU 耗时可忽略，VLM 链瓶颈在 API 网络
+    zoomed_roi = cv2.resize(roi, (_NEW_W, _NEW_H), interpolation=cv2.INTER_CUBIC)
 
     # CPU: center placement
     zoomed = np.zeros((_IMG_H, _IMG_W, 3), dtype=np.uint8)
