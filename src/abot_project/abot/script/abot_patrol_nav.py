@@ -24,7 +24,7 @@ class PatrolNav():
         #set all navigation target pose
         self.locations = dict()
         self.locations['two']   = Pose(Point(-1.868, -0.63, 0.000), Quaternion(0.000, 0.000, -0.0314, 0.9995))
-        self.locations['three']   = Pose(Point(0.273, 0.638, 0.000), Quaternion(0.000, 0.000, -0.9981, 0.061))
+        self.locations['three']   = Pose(Point(0.103, 0.688, 0.000), Quaternion(0.000, 0.000, -0.9982, 0.0608))
         self.locations['four']   = Pose(Point(-2.278, -0.725, 0.000), Quaternion(0.000, 0.000, 0.1392, 0.9903))
         self.locations['five']   = Pose(Point(-1.859, 0.464, 0.000), Quaternion(0.000, 0.000, 0.0192, 0.9998))
         self.locations['six']   = Pose(Point(-2.236, 0.461, 0.000), Quaternion(0.000, 0.000, 0.0192, 0.9998))
