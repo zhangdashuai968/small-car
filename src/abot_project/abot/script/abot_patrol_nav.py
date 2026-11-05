@@ -23,7 +23,6 @@ class PatrolNav():
  
         #set all navigation target pose
         self.locations = dict()
-        self.locations['one']     = Pose(Point(0.057, -1.009, 0.000), Quaternion(0.000, 0.000, -0.006, 1.000))
         self.locations['two']     = Pose(Point(-1.713, -0.680, 0.000), Quaternion(0.000, 0.000, -0.0315, 0.9995))
         self.locations['three']   = Pose(Point(0.103, 0.688, 0.000), Quaternion(0.000, 0.000, -0.9982, 0.0608))
         self.locations['four']    = Pose(Point(-2.153, -0.655, 0.000), Quaternion(0.000, 0.000, -0.0175, 0.9998))
@@ -51,7 +50,7 @@ class PatrolNav():
         location   = ""
         start_time = rospy.Time.now()
         locations_cnt = len(self.locations)
-        sequeue = ['one', 'two', 'three', 'four', 'five', 'three', 'six', 'seven', 'three', 'eight', 'nine']
+        sequeue = ['two', 'three', 'four', 'five', 'three', 'six', 'seven', 'three', 'eight', 'nine']
  
         rospy.loginfo("Starting position navigation ")
         # Begin the main loop and run through a sequence of locations
@@ -59,7 +58,7 @@ class PatrolNav():
             #judge if set keep_patrol is true
             if self.keep_patrol == False:
                 if self.patrol_type == 0: #use patrol_loop
-                    if target_num == locations_cnt :
+                    if target_num == len(sequeue):
                       if loop_cnt < self.patrol_loop-1:
                         target_num = 0
                         loop_cnt  += 1
