@@ -16,19 +16,19 @@ gripper_close: 700
 gripper_open: 150
 gripper_default: 500
 
-# 标定参数
-cali_1_im: [38, 366]
-cali_1_mc: [-70, 105]
-cali_2_im: [577, 92]
-cali_2_mc: [130, 195]
-cali_3_im: [63, 193]
-cali_3_mc: [-75, 190]
-cali_4_im: [590, 373]
-cali_4_mc: [120, 95]
-cali_rotary_anchors: [[38, 120], [63, 110], [331, 75], [577, 55], [590, 40]]
+# 标定参数(11-06晚 修复0-1000坐标系后全量重测,7点仿射,残差≤0.6cm;全部z=-95平面jog实测)
+cali_1_im: [100, 151]
+cali_1_mc: [-50, 175]
+cali_2_im: [529, 147]
+cali_2_mc: [120, 170]
+cali_3_im: [95, 306]
+cali_3_mc: [-50, 130]
+cali_4_im: [520, 316]
+cali_4_mc: [110, 110]
+cali_rotary_anchors: [[95, 105], [100, 100], [215, 100], [312, 75], [431, 70], [482, 60], [520, 45], [529, 45]]
 
 # 抓取参数
-grasp_z: -95             # -95平面微调终版(11-03)
+grasp_z: -95             # 11-03:反馈爪伸太低,上抬1cm
 grasp_offset_x: 10      # 
 grasp_offset_y: 0      # X轴偏移
 rotation_factor: 0.0             # 11-02:自动转盘旋转关闭,标定系=rotary90,旋转会引入偏移
@@ -39,8 +39,12 @@ continuous_mode: true   # True为持续抓取，False为单次抓取
 
 # 话题名称
 pose_topic: "/Pose"
-cali_5_im: [331, 218]
-cali_5_mc: [35, 150]
-home_x: 25
+cali_5_im: [215, 100]    # P5 banana 11-06晚实测
+cali_5_mc: [-10, 195]
+cali_6_im: [431, 108]    # P6 banana 11-06晚实测
+cali_6_mc: [75, 187]
+cali_7_im: [482, 228]    # P7 banana 11-06晚实测(-95面,数据干净)
+cali_7_mc: [95, 150]
+home_x: 0
 home_y: 0
 home_z: 240

@@ -48,6 +48,10 @@ class BasicXArmGrasp():
         self.cali_4_mc = rospy.get_param("~cali_4_mc", None)
         self.cali_5_im = rospy.get_param("~cali_5_im", None)
         self.cali_5_mc = rospy.get_param("~cali_5_mc", None)
+        self.cali_6_im = rospy.get_param("~cali_6_im", None)  # 11-06第6锚:中心↔左下带
+        self.cali_6_mc = rospy.get_param("~cali_6_mc", None)
+        self.cali_7_im = rospy.get_param("~cali_7_im", None)  # 11-06第7锚:中心右下带
+        self.cali_7_mc = rospy.get_param("~cali_7_mc", None)
         # 11-02四点标定: 转盘角度随像素y插值(四角实测40~120各不相同,单一factor罩不住)
         self.cali_rotary_anchors = rospy.get_param("~cali_rotary_anchors", None)
         
@@ -98,30 +102,48 @@ class BasicXArmGrasp():
     def camera_point_to_grasp_pose(self, obj_info):
         """相机坐标转换为抓取位姿"""
         
-        # 11-02三点标定：锚点按像素升序排列后分段线性插值(np.interp要求xp递增)
-        pts_x = [(self.cali_1_im[0], self.cali_1_mc[0]), (self.cali_2_im[0], self.cali_2_mc[0])]
-        pts_y = [(self.cali_1_im[1], self.cali_1_mc[1]), (self.cali_2_im[1], self.cali_2_mc[1])]
-        if self.cali_3_im and self.cali_3_mc:
-            pts_x.append((self.cali_3_im[0], self.cali_3_mc[0]))
-            pts_y.append((self.cali_3_im[1], self.cali_3_mc[1]))
-        if self.cali_4_im and self.cali_4_mc:
-            pts_x.append((self.cali_4_im[0], self.cali_4_mc[0]))
-            pts_y.append((self.cali_4_im[1], self.cali_4_mc[1]))
-        if self.cali_5_im and self.cali_5_mc:
-            pts_x.append((self.cali_5_im[0], self.cali_5_mc[0]))
-            pts_y.append((self.cali_5_im[1], self.cali_5_mc[1]))
-        pts_x.sort(key=lambda t: t[0])
-        pts_y.sort(key=lambda t: t[0])
-        X_cali_im = [t[0] for t in pts_x]
-        X_cali_mc = [t[1] for t in pts_x]
-        Y_cali_im = [t[0] for t in pts_y]
-        Y_cali_mc = [t[1] for t in pts_y]
+        # 11-06仿射最小二乘拟合(替代IDW:IDW锚间波浪形吸偏;仿射全平面平滑,残差RMS约1.1cm)
+        # 2锚=对角线性插值;>=3锚=np.linalg.lstsq拟合 X_mc=a*px+b*py+c
+        anchors = []
+        for im, mc in [(self.cali_1_im, self.cali_1_mc),
+                       (self.cali_2_im, self.cali_2_mc),
+                       (self.cali_3_im, self.cali_3_mc),
+                       (self.cali_4_im, self.cali_4_mc),
+                       (self.cali_5_im, self.cali_5_mc),
+                       (self.cali_6_im, self.cali_6_mc),
+                       (self.cali_7_im, self.cali_7_mc)]:
+            if im and mc:
+                anchors.append((float(im[0]), float(im[1]), float(mc[0]), float(mc[1])))
+        px, py = float(obj_info.x_center), float(obj_info.y_center)
 
-        # X差值
-        X = int(np.interp(obj_info.x_center, X_cali_im, X_cali_mc))
+        # 11-07安全区护栏: 像素超出锚点覆盖区(±25px余量)直接放弃,防仿射外推甩臂
+        if anchors:
+            xs = [a[0] for a in anchors]
+            ys = [a[1] for a in anchors]
+            if not (min(xs) - 25 <= px <= max(xs) + 25 and
+                    min(ys) - 25 <= py <= max(ys) + 25):
+                rospy.logwarn("检测像素(%d,%d)超出标定安全区,放弃本次动作", int(px), int(py))
+                self.pose_valid = False
+                return
+        self.pose_valid = True
 
-        # Y差值
-        Y = int(np.interp(obj_info.y_center, Y_cali_im, Y_cali_mc))
+        if len(anchors) == 2:
+            x_ims = [anchors[0][0], anchors[1][0]]
+            x_mcs = [anchors[0][2], anchors[1][2]]
+            y_ims = [anchors[0][1], anchors[1][1]]
+            y_mcs = [anchors[0][3], anchors[1][3]]
+            xo = np.argsort(x_ims)
+            yo = np.argsort(y_ims)
+            X = int(round(np.interp(px, [x_ims[i] for i in xo], [x_mcs[i] for i in xo])))
+            Y = int(round(np.interp(py, [y_ims[i] for i in yo], [y_mcs[i] for i in yo])))
+        else:
+            Mtrx = np.array([[a[0], a[1], 1.0] for a in anchors])
+            bx = np.array([a[2] for a in anchors])
+            by = np.array([a[3] for a in anchors])
+            coeff_x, _, _, _ = np.linalg.lstsq(Mtrx, bx, rcond=-1)
+            coeff_y, _, _, _ = np.linalg.lstsq(Mtrx, by, rcond=-1)
+            X = int(round(coeff_x[0] * px + coeff_x[1] * py + coeff_x[2]))
+            Y = int(round(coeff_y[0] * px + coeff_y[1] * py + coeff_y[2]))
         self.x = Y + self.grasp_offset_x
         self.y = -X+self.grasp_offset_y
         self.z = self.grasp_z
@@ -181,6 +203,12 @@ class BasicXArmGrasp():
         
         # 2. 计算抓取位姿
         self.camera_point_to_grasp_pose(self.grasp_obj)
+        if not getattr(self, 'pose_valid', True):
+            rospy.logwarn("抓取目标超出安全区,清状态放行主控继续跑")
+            self.obj_detected = False
+            self.grasp_obj = None
+            rospy.set_param('success', True)
+            return False
         time.sleep(1)
         
         # 3. 移动到抓取位置
@@ -216,9 +244,18 @@ class BasicXArmGrasp():
             return False
             
         rospy.loginfo("开始put物体...")
-        
+
+        # 11-07: 放置保持抓取时的转盘角,防止带着物体旋转甩飞
+        keep_rotary = self.rotary
         # 1. 计算put位姿
         self.camera_point_to_grasp_pose(self.grasp_obj)
+        if not getattr(self, 'pose_valid', True):
+            rospy.logwarn("放置目标超出安全区,清状态放行主控继续跑")
+            self.obj_detected = False
+            self.grasp_obj = None
+            rospy.set_param('success', True)
+            return False
+        self.rotary = keep_rotary
         self.x += self.place_offset_x
         self.y += self.place_offset_y
         rospy.loginfo("放置补偿后位姿: x=%d, y=%d, z=%d",

@@ -4,6 +4,7 @@ import rospy
 import json
 import threading
 import sys
+import time
 import serial
 #import struct
 
@@ -45,7 +46,7 @@ class xArmCtrl(object):
     def SerialRecvieCallback(self):
         while True:
             #rx_data = self.__ser.readline()
-            rx_len = self.__ser.inWaiting() 
+            rx_len = self.__ser.inWaiting()
             #self.__ser.flushInput()
             #if len(rx_data):
             if rx_len > 0:
@@ -56,6 +57,8 @@ class xArmCtrl(object):
                     rospy.loginfo("json data: %s", rx_data)
                 except ValueError, e:
                     rospy.loginfo("rx data: %s", rx_data)
+            else:
+                time.sleep(0.01)  # 11-06:无数据睡10ms,修复串口空转吃满单核(96.5%CPU)
 
 if __name__ == '__main__':
     rospy.init_node("Rikibot_xArm_Controller")

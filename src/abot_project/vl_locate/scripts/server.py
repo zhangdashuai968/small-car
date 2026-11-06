@@ -100,6 +100,7 @@ class VLM:
             client = OpenAI(
                 api_key=self.api_key,
                 base_url=self.base_url,
+                timeout=20.0,   # 11-06:API硬超时20s,防模型慢响应拖死抓取节奏
             )
             response = client.chat.completions.create(
                 model=self.model_name, 
@@ -168,12 +169,17 @@ class VLM:
         return candidates[0]
 
     def normalize_bbox(self, bbox_2d, img_w, img_h):
-        """归一化bbox到图像像素坐标：VLM可能返回0-1000归一化坐标或真实像素坐标"""
+        """将Qwen返回的0-1000归一化坐标转换为图像真实像素坐标
+        (11-06定案:模型恒返回0-1000归一化;旧'超界才缩放'启发式对界内目标必错位,
+         且标定锚点像素需同步×0.64/×0.48换算——已随本修复一并更新)"""
         x_min, y_min, x_max, y_max = map(float, bbox_2d)
-        if max(x_min, x_max) > img_w or max(y_min, y_max) > img_h:
-            rospy.logwarn(
-                f"bbox坐标超出图像尺寸，按0-1000坐标归一化: bbox={bbox_2d}, image=({img_w},{img_h})"
-            )
+
+        if max(x_min, y_min, x_max, y_max) <= 1.0:
+            x_min *= img_w
+            x_max *= img_w
+            y_min *= img_h
+            y_max *= img_h
+        else:
             x_min = x_min / 1000.0 * img_w
             x_max = x_max / 1000.0 * img_w
             y_min = y_min / 1000.0 * img_h
@@ -190,7 +196,10 @@ class VLM:
         img_h, img_w = img_bgr.shape[:2]
         
         START_NAME = result['label']
-        bbox_2d = result['bbox_2d']
+        bbox_2d = result.get('bbox_2d')
+        if not bbox_2d or len(bbox_2d) != 4:   # 11-06:空框保护——模型说没找到时不崩请求
+            rospy.logwarn("VLM未返回有效bbox(画面中无目标?),本次识别判失败")
+            return None
         bbox_2d = self.normalize_bbox(bbox_2d, img_w, img_h)
         rospy.loginfo(f"检测到目标: {START_NAME}, 坐标: {bbox_2d}")
 
@@ -221,7 +230,10 @@ class VLM:
             rospy.logerr("返回结果格式错误！")
             return None
         
-        X_CENTER, Y_CENTER = self.post_processing_viz(result, self.image_save_path)
+        res = self.post_processing_viz(result, self.image_save_path)
+        if res is None:
+            return None
+        X_CENTER, Y_CENTER = res
 
         # 发布位姿信息  创建单个Detection消息
         pose_msg = Detection()
