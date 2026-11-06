@@ -278,3 +278,17 @@ step3 -> -1.98 — 10.7s
   锚点空档抽查(左上↔中心/右下↔中心)未做
 [存档态] 车上=仓库工作区md5一致(patrol_nav cc05c54d/gg.py 09194b0a/yaml aeb55cce);HEAD=119(02e418c)未动;
   patrol_nav七站补偿v2+nine的A+B修法(西移15cm+朝180°)在车上待复跑验证,均未提交
+
+========== 11-07 凌晨：比赛一条龙体系建成 + USB真凶修复 + 全程验证 ==========
+[22:15-22:47] 一条龙体系: race.sh(一键起四栈+命令展示+相机88/20+Ctrl-C全停[先零速流再杀节点本体防孤儿]) + abot_race_task.py(10站任务序+厂家/grab+/success握手+全链容错跳过)
+[22:28] 空跑验证: 导航+握手+容错全通;发现服务空框崩请求bug→server.py加空框保护+API超时20s;抓等臂90→45s/放60→35s
+[23:0x] 快停模式上线: 位置<15cm+朝向差<23°提前收工不等move_base完美SUCCEEDED,站均10-20s(此前45-150s)
+[23:3x] 全真跑: apple轮抓+放全握手实战通过;辅助对话贡献:xarm_driver串口空转(96.5%CPU/核)修复×2——采纳部署
+[00:0x] 连续两次"four→five段全图团灭"→dmesg破案: cp210x底盘串口中途掉线重连+usb_suspend_both刷屏=内核USB自动挂起
+       修复: 全设备power/control=on + usb-power-lock.service(sudo建systemd开机持久化)
+[00:5x] 护栏体系: gg.py安全区护栏(识别像素超七锚区±25px拒动作防外推甩臂)+拦截路径清obj_detected并置/success放行(防10Hz重触发+防总控干等)
+       放置保持抓取时转盘角;不采纳:放90°(加回旋转)/grasp_offset全局补偿(带歪其他区)
+[01:0x] USB修复验证跑: 全程4.9分钟8/10流程OK,master全程存活,死亡航段20s通过;
+       pear方块(65,363)标定区外被护栏秒跳(明早补左缘锚);watermelon未识别跳过;
+       遗留: nine终点state=4 ABORTED(今日三败,从未成功,明天优先查)
+[环境] 车现IP 192.168.43.8(新网段);车上sudo密码同SSH;新卡已刷仓库版双包+conda39重建
